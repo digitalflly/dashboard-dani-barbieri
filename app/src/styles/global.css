@@ -1,0 +1,100 @@
+/* ============================================================
+   Global / dashboard surface styles
+   Ported from the <helmet><style> block of Dashboard.dc.html.
+   ============================================================ */
+
+* { box-sizing: border-box; }
+html { letter-spacing: var(--ls-body); }
+body { margin: 0; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--sand-400);
+  border-radius: 999px;
+  border: 3px solid var(--surface-page);
+}
+
+/* whole dashboard reads lowercase, except elements opted out via data-keepcase */
+.dash,
+.dash *:not([data-keepcase]) { text-transform: lowercase !important; }
+.dash [data-keepcase] { text-transform: none !important; }
+
+/* ---- card / badge / button / select / avatar primitives ---- */
+.b-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.b-card--bare {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  box-shadow: none;
+}
+
+.b-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 8px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--wine-800);
+}
+.b-badge--warning { background: #F4E4C9; color: var(--gold-deep); }
+
+.b-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 24px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border-radius: var(--radius-xs);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+.b-btn--primary {
+  background: var(--wine-800);
+  color: var(--cream);
+  border-color: var(--wine-800);
+  box-shadow: var(--shadow-sm);
+}
+.b-btn--primary:hover { background: var(--wine-900); border-color: var(--wine-900); }
+.b-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.b-select {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-strong);
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.b-select:focus {
+  outline: none;
+  border-color: var(--wine-800);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.b-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.b-avatar--lg { width: 52px; height: 52px; }

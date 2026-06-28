@@ -1,0 +1,132 @@
+/* ============================================================
+   Design tokens — dani barbieri (High Beauty PrØ)
+   Ported verbatim from the design-system bundle. Font url()s
+   re-pointed to /fonts (served from public/).
+   ============================================================ */
+
+/* ---- FONTS ---- */
+@font-face {
+  font-family: "Cammron Round";
+  src: url("/fonts/CammronRound.otf") format("opentype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Arimo";
+  src: url("/fonts/Arimo-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Arimo";
+  src: url("/fonts/Arimo-Italic-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --font-display: "Cammron Round", "Didot", Georgia, serif;
+  --font-sans: "Arimo", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-mono: "Arimo", ui-monospace, monospace;
+
+  /* ---- Wine / bordô (primary) ---- */
+  --wine-950: #3D0A11;
+  --wine-900: #5A0F18;
+  --wine-800: #771520;
+  --wine-700: #8E1A28;
+  --wine-600: #A5293A;
+  --wine-500: #BB4252;
+  --wine-200: #E8B9BF;
+  --wine-100: #F4DCDF;
+
+  /* ---- Nude / sand neutrals ---- */
+  --cream:    #F6EFE8;
+  --nude-100: #EFE4DA;
+  --nude-200: #E4D5CA;
+  --sand-300: #D0BBA6;
+  --sand-400: #BCA489;
+  --taupe-500:#9C846C;
+
+  /* ---- Gold foil (metallic accent) ---- */
+  --gold-light: #EAD3A0;
+  --gold:       #C2A05B;
+  --gold-deep:  #9A7637;
+  --gold-foil:  linear-gradient(135deg,#A8823F 0%,#E7CE92 28%,#F4E6BE 46%,#B68F49 64%,#8C6A34 100%);
+
+  /* ---- Ink (wine-tinted neutrals for text) ---- */
+  --ink-900: #271217;
+  --ink-700: #4A3338;
+  --ink-500: #6E595D;
+  --ink-300: #A2908F;
+
+  /* surfaces */
+  --surface-page:    var(--cream);
+  --surface-card:    #FFFFFF;
+  --surface-sunken:  var(--nude-100);
+  --surface-tinted:  var(--nude-200);
+  --surface-sand:    var(--sand-300);
+  --surface-wine:    var(--wine-800);
+  --surface-wine-deep: var(--wine-900);
+
+  /* text */
+  --text-strong:   var(--ink-900);
+  --text-body:     var(--ink-700);
+  --text-muted:    var(--ink-500);
+  --text-on-wine:  var(--nude-200);
+  --text-on-wine-strong: var(--cream);
+  --text-gold:     var(--gold-deep);
+
+  /* brand / accent */
+  --accent:        var(--wine-800);
+  --accent-hover:  var(--wine-900);
+  --accent-press:  var(--wine-950);
+  --accent-soft:   var(--wine-100);
+
+  /* lines & edges */
+  --border-soft:   #E7DACE;
+  --border-strong: var(--sand-400);
+  --border-gold:   var(--gold);
+  --hairline:      rgba(39,18,23,0.10);
+  --hairline-gold: rgba(194,160,91,0.45);
+  --hairline-light:rgba(246,239,232,0.22);
+
+  /* status */
+  --success: #5F7A52;
+  --warning: #B8862F;
+  --danger:  var(--wine-700);
+
+  /* typography scale */
+  --fs-label: 12px;
+  --ls-display: -0.09em;
+  --ls-body: -0.025em;
+  --ls-tight: -0.02em;
+  --ls-label: 0.24em;
+  --ls-caps: 0.12em;
+
+  /* radii */
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+
+  /* shadows */
+  --shadow-xs: 0 1px 2px rgba(39,18,23,0.06);
+  --shadow-sm: 0 2px 8px rgba(39,18,23,0.07);
+  --shadow-md: 0 10px 30px -12px rgba(39,18,23,0.18);
+  --shadow-lg: 0 24px 60px -20px rgba(39,18,23,0.26);
+  --shadow-wine: 0 18px 50px -18px rgba(119,21,32,0.42);
+
+  /* motion */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur: 240ms;
+  --transition-base: all var(--dur) var(--ease-out);
+
+  /* custom */
+  --warning-bg: #F5E7CF;
+}
