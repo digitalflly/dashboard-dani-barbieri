@@ -22,7 +22,8 @@
     body{ margin:0; }
     :root{ --warning-bg:#F5E7CF; }
     ::-webkit-scrollbar{ width:10px; height:10px; }
-    ::-webkit-scrollbar-thumb{ background:var(--sand-400); border-radius:999px; border:3px solid var(--surface-page); }
+    ::-webkit-scrollbar-thumb{ background:var(--accent); border-radius:999px; border:3px solid var(--surface-page); }
+    *{ scrollbar-color: var(--accent) var(--surface-page); }
     .dash, .dash *:not([data-keepcase]){ text-transform: lowercase !important; }
     .dash [data-keepcase]{ text-transform: none !important; }
     /* dashboard surfaces re-skinned on dani barbieri tokens */
@@ -60,7 +61,7 @@
         <div class="b-avatar b-avatar--lg" style="background:var(--wine-800); color:var(--surface-card); font-family:var(--font-display); font-size:24px;">{{ brand.initial }}</div>
         <div>
           <div style="font-family:var(--font-display); font-size:26px; line-height:1; color:var(--text-strong); letter-spacing:-0.01em;">{{ brand.name }}</div>
-          <div style="font-size:13px; color:var(--text-muted); margin-top:3px;">@{{ brand.handle }} · análise de conteúdo</div>
+          <div style="font-size:13px; color:var(--text-muted); margin-top:3px;">@{{ brand.handle }} · análise de marketing</div>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:16px;">
@@ -356,6 +357,7 @@
             </sc-if>
           </sc-for>
         </div>
+        <sc-if value="{{ showStatusBtns }}" hint-placeholder-val="{{ true }}">
         <div style="display:flex; gap:6px; align-items:center;">
           <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-right:4px;">Status</span>
           <sc-for list="{{ candStatusBtns }}" as="b" hint-placeholder-count="2">
@@ -367,10 +369,13 @@
             </sc-if>
           </sc-for>
         </div>
+        </sc-if>
       </div>
 
       <sc-if value="{{ candReady }}" hint-placeholder-val="{{ false }}">
       <div>
+        <sc-if value="{{ leadsView }}" hint-placeholder-val="{{ true }}">
+        <div>
         <div style="margin:18px 0 16px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
           <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Informações gerais</div>
         </div>
@@ -404,9 +409,11 @@
             </div>
           </sc-for>
         </div>
+        </div>
+        </sc-if>
 
         <sc-if value="{{ investShow }}" hint-placeholder-val="{{ false }}">
-        <div style="border-top:1px solid var(--border-soft); margin:26px 0 18px; padding-top:24px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+        <div style="{{ investHeaderStyle }}">
           <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Investimento do funil</div>
         </div>
         <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:16px;">
@@ -417,9 +424,11 @@
             </div>
           </sc-for>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-          <div id="inv-funnel" class="b-card" style="padding:22px 24px;">
+        <div style="{{ investGridStyle }}">
+          <div style="{{ funnelCellStyle }}">
+          <div id="inv-funnel" class="b-card" style="padding:22px 24px; flex:1; width:100%; display:flex; flex-direction:column;">
             <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">{{ investEyebrow }}</div>
+            <sc-if value="{{ convShow }}" hint-placeholder-val="{{ true }}">
             <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:18px; color:var(--text-strong); line-height:1.15; margin-bottom:16px;">Dados de conversão</div>
             <div style="display:flex; flex-direction:column; gap:5px;">
               <sc-for list="{{ investStages }}" as="s" hint-placeholder-count="6">
@@ -432,24 +441,51 @@
                 </div>
               </sc-for>
             </div>
+            </sc-if>
+            <sc-if value="{{ turbinaShow }}" hint-placeholder-val="{{ false }}">
+            <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:18px; color:var(--text-strong); line-height:1.15; margin-bottom:16px;">Turbinamento</div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:14px;">
+              <sc-for list="{{ turbinaSummary }}" as="t" hint-placeholder-count="3">
+                <div style="border:1px solid var(--border-soft); border-radius:5px; padding:10px 12px; display:flex; flex-direction:column; gap:4px;">
+                  <div style="font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); line-height:1.2;">{{ t.label }}</div>
+                  <div data-keepcase="1" style="font-size:17px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em;">{{ t.value }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; flex:1; min-height:120px; overflow-y:auto;">
+              <sc-for list="{{ turbina }}" as="t" hint-placeholder-count="6">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 11px; border:1px solid var(--border-soft); border-radius:5px;">
+                  <span style="font-size:12px; color:var(--text-strong); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ t.name }}</span>
+                  <span style="display:flex; gap:14px; flex:none; align-items:baseline;">
+                    <span data-keepcase="1" style="font-size:11.5px; color:var(--text-muted);">{{ t.visitas }} visitas</span>
+                    <span data-keepcase="1" style="font-size:12.5px; font-weight:600; color:#771520;">{{ t.spend }}</span>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+          </div>
           </div>
 
-          <div id="inv-adset-card" class="b-card" style="padding:22px 24px; min-width:0; display:flex; flex-direction:column;">
+          <div style="{{ adsetCellStyle }}">
+          <div id="inv-adset-card" class="b-card" style="padding:22px 24px; min-width:0; flex:1; width:100%; display:flex; flex-direction:column;">
             <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">{{ investEyebrow }}</div>
             <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
               <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:18px; color:var(--text-strong); line-height:1.15;">Conjuntos de anúncio</div>
               <span data-keepcase="1" style="font-size:11px; color:var(--text-muted);">{{ adsStatus }}</span>
             </div>
-            <div style="overflow:auto; margin:0 -4px; flex:1 1 0; min-height:0;">
+            <div style="{{ adsetWrapStyle }}">
               <table style="border-collapse:collapse; width:100%; table-layout:fixed;">
                 <thead>
                   <tr style="text-align:right;">
                     <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:left; padding:0 8px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; width:32%;">Conjunto</th>
                     <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 8px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Impr.</th>
                     <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 8px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Cliques</th>
+                    <sc-if value="{{ showLpCr }}" hint-placeholder-val="{{ true }}">
                     <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 8px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Visu. pág.</th>
                     <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 8px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Connect</th>
-                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:right; padding:0 4px 10px 8px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Leads</th>
+                    </sc-if>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:right; padding:0 4px 10px 8px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">{{ adsetResultLabel }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -460,8 +496,10 @@
                       </td>
                       <td data-keepcase="1" style="text-align:right; padding:10px 8px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ a.impr }}</td>
                       <td data-keepcase="1" style="text-align:right; padding:10px 8px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ a.clk }}</td>
+                      <sc-if value="{{ showLpCr }}" hint-placeholder-val="{{ true }}">
                       <td data-keepcase="1" style="text-align:right; padding:10px 8px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ a.lpv }}</td>
                       <td data-keepcase="1" style="text-align:right; padding:10px 8px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ a.cr }}</td>
+                      </sc-if>
                       <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 8px; font-size:12.5px; font-weight:600; color:#771520; white-space:nowrap;">{{ a.leads }}</td>
                     </tr>
                   </sc-for>
@@ -469,44 +507,51 @@
               </table>
             </div>
           </div>
-        </div>
+          </div>
 
-        <div id="inv-ads-card" class="b-card" style="padding:22px 24px; min-width:0; margin-bottom:16px;">
+          <div style="{{ adsCellStyle }}">
+          <div id="inv-ads-card" class="b-card" style="padding:22px 24px; min-width:0; flex:1; width:100%;">
           <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">{{ investEyebrow }}</div>
           <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
             <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:18px; color:var(--text-strong); line-height:1.15;">Anúncios</div>
             <span data-keepcase="1" style="font-size:11px; color:var(--text-muted);">{{ adsStatus }}</span>
           </div>
-          <div style="overflow-x:auto; margin:0 -4px;">
-            <table style="border-collapse:collapse; width:100%; min-width:660px;">
+          <div style="{{ adsWrapStyle }}">
+            <table style="{{ adsTableStyle }}">
               <thead>
                 <tr style="text-align:right;">
-                  <th style="text-align:left; padding:0 12px 10px 4px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Anúncio</th>
+                  <th style="{{ adsNameColStyle }}">Anúncio</th>
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Impressões</th>
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Cliques no link</th>
+                  <sc-if value="{{ showLpCr }}" hint-placeholder-val="{{ true }}">
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Visualização da página</th>
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Connect rate</th>
-                  <th style="text-align:right; padding:0 4px 10px 12px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Leads do gerenciador</th>
+                  </sc-if>
+                  <th style="text-align:right; padding:0 4px 10px 12px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">{{ adsResultLabel }}</th>
                 </tr>
               </thead>
               <tbody>
                 <sc-for list="{{ investAds }}" as="a" hint-placeholder-count="5">
                   <tr style="border-top:1px solid var(--border-soft);">
-                    <td style="padding:10px 12px 10px 4px;">
+                    <td style="padding:10px 12px 10px 4px; min-width:0;">
                       <div style="display:flex; align-items:center; gap:10px; min-width:0;">
                         <div style="{{ a.thumbStyle }}"></div>
-                        <span style="font-size:12.5px; font-weight:500; color:var(--text-strong); white-space:nowrap;">{{ a.name }}</span>
+                        <span style="font-size:12.5px; font-weight:500; color:var(--text-strong); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1;">{{ a.name }}</span>
                       </div>
                     </td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.impr }}</td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.clk }}</td>
+                    <sc-if value="{{ showLpCr }}" hint-placeholder-val="{{ true }}">
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.lpv }}</td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.cr }}</td>
+                    </sc-if>
                     <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 12px; font-size:13px; font-weight:600; color:#771520; white-space:nowrap;">{{ a.leads }}</td>
                   </tr>
                 </sc-for>
               </tbody>
             </table>
+          </div>
+          </div>
           </div>
         </div>
         </sc-if>
@@ -554,7 +599,7 @@ class Component extends DCLogic {
       adsError: '',
     };
     this.ADS_ACCOUNT_ID = '450830237045296';
-    this.ADS_CAMPAIGN_MATCH = { premium:/sess[aã]o\s*premium/i, diagnostico:/diagn[oó]stico/i };
+    this.ADS_CAMPAIGN_MATCH = { premium:/sess[aã]o\s*premium/i, diagnostico:/diagn[oó]stico/i, seguidores:/seguidores/i, turbinamento:/do instagram/i };
     this.SHEET_ID = '1SEHe4kbnkOj_D5l4vCvnvEM2pPObgCrX25elBh_FH1o';
     // degradê do vermelho da marca (intenso → claro)
     this.RED_RAMP = ['#771520','#6B131D','#5F111A','#530F17','#470C13','#3B0A10','#2F070C'];
@@ -575,6 +620,7 @@ class Component extends DCLogic {
           { title:'Faixa de faturamento', eyebrow:'Por mês', col:8, kind:'fatdiag', dropNI:true, horizontal:true },
           { title:'Tamanho da equipe', eyebrow:'Time', col:7, kind:'equipe', donut:true },
         ] },
+      { key:'seguidores', name:'Funil Seguidores', adsOnly:true },
     ];
     this.PAGE_ACCENTS = { conta:'#771520', conteudos:'#9A7637', insights:'#C2A05B' };
     this.WEEK_COLORS = ['#771520','#C2A05B','#A5293A','#9A7637','#BCA489','#5A0F18','#9C846C','#8E1A28'];
@@ -676,7 +722,6 @@ class Component extends DCLogic {
         label:iw.week+' · '+this.ddmm(m)+'–'+this.ddmm(endW) });
       m=this.addDays(m,7);
     }
-    const DEFAULT_WEEK = weeks.find(w=> dailyMax>=w.start && dailyMax<=w.end) || weeks[weeks.length-1];
 
     // months
     const monthSet=[]; allDates.forEach(d=>{ const ym=d.slice(0,7); if(!monthSet.includes(ym)) monthSet.push(ym); }); monthSet.sort();
@@ -692,6 +737,10 @@ class Component extends DCLogic {
     // post counts per week
     const postCounts={}; weeks.forEach(w=>{ postCounts[w.iso]=0; });
     media.forEach(p=>{ const w=weeks.find(w=> p.ts>=w.start && p.ts<=w.end); if(w) postCounts[w.iso]++; });
+    // semana padrão: a mais recente COM posts; senão a semana da data mais recente
+    const weekOfLatestData = weeks.find(w=> dailyMax>=w.start && dailyMax<=w.end) || weeks[weeks.length-1];
+    let weekWithPosts=null; for(let i=weeks.length-1;i>=0;i--){ if(postCounts[weeks[i].iso]>0){ weekWithPosts=weeks[i]; break; } }
+    const DEFAULT_WEEK = weekWithPosts || weekOfLatestData;
 
     const md=this.parse(dailyMax);
     const fmtSync = md.getUTCDate()+' '+MONTH_NAMES[md.getUTCMonth()]+' '+md.getUTCFullYear()+' · 14:30';
@@ -764,7 +813,8 @@ class Component extends DCLogic {
       const actSum = daily.reduce((a,d)=>a+d.reach+d.views+d.interactions,0);
       this._live = { profile, daily, follows, actSum };
       this.model=this.buildModel({ profile, daily, follows, media:[] });
-      this.setState({ live:true, dataError:'', lastSync:this.nowStamp(), month:'all', week:this.model.DEFAULT_WEEK.iso, mediaLoading:true, dormant:false });
+      const _phase1Week=this.model.DEFAULT_WEEK.iso;
+      this.setState({ live:true, dataError:'', lastSync:this.nowStamp(), month:'all', week:_phase1Week, mediaLoading:true, dormant:false });
 
       // ── Phase 2: per-post insights — só os últimos 30 dias são buscados; o
       //    histórico anterior fica estático em cache (localStorage). ──
@@ -790,8 +840,10 @@ class Component extends DCLogic {
         this.saveCache(CKEY, media, fd(to));
         this.model=this.buildModel({ profile:this._live.profile, daily:this._live.daily, follows:this._live.follows, media });
         const dormant = (this._live.actSum||0) < 50 && media.length===0;
-        this.setState({ refreshing:false, mediaLoading:false, dormant });
-        // baixa e embute as capas (desde jan/2026) para guardá-las de forma durável
+        const _newDefWeek=this.model.DEFAULT_WEEK.iso;
+        // se o usuário não mexeu na semana, ajusta para a semana mais recente COM posts
+        this.setState(s=> (s.week===_phase1Week && s.month==='all') ? {refreshing:false, mediaLoading:false, dormant, week:_newDefWeek} : {refreshing:false, mediaLoading:false, dormant});
+        // baixa e embute as capas (desde mai/2026) para guardá-las de forma durável
         this.persistCovers(media, CKEY, fd(to));
       }catch(e2){ this.setState({ refreshing:false, mediaLoading:false, dataError:'Publicações: '+((e2&&e2.message)||'falha ao carregar') }); }
     }catch(e){ this.setState({ refreshing:false, mediaLoading:false, dataError:(e&&e.message)||'Falha ao buscar dados ao vivo.' }); }
@@ -824,9 +876,9 @@ class Component extends DCLogic {
       img.src=url;
     });
   }
-  // embute, em background, as capas dos posts desde jan/2026 ainda não guardadas
+  // embute, em background, as capas dos posts desde mai/2026 ainda não guardadas
   async persistCovers(media, CKEY, savedAt){
-    const SINCE='2026-01-01';
+    const SINCE='2026-05-01';
     const targets=media.filter(p=> p && p.ts>=SINCE && !p.coverData && (p.thumb||p.cover));
     if(!targets.length) return;
     let i=0; const conc=6;
@@ -848,34 +900,65 @@ class Component extends DCLogic {
       const key=this.WINDSOR_KEY;
       const to=new Date(); const from=new Date(to.getTime()-180*86400000);
       const fd=(d)=>this.ymd(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));
-      const fields='account_name,account_id,campaign,adset_name,ad_name,thumbnail_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend';
+      const fields='account_id,date,campaign,adset_name,ad_name,thumbnail_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend';
       const url='https://connectors.windsor.ai/facebook?api_key='+encodeURIComponent(key)+'&date_from='+fd(from)+'&date_to='+fd(to)+'&fields='+encodeURIComponent(fields)+'&_cb='+Date.now();
       const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('Facebook HTTP '+r.status);
       const j=await r.json(); if(j.error) throw new Error(String(j.error).slice(0,120));
       const all=j.data||[]; const num=(v)=>(v==null||v==='')?0:(+v||0);
       const acct=this.ADS_ACCOUNT_ID;
       const base=all.filter(x=>String(x.account_id||'').replace(/\D/g,'')===acct);
-      const buildSet=(camRe)=>{
-        const sub=base.filter(x=>camRe.test(x.campaign||''));
-        const byAd={}, byAdset={};
-        sub.forEach(x=>{ const k=(x.ad_name||'(sem nome)'); if(!byAd[k]) byAd[k]={ name:k, thumb:'', impressions:0, reach:0, linkClicks:0, lpViews:0, leads:0, spend:0 };
-          const a=byAd[k]; a.impressions+=num(x.impressions); a.reach+=num(x.reach); a.linkClicks+=num(x.inline_link_clicks); a.lpViews+=num(x.actions_landing_page_view); a.leads+=num(x.actions_lead); a.spend+=num(x.spend); if(!a.thumb && x.thumbnail_url) a.thumb=x.thumbnail_url;
-          const sk=(x.adset_name||'(sem conjunto)'); if(!byAdset[sk]) byAdset[sk]={ name:sk, impressions:0, reach:0, linkClicks:0, lpViews:0, leads:0, spend:0 };
-          const s=byAdset[sk]; s.impressions+=num(x.impressions); s.reach+=num(x.reach); s.linkClicks+=num(x.inline_link_clicks); s.lpViews+=num(x.actions_landing_page_view); s.leads+=num(x.actions_lead); s.spend+=num(x.spend); });
-        return { ads:Object.values(byAd).sort((a,b)=>b.impressions-a.impressions), adsets:Object.values(byAdset).sort((a,b)=>b.impressions-a.impressions) };
-      };
-      const premium=buildSet(this.ADS_CAMPAIGN_MATCH.premium);
-      const diagnostico=buildSet(this.ADS_CAMPAIGN_MATCH.diagnostico);
-      this.setState({adsLoading:false, ads:{premium:premium.ads, diagnostico:diagnostico.ads}, adsets:{premium:premium.adsets, diagnostico:diagnostico.adsets}});
+      // guarda as linhas diárias para filtrar por data no client
+      this._adsRaw = base.map(x=>({ date:String(x.date||'').slice(0,10), campaign:x.campaign||'', ad:x.ad_name||'(sem nome)', adset:x.adset_name||'(sem conjunto)', thumb:x.thumbnail_url||'', impressions:num(x.impressions), reach:num(x.reach), linkClicks:num(x.inline_link_clicks), lpViews:num(x.actions_landing_page_view), leads:num(x.actions_lead), spend:num(x.spend) }));
+      let mn=null,mx=null; this._adsRaw.forEach(rw=>{ if(/^\d{4}-\d{2}-\d{2}$/.test(rw.date)){ if(!mn||rw.date<mn)mn=rw.date; if(!mx||rw.date>mx)mx=rw.date; } });
+      this._adsMinD=mn; this._adsMaxD=mx;
+      this.setState({adsLoading:false, adsReady:true});
+      // se já estiver no funil seguidores e sem filtro, aplica o intervalo padrão
+      if(this.state.funnel==='seguidores' && !this.state.candFrom && !this.state.candTo && this.state.candMonth==='all'){ const dr=this.defaultFunnelRange(mn,mx); this.setState({candFrom:dr.from, candTo:dr.to}); }
     }catch(e){ this.setState({adsLoading:false, adsError:(e&&e.message)||'Falha ao ler Facebook Ads.'}); }
+  }
+  // agrega anúncios/conjuntos por campanha (regex) e intervalo de datas
+  adsAgg(camRe, from, to){
+    const rows=(this._adsRaw||[]).filter(x=> camRe.test(x.campaign) && (!from||x.date>=from) && (!to||x.date<=to));
+    const byAd={}, byAdset={};
+    rows.forEach(x=>{ const a=byAd[x.ad]||(byAd[x.ad]={name:x.ad,thumb:'',impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,spend:0});
+      a.impressions+=x.impressions; a.reach+=x.reach; a.linkClicks+=x.linkClicks; a.lpViews+=x.lpViews; a.leads+=x.leads; a.spend+=x.spend; if(!a.thumb&&x.thumb)a.thumb=x.thumb;
+      const s=byAdset[x.adset]||(byAdset[x.adset]={name:x.adset,impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,spend:0});
+      s.impressions+=x.impressions; s.reach+=x.reach; s.linkClicks+=x.linkClicks; s.lpViews+=x.lpViews; s.leads+=x.leads; s.spend+=x.spend; });
+    return { ads:Object.values(byAd).sort((a,b)=>b.impressions-a.impressions), adsets:Object.values(byAdset).sort((a,b)=>b.impressions-a.impressions) };
+  }
+  // agrega turbinamento por campanha + intervalo de datas
+  turbinaAgg(from, to){
+    const re=this.ADS_CAMPAIGN_MATCH.turbinamento;
+    const rows=(this._adsRaw||[]).filter(x=> re.test(x.campaign) && (!from||x.date>=from) && (!to||x.date<=to));
+    const byCamp={};
+    rows.forEach(x=>{ const t=byCamp[x.campaign]||(byCamp[x.campaign]={name:x.campaign,impressions:0,reach:0,linkClicks:0,lpViews:0,spend:0,thumb:''});
+      t.impressions+=x.impressions; t.reach+=x.reach; t.linkClicks+=x.linkClicks; t.lpViews+=x.lpViews; t.spend+=x.spend; if(!t.thumb&&x.thumb)t.thumb=x.thumb; });
+    return Object.values(byCamp).sort((a,b)=>b.spend-a.spend);
   }
 
   /* ============ LEADS (Google Sheet — uma aba por funil) ============ */
   funnelSpec(key){ return this.FUNNELS.find(f=>f.key===key); }
   parseRowDate(s){ const m=String(s||'').match(/(\d{2})\/(\d{2})\/(\d{4})/); if(m) return m[3]+'-'+m[2]+'-'+m[1]; const m2=String(s||'').match(/(\d{4})-(\d{2})-(\d{2})/); return m2? m2[0]:null; }
-  setFunnel(key){ this.setState({funnel:key, candMonth:'all', candFrom:'', candTo:'', candStatusFilter:'all'}); if(!this.state.funnelData[key] && !this.state.funnelLoading[key]) this.fetchFunnel(key); }
+  setFunnel(key){
+    this.setState({funnel:key, candMonth:'all', candFrom:'', candTo:'', candStatusFilter:'all'});
+    const spec=this.funnelSpec(key);
+    if(spec && spec.adsOnly){ const r=this.defaultFunnelRange(this._adsMinD, this._adsMaxD); this.setState({candFrom:r.from, candTo:r.to}); return; }
+    const d=this.state.funnelData[key];
+    if(!d && !this.state.funnelLoading[key]) this.fetchFunnel(key);
+    else if(d){ const r=this.defaultFunnelRange(d.minD,d.maxD); this.setState({candFrom:r.from, candTo:r.to}); }
+  }
+  // intervalo padrão: mês atual + 2 meses anteriores (limitado ao período disponível)
+  defaultFunnelRange(minD,maxD){
+    const t=new Date(), y=t.getFullYear(), m=t.getMonth(), pad=n=>String(n).padStart(2,'0');
+    const first=new Date(Date.UTC(y,m-2,1)), last=new Date(Date.UTC(y,m+1,0));
+    const iso=d=>d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());
+    let from=iso(first), to=iso(last);
+    if(minD && from<minD) from=minD;
+    if(maxD && to>maxD) to=maxD;
+    return {from,to};
+  }
   async fetchFunnel(key, force){
-    const spec=this.funnelSpec(key); if(!spec) return;
+    const spec=this.funnelSpec(key); if(!spec || spec.adsOnly) return;
     if(this.state.funnelLoading[key]) return;
     if(this.state.funnelData[key] && !force) return;
     this.setState(s=>({ funnelLoading:{...s.funnelLoading,[key]:true}, funnelError:{...s.funnelError,[key]:''} }));
@@ -892,6 +975,7 @@ class Component extends DCLogic {
       const months=Object.keys(monthSet).sort().map(ym=>({ value:ym, label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4) }));
       const data={ rows:body, minD, maxD, months };
       this.setState(s=>({ funnelLoading:{...s.funnelLoading,[key]:false}, funnelData:{...s.funnelData,[key]:data} }));
+      if(this.state.funnel===key){ const r=this.defaultFunnelRange(minD,maxD); this.setState(s=> (!s.candFrom && !s.candTo && s.candMonth==='all') ? {candFrom:r.from, candTo:r.to} : null); }
     }catch(e){ this.setState(s=>({ funnelLoading:{...s.funnelLoading,[key]:false}, funnelError:{...s.funnelError,[key]:(e&&e.message)||'Falha ao ler a aba.'} })); }
   }
   buildFunnel(spec, body){
@@ -1151,8 +1235,8 @@ class Component extends DCLogic {
       const baseBg=this.COVER_BG[p.coverIdx%this.COVER_BG.length];
       const src = p.coverData || p.cover;
       const coverStyle = src
-        ? `position:relative; height:150px; display:flex; align-items:center; justify-content:center; background:linear-gradient(rgba(39,21,13,0.12), rgba(39,21,13,0.40)), center/cover no-repeat url("${src}"), ${baseBg};`
-        : `position:relative; height:150px; display:flex; align-items:center; justify-content:center; background:${baseBg}; background-image:radial-gradient(circle at 30% 25%, rgba(255,255,255,0.10), transparent 60%);`;
+        ? { position:'relative', height:'150px', display:'flex', alignItems:'center', justifyContent:'center', backgroundColor:baseBg, backgroundImage:`linear-gradient(rgba(39,21,13,0.12), rgba(39,21,13,0.40)), url("${src}")`, backgroundSize:'cover', backgroundPosition:'center', backgroundRepeat:'no-repeat' }
+        : { position:'relative', height:'150px', display:'flex', alignItems:'center', justifyContent:'center', background:baseBg, backgroundImage:'radial-gradient(circle at 30% 25%, rgba(255,255,255,0.10), transparent 60%)' };
       return { typeLabel:typeLabel(p.type), date:this.ddmm(p.ts), caption:p.caption,
         likes: PM?this.fmtNum(p.likes):'—', comments: PM?this.fmtNum(p.comments):'—', shares: PM?this.fmtNum(p.shares):'—', saves: PM?this.fmtNum(p.saves):'—',
         coverStyle,
@@ -1237,9 +1321,24 @@ class Component extends DCLogic {
       onClear:()=>this.setState({candMonth:'all', candFrom:'', candTo:''}),
       hasFilter: S.candMonth!=='all' || !!S.candFrom || !!S.candTo,
     };
+    // janela de data efetiva (mês selecionado OU intervalo) — usada nos anúncios
+    const lastDayOf=(ym)=>{ const y=+ym.slice(0,4),m=+ym.slice(5,7); return ym+'-'+String(new Date(Date.UTC(y,m,0)).getUTCDate()).padStart(2,'0'); };
+    let winFrom=S.candFrom||'', winTo=S.candTo||'';
+    if(S.candMonth!=='all'){ winFrom=S.candMonth+'-01'; winTo=lastDayOf(S.candMonth); }
+    // funil só de anúncios (ex.: Seguidores) — sem planilha de leads, só a seção de investimento
+    if(spec && spec.adsOnly){
+      this._funnelCfgs=null;
+      const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      const segMonths=[];
+      if(this._adsMinD && this._adsMaxD){ let ym=this._adsMinD.slice(0,7); const end=this._adsMaxD.slice(0,7); let g=0; while(ym<=end && g<48){ segMonths.push({value:ym, label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4)}); const y=+ym.slice(0,4),m=+ym.slice(5,7); const nd=new Date(Date.UTC(y,m,1)); ym=nd.getUTCFullYear()+'-'+String(nd.getUTCMonth()+1).padStart(2,'0'); g++; } }
+      const segFilters={...candFilters, monthOptions:[{value:'all',label:'Todos os meses'}].concat(segMonths), min:this._adsMinD||'', max:this._adsMaxD||''};
+      const inv=this.investFunnel(key, 0, winFrom, winTo);
+      return { funnelTabs, candFilters:segFilters, candStatusBtns:[], candReady:true, candLoadingView:false,
+        candStatusLabel:'', candKpis:[], candStatus:[], candCharts:[], leadsView:false, showStatusBtns:false, ...inv };
+    }
     if(!F){
       this._funnelCfgs=null;
-      return { funnelTabs, candFilters, candStatusBtns:[], candReady:false, candLoadingView:true, investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'',
+      return { funnelTabs, candFilters, candStatusBtns:[], candReady:false, candLoadingView:true, leadsView:true, showStatusBtns:true, investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'',
         candStatusLabel: err? ('erro ao ler a aba: '+err).slice(0,90) : (loading? 'lendo a planilha…' : 'aba não carregada'),
         candKpis:[], candStatus:[], candCharts:[] };
     }
@@ -1275,19 +1374,35 @@ class Component extends DCLogic {
     const candStatus=C.status.map((s,i)=>({ label:s.label, count:this.fmtNum(s.count),
       barStyle:`height:100%; width:${Math.round(s.count/stMax*100)}%; background:${ramp[i]}; border-radius:999px;` }));
 
-    const inv=this.investFunnel(key, C.total);
-    return { funnelTabs, candFilters, candStatusBtns, candReady:true, candLoadingView:false,
+    const inv=this.investFunnel(key, C.total, winFrom, winTo);
+    return { funnelTabs, candFilters, candStatusBtns, candReady:true, candLoadingView:false, leadsView:true, showStatusBtns:true,
       candStatusLabel: loading? 'atualizando…' : (C.name+' · '+this.fmtNum(C.total)+' leads'),
       candKpis, candStatus, candCharts, ...inv };
   }
 
   // Funil de investimento — Facebook Ads (contas barbieri · campanhas SESSAO PREMIUM) → leads da planilha.
-  investFunnel(key, total){
-    if(key!=='premium' && key!=='diagnostico'){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
+  investFunnel(key, total, from, to){
+    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores'){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
+    const isSeg = key==='seguidores';
+    // Turbinamento (só no funil Seguidores) — substitui o card "Dados de conversão"
+    let convShow=true, turbinaShow=false, turbina=[], turbinaSummary=[];
+    if(isSeg){
+      convShow=false; turbinaShow=true;
+      const tb=this.turbinaAgg(from,to);
+      const tspend=tb.reduce((a,x)=>a+(x.spend||0),0), tvis=tb.reduce((a,x)=>a+(x.linkClicks||0),0);
+      turbinaSummary=[
+        {label:'Publicações', value:this.fmtNum(tb.length)},
+        {label:'Investimento', value:'R$ '+this.fmtNum(tspend)},
+        {label:'Visitas ao perfil', value:this.fmtNum(tvis)},
+      ];
+      turbina=tb.map((x,i)=>({ idx:i,
+        name:String(x.name||'').replace(/^Post do Instagram:\s*/i,'').replace(/^Publica[çc][ãa]o do Instagram:\s*/i,'').slice(0,70) || '(sem título)',
+        visitas:this.fmtNum(x.linkClicks), spend:'R$ '+this.fmtNum(x.spend) }));
+    }
     const T=Math.max(total,1), money2=(v)=>'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-    const S=this.state, ads=S.ads&&S.ads[key];
-    const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : 'Sessão Premium';
-    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : 'funil sessão premium';
+    const S=this.state, _agg=this.adsAgg(this.ADS_CAMPAIGN_MATCH[key]||/^\b$/, from, to), ads=_agg.ads;
+    const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : 'Sessão Premium';
+    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : isSeg ? 'funil seguidores' : 'funil sessão premium';
     const hasReal = ads && ads.length>0;
     let alcance,impressoes,cliques,lpViews,leadsGer,investido;
     if(hasReal){
@@ -1313,9 +1428,9 @@ class Component extends DCLogic {
       { label:'Cliques no link', value:cliques, conv:div(cliques,impressoes), cost:money2(cpc) },
       { label:'Visualizações da página', value:lpViews, conv:div(lpViews,cliques), cost:null },
       { label:'Leads do gerenciador', value:leadsGer, conv:div(leadsGer,lpViews), cost:money2(custoGer) },
-      { label:'Leads da planilha', value:leadsPlan, conv:div(leadsPlan,leadsGer), cost:money2(custoPlan) },
     ];
-    const widths=[100,93,84,73,62,52];
+    if(!isSeg) raw.push({ label:'Leads da planilha', value:leadsPlan, conv:div(leadsPlan,leadsGer), cost:money2(custoPlan) });
+    const widths = isSeg ? [100,92,82,70,58] : [100,93,84,73,62,52];
     const investStages=raw.map((s,i)=>{
       const convStr = s.freq!=null ? (s.freq).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : (s.conv==null? '' : this.fmtPct(s.conv*100));
       const left = convStr ? (s.cost ? convStr+'  -  '+s.cost : convStr) : '';
@@ -1326,7 +1441,7 @@ class Component extends DCLogic {
       { label:'CPM', value:money2(cpm) },
       { label:'Custo por clique', value:money2(cpc) },
       { label:'Connect rate', value:this.fmtPct(connectRate) },
-      { label:'Custo / lead planilha', value:money2(custoPlan) },
+      { label: isSeg? 'Custo / lead gerenciador' : 'Custo / lead planilha', value:money2(isSeg? custoGer : custoPlan) },
     ];
     let investAds;
     if(hasReal){
@@ -1334,29 +1449,47 @@ class Component extends DCLogic {
         thumbStyle: a.thumb? `width:42px; height:42px; flex:none; border-radius:5px; background:#3D0A11 center/cover no-repeat url("${a.thumb}");`
           : `width:42px; height:42px; flex:none; border-radius:5px; background:linear-gradient(135deg, #771520, #3D0A11);`,
         impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews),
-        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(a.leads) }));
+        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(isSeg? a.linkClicks : a.leads) }));
     }else{
       const adNames=[fbPrefix+' · Depoimento',fbPrefix+' · VSL Curta',fbPrefix+' · Carrossel',fbPrefix+' · Reels Bastidores',fbPrefix+' · Prova Social'];
       const w=[0.30,0.24,0.19,0.15,0.12], adCr=[0.82,0.76,0.80,0.74,0.78], thumbBg=['#771520','#8A1A24','#5A0F18','#9E2230','#6B131D'];
       investAds=adNames.map((nm,i)=>{ const impr=Math.round(impressoes*w[i]), clk=Math.round(cliques*w[i]), lpv=Math.round(clk*adCr[i]), leads=Math.round(leadsGer*w[i]);
         return { idx:i, name:nm, thumbStyle:`width:42px; height:42px; flex:none; border-radius:5px; background:linear-gradient(135deg, ${thumbBg[i]}, #3D0A11);`,
-          impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(leads) }; });
+          impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(isSeg? clk : leads) }; });
     }
     const adsStatus = S.adsError? ('Facebook Ads: '+S.adsError).slice(0,80) : (S.adsLoading? 'carregando anúncios do Facebook…' : (hasReal? '' : 'dados estimados'));
-    const adsets=S.adsets&&S.adsets[key];
+    const adsets=_agg.adsets;
     const hasRealSet = adsets && adsets.length>0;
     let investAdsets;
     if(hasRealSet){
       investAdsets=adsets.slice(0,30).map((a,i)=>({ idx:i, name:a.name,
         impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews),
-        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(a.leads) }));
+        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(isSeg? a.linkClicks : a.leads) }));
     }else{
       const setNames=[fbPrefix+' · Aberto',fbPrefix+' · Lookalike',fbPrefix+' · Interesses',fbPrefix+' · Remarketing'];
       const w=[0.38,0.27,0.21,0.14], setCr=[0.80,0.78,0.81,0.83];
       investAdsets=setNames.map((nm,i)=>{ const impr=Math.round(impressoes*w[i]), clk=Math.round(cliques*w[i]), lpv=Math.round(clk*setCr[i]), leads=Math.round(leadsGer*w[i]);
-        return { idx:i, name:nm, impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(leads) }; });
+        return { idx:i, name:nm, impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(isSeg? clk : leads) }; });
     }
-    return { investShow:true, investStages, investStats, investAds, investAdsets, investEyebrow, adsStatus };
+    return { investShow:true, investStages, investStats, investAds, investAdsets, investEyebrow, adsStatus,
+      convShow, turbinaShow, turbina, turbinaSummary, showLpCr: !isSeg,
+      investGridStyle: isSeg
+        ? 'display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch; margin-bottom:16px;'
+        : 'display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;',
+      funnelCellStyle: 'grid-column:1; grid-row:1' + (isSeg? ' / span 2' : '') + '; min-width:0; display:flex;',
+      adsetCellStyle: 'grid-column:2; grid-row:1; min-width:0; display:flex;',
+      adsCellStyle: isSeg
+        ? 'grid-column:2; grid-row:2; min-width:0; display:flex;'
+        : 'grid-column:1 / -1; grid-row:2; min-width:0; display:flex;',
+      adsTableStyle: isSeg ? 'border-collapse:collapse; width:100%; table-layout:fixed;' : 'border-collapse:collapse; width:100%; min-width:660px;',
+      adsWrapStyle: isSeg ? 'overflow:auto; margin:0 -4px; max-height:625px;' : 'overflow-x:auto; margin:0 -4px;',
+      adsNameColStyle: 'text-align:left; padding:0 12px 10px 4px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;' + (isSeg? ' width:38%;' : ''),
+      adsetWrapStyle: isSeg ? 'overflow:auto; margin:0 -4px; height:430px;' : 'overflow:auto; margin:0 -4px; flex:1 1 0; min-height:0;',
+      adsResultLabel: isSeg? 'Visitas ao perfil' : 'Leads do gerenciador',
+      adsetResultLabel: isSeg? 'Visitas ao perfil' : 'Leads',
+      investHeaderStyle: isSeg
+        ? 'margin:18px 0 18px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;'
+        : 'border-top:1px solid var(--border-soft); margin:26px 0 18px; padding-top:24px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;' };
   }
 
   learnings(valid, followers){
