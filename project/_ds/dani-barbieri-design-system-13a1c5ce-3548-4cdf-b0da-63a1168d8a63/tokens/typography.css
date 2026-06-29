@@ -1,0 +1,60 @@
+/* ============================================================
+   TYPOGRAPHY — High Beauty PrØ
+   Display: Cammron Round — titles, short text.
+   Support: Arimo — subtitles, labels, long-form body. Labels are
+   set in tracked UPPERCASE (the "MENTORIA" treatment).
+   ============================================================ */
+:root {
+  /* fluid display sizes */
+  --fs-display-xl: clamp(56px, 8vw, 104px); /* @kind font */
+  --fs-display-lg: clamp(40px, 5.4vw, 68px); /* @kind font */
+  --fs-display-md: clamp(30px, 3.4vw, 44px); /* @kind font */
+  --fs-display-sm: clamp(24px, 2.4vw, 32px); /* @kind font */
+
+  --fs-h1: 40px;
+  --fs-h2: 30px;
+  --fs-h3: 23px;
+  --fs-body-lg: 19px;
+  --fs-body: 16px;
+  --fs-sm: 14px;
+  --fs-xs: 12px;
+  --fs-label: 12px;
+
+  /* weights */
+  --fw-light: 300; /* @kind font */
+  --fw-regular: 400; /* @kind font */
+  --fw-medium: 500; /* @kind font */
+  --fw-semibold: 600; /* @kind font */
+  --fw-bold: 700; /* @kind font */
+
+  /* line heights */
+  --lh-tight: 1.04; /* @kind font */
+  --lh-display: 1.1; /* @kind font */
+  --lh-snug: 1.28; /* @kind font */
+  --lh-body: 1.62; /* @kind font */
+
+  /* letter spacing — brand defaults: Cammron -90 (-0.09em), Arimo -25 (-0.025em) */
+  --ls-display: -0.09em; /* @kind font */
+  --ls-body: -0.025em; /* @kind font */
+  --ls-tight: -0.02em; /* @kind font */
+  --ls-normal: 0; /* @kind font */
+  --ls-label: 0.24em; /* @kind font */ /* tracked caps (MENTORIA) */
+  --ls-label-wide: 0.36em; /* @kind font */
+  --ls-caps: 0.12em; /* @kind font */
+
+  /* semantic */
+  --text-display-font: var(--font-display);
+  --text-ui-font: var(--font-sans);
+}
+
+/* ---- Brand default tracking ----
+   Arimo body text: -0.025em (-25).  Cammron Round display/headings: -0.09em (-90).
+   Tracked-caps labels set their own positive letter-spacing inline and override these. */
+html { letter-spacing: var(--ls-body); }
+h1, h2, h3, h4, h5, h6 { letter-spacing: var(--ls-display); }
+
+/* Optional helper classes (specimens / kits may use these) */
+.hb-display { font-family: var(--font-display); font-weight: var(--fw-regular); line-height: var(--lh-display); letter-spacing: var(--ls-display); color: var(--text-strong); }
+.hb-kicker  { font-family: var(--font-sans); font-weight: var(--fw-medium); font-size: var(--fs-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--text-muted); }
+.hb-body    { font-family: var(--font-sans); font-weight: var(--fw-light); font-size: var(--fs-body); line-height: var(--lh-body); letter-spacing: var(--ls-body); color: var(--text-body); }
+.hb-lede    { font-family: var(--font-sans); font-weight: var(--fw-light); font-size: var(--fs-body-lg); line-height: 1.55; color: var(--text-body); }

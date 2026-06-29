@@ -1,0 +1,47 @@
+/* ============================================================
+   EFFECTS — High Beauty PrØ
+   Shadows are warm, low and soft (wine-tinted), never grey.
+   Transitions are gentle and quick. Borders favour hairlines
+   and a thin gold rule for "foil" emphasis.
+   ============================================================ */
+:root {
+  /* shadows — warm/wine tint, low spread */
+  --shadow-xs: 0 1px 2px rgba(39,18,23,0.06);
+  --shadow-sm: 0 2px 8px rgba(39,18,23,0.07);
+  --shadow-md: 0 10px 30px -12px rgba(39,18,23,0.18);
+  --shadow-lg: 0 24px 60px -20px rgba(39,18,23,0.26);
+  --shadow-wine: 0 18px 50px -18px rgba(119,21,32,0.42);
+
+  /* borders */
+  --border-hairline: 1px solid var(--hairline); /* @kind other */
+  --border-card: 1px solid var(--border-soft); /* @kind other */
+  --rule-gold: 1px solid var(--hairline-gold); /* @kind other */
+
+  /* gold foil text/clip helper */
+  --foil-clip: var(--gold-foil); /* @kind color */
+
+  /* motion — elegant, no bounce */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1); /* @kind other */
+  --ease-in-out: cubic-bezier(0.45, 0, 0.2, 1); /* @kind other */
+  --dur-fast: 140ms; /* @kind other */
+  --dur: 240ms; /* @kind other */
+  --dur-slow: 420ms; /* @kind other */
+  --transition-base: all var(--dur) var(--ease-out); /* @kind other */
+
+  /* blur / overlay */
+  --blur-panel: saturate(120%) blur(14px); /* @kind other */
+  --scrim-wine: linear-gradient(180deg, rgba(61,10,17,0) 0%, rgba(61,10,17,0.62) 78%, rgba(61,10,17,0.85) 100%); /* @kind color */
+  --scrim-dark: linear-gradient(180deg, rgba(20,8,11,0) 30%, rgba(20,8,11,0.7) 100%); /* @kind color */
+}
+
+/* Gold-foil text — apply to a span over a dark/light surface */
+.hb-foil {
+  background: var(--gold-foil);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Thin gold divider rule */
+.hb-rule-gold { height: 1px; border: 0; background: var(--hairline-gold); }

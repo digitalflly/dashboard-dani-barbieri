@@ -1,0 +1,78 @@
+/* ============================================================
+   COLORS — High Beauty PrØ
+   Palette from the brand manual (ArthDesignn, 04/2025):
+     #771520  wine / bordô     · primary
+     #E4D5CA  nude / blush      · light surface
+     #D0BBA6  sand / tan        · secondary surface
+   plus a metallic GOLD foil accent (logo treatment) and a
+   wine-tinted ink for text. Tints/shades derived in OKLCH to
+   stay harmonious with the three source hues.
+   ============================================================ */
+:root {
+  /* ---- Wine / bordô (primary) ---- */
+  --wine-950: #3D0A11;
+  --wine-900: #5A0F18;
+  --wine-800: #771520; /* brand primary */
+  --wine-700: #8E1A28;
+  --wine-600: #A5293A; /* brighter wine seen in mockups */
+  --wine-500: #BB4252;
+  --wine-200: #E8B9BF;
+  --wine-100: #F4DCDF;
+
+  /* ---- Nude / sand neutrals ---- */
+  --cream:    #F6EFE8; /* lightest paper */
+  --nude-100: #EFE4DA;
+  --nude-200: #E4D5CA; /* brand light */
+  --sand-300: #D0BBA6; /* brand secondary */
+  --sand-400: #BCA489;
+  --taupe-500:#9C846C;
+
+  /* ---- Gold foil (metallic accent) ---- */
+  --gold-light: #EAD3A0;
+  --gold:       #C2A05B; /* solid gold */
+  --gold-deep:  #9A7637;
+  --gold-foil:  linear-gradient(135deg,#A8823F 0%,#E7CE92 28%,#F4E6BE 46%,#B68F49 64%,#8C6A34 100%); /* @kind color */
+
+  /* ---- Ink (wine-tinted neutrals for text) ---- */
+  --ink-900: #271217; /* headings on light */
+  --ink-700: #4A3338;
+  --ink-500: #6E595D;
+  --ink-300: #A2908F;
+
+  /* ============ SEMANTIC ALIASES ============ */
+  /* surfaces */
+  --surface-page:    var(--cream);
+  --surface-card:    #FFFFFF;
+  --surface-sunken:  var(--nude-100);
+  --surface-tinted:  var(--nude-200);
+  --surface-sand:    var(--sand-300);
+  --surface-wine:    var(--wine-800);
+  --surface-wine-deep: var(--wine-900);
+
+  /* text */
+  --text-strong:   var(--ink-900);
+  --text-body:     var(--ink-700);
+  --text-muted:    var(--ink-500);
+  --text-on-wine:  var(--nude-200);
+  --text-on-wine-strong: var(--cream);
+  --text-gold:     var(--gold-deep);
+
+  /* brand / accent */
+  --accent:        var(--wine-800);
+  --accent-hover:  var(--wine-900);
+  --accent-press:  var(--wine-950);
+  --accent-soft:   var(--wine-100);
+
+  /* lines & edges */
+  --border-soft:   #E7DACE;
+  --border-strong: var(--sand-400);
+  --border-gold:   var(--gold);
+  --hairline:      rgba(39,18,23,0.10);
+  --hairline-gold: rgba(194,160,91,0.45);
+  --hairline-light:rgba(246,239,232,0.22);
+
+  /* status (kept muted to fit the luxury palette) */
+  --success: #5F7A52;
+  --warning: #B8862F;
+  --danger:  var(--wine-700);
+}
