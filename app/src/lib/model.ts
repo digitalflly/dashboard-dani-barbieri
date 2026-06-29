@@ -38,9 +38,6 @@ export function buildModel(raw?: RawData): Model {
     })
     m = addDays(m, 7)
   }
-  const DEFAULT_WEEK =
-    weeks.find((w) => dailyMax >= w.start && dailyMax <= w.end) || weeks[weeks.length - 1]
-
   // months
   const monthSet: string[] = []
   allDates.forEach((d) => {
@@ -73,6 +70,18 @@ export function buildModel(raw?: RawData): Model {
     const w = weeks.find((w) => p.ts >= w.start && p.ts <= w.end)
     if (w) postCounts[w.iso]++
   })
+
+  // semana padrão: a mais recente COM posts; senão a semana da data mais recente
+  const weekOfLatestData =
+    weeks.find((w) => dailyMax >= w.start && dailyMax <= w.end) || weeks[weeks.length - 1]
+  let weekWithPosts: WeekDef | null = null
+  for (let i = weeks.length - 1; i >= 0; i--) {
+    if (postCounts[weeks[i].iso] > 0) {
+      weekWithPosts = weeks[i]
+      break
+    }
+  }
+  const DEFAULT_WEEK = weekWithPosts || weekOfLatestData
 
   const md = parse(dailyMax)
   const fmtSync =

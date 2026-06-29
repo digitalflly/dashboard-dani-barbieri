@@ -97,14 +97,14 @@ export function embedCover(url: string): Promise<string | null> {
   })
 }
 
-// embute, em background, as capas dos posts desde jan/2026 ainda não guardadas
+// embute, em background, as capas dos posts desde mai/2026 ainda não guardadas
 export async function persistCovers(
   media: MediaPost[],
   ckey: string,
   savedAt: string,
   onProgress?: () => void
 ): Promise<void> {
-  const SINCE = '2026-01-01'
+  const SINCE = '2026-05-01'
   const targets = media.filter((p) => p && p.ts >= SINCE && !p.coverData && (p.thumb || p.cover))
   if (!targets.length) return
   let i = 0

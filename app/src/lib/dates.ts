@@ -58,3 +58,30 @@ export function ddmm(s: string): string {
   const p = s.split('-')
   return p[2] + '/' + p[1]
 }
+
+// último dia do mês ym ("YYYY-MM") como "YYYY-MM-DD"
+export function lastDayOf(ym: string): string {
+  const y = +ym.slice(0, 4)
+  const m = +ym.slice(5, 7)
+  return ym + '-' + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0')
+}
+
+// intervalo padrão dos funis: mês atual + 2 meses anteriores, limitado ao período disponível
+export function defaultFunnelRange(
+  minD: string | null,
+  maxD: string | null
+): { from: string; to: string } {
+  const t = new Date()
+  const y = t.getFullYear()
+  const m = t.getMonth()
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  const first = new Date(Date.UTC(y, m - 2, 1))
+  const last = new Date(Date.UTC(y, m + 1, 0))
+  const iso = (d: Date): string =>
+    d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate())
+  let from = iso(first)
+  let to = iso(last)
+  if (minD && from < minD) from = minD
+  if (maxD && to > maxD) to = maxD
+  return { from, to }
+}

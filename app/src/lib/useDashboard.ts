@@ -10,8 +10,9 @@ import { fetchAccount, fetchMedia, type LiveAccount } from './windsor'
 import { fetchAds } from './facebook'
 import { fetchFunnel as fetchFunnelCsv, funnelSpec } from './sheets'
 import { persistCovers } from './cache'
+import { defaultFunnelRange } from './dates'
 import { FUNNELS } from './constants'
-import type { Model, FunnelData, AdRow, AdsetRow } from './types'
+import type { Model, FunnelData, AdDailyRow } from './types'
 
 export type PageKey = 'conta' | 'conteudos' | 'insights' | 'candidaturas'
 
@@ -35,8 +36,9 @@ export interface DashState {
   candFrom: string
   candTo: string
   candStatusFilter: string
-  ads: Record<string, AdRow[]> | null
-  adsets: Record<string, AdsetRow[]> | null
+  adsRaw: AdDailyRow[] | null
+  adsMinD: string | null
+  adsMaxD: string | null
   adsLoading: boolean
   adsError: string
   postMetrics: boolean
@@ -75,8 +77,9 @@ export function useDashboard(): Dashboard {
     candFrom: '',
     candTo: '',
     candStatusFilter: 'all',
-    ads: null,
-    adsets: null,
+    adsRaw: null,
+    adsMinD: null,
+    adsMaxD: null,
     adsLoading: false,
     adsError: '',
     postMetrics: true,
@@ -92,6 +95,8 @@ export function useDashboard(): Dashboard {
   // refs for guard flags (avoid stale closures in async handlers)
   const refreshingRef = useRef(false)
   const adsLoadingRef = useRef(false)
+  const adsMinDRef = useRef<string | null>(null)
+  const adsMaxDRef = useRef<string | null>(null)
   const funnelLoadingRef = useRef<Record<string, boolean>>({})
   const funnelDataRef = useRef<Record<string, FunnelData>>({})
   const liveRef = useRef<LiveAccount | null>(null)
@@ -160,8 +165,19 @@ export function useDashboard(): Dashboard {
     adsLoadingRef.current = true
     setState({ adsLoading: true, adsError: '' })
     try {
-      const { ads, adsets } = await fetchAds()
-      setState({ adsLoading: false, ads, adsets })
+      const { raw, minD, maxD } = await fetchAds()
+      adsMinDRef.current = minD
+      adsMaxDRef.current = maxD
+      // se já estiver num funil só de anúncios e sem filtro, aplica o intervalo padrão
+      setState((s) => {
+        const patch: Partial<DashState> = { adsLoading: false, adsRaw: raw, adsMinD: minD, adsMaxD: maxD }
+        if (funnelSpec(s.funnel)?.adsOnly && !s.candFrom && !s.candTo && s.candMonth === 'all') {
+          const r = defaultFunnelRange(minD, maxD)
+          patch.candFrom = r.from
+          patch.candTo = r.to
+        }
+        return patch
+      })
     } catch (e) {
       const msg = (e instanceof Error && e.message) || 'Falha ao ler Facebook Ads.'
       setState({ adsLoading: false, adsError: msg })
@@ -172,7 +188,7 @@ export function useDashboard(): Dashboard {
   const fetchFunnel = useCallback(
     async (key: string, force?: boolean) => {
       const spec = funnelSpec(key)
-      if (!spec) return
+      if (!spec || spec.adsOnly) return
       if (funnelLoadingRef.current[key]) return
       if (funnelDataRef.current[key] && !force) return
       funnelLoadingRef.current[key] = true
@@ -183,10 +199,19 @@ export function useDashboard(): Dashboard {
       try {
         const data = await fetchFunnelCsv(key)
         funnelDataRef.current[key] = data
-        setState((s) => ({
-          funnelLoading: { ...s.funnelLoading, [key]: false },
-          funnelData: { ...s.funnelData, [key]: data },
-        }))
+        setState((s) => {
+          const patch: Partial<DashState> = {
+            funnelLoading: { ...s.funnelLoading, [key]: false },
+            funnelData: { ...s.funnelData, [key]: data },
+          }
+          // intervalo padrão na 1ª carga, se o usuário ainda não filtrou
+          if (s.funnel === key && !s.candFrom && !s.candTo && s.candMonth === 'all') {
+            const r = defaultFunnelRange(data.minD, data.maxD)
+            patch.candFrom = r.from
+            patch.candTo = r.to
+          }
+          return patch
+        })
       } catch (e) {
         const msg = (e instanceof Error && e.message) || 'Falha ao ler a aba.'
         setState((s) => ({
@@ -218,7 +243,19 @@ export function useDashboard(): Dashboard {
   const setFunnel = useCallback(
     (key: string) => {
       setState({ funnel: key, candMonth: 'all', candFrom: '', candTo: '', candStatusFilter: 'all' })
-      if (!funnelDataRef.current[key] && !funnelLoadingRef.current[key]) void fetchFunnel(key)
+      const spec = funnelSpec(key)
+      // funil só de anúncios (ex.: Seguidores) — sem planilha, só o intervalo padrão
+      if (spec?.adsOnly) {
+        const r = defaultFunnelRange(adsMinDRef.current, adsMaxDRef.current)
+        setState({ candFrom: r.from, candTo: r.to })
+        return
+      }
+      const d = funnelDataRef.current[key]
+      if (!d && !funnelLoadingRef.current[key]) void fetchFunnel(key)
+      else if (d) {
+        const r = defaultFunnelRange(d.minD, d.maxD)
+        setState({ candFrom: r.from, candTo: r.to })
+      }
     },
     [setState, fetchFunnel]
   )
