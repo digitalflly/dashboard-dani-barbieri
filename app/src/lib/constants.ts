@@ -14,6 +14,8 @@ export const ADS_ACCOUNT_ID = '450830237045296'
 export const ADS_CAMPAIGN_MATCH: Record<string, RegExp> = {
   premium: /sess[aã]o\s*premium/i,
   diagnostico: /diagn[oó]stico/i,
+  seguidores: /seguidores/i,
+  turbinamento: /do instagram/i,
 }
 
 export const SHEET_ID = '1SEHe4kbnkOj_D5l4vCvnvEM2pPObgCrX25elBh_FH1o'
@@ -50,6 +52,17 @@ export const FUNNELS: FunnelSpec[] = [
       { title: 'Faixa de faturamento', eyebrow: 'Por mês', col: 8, kind: 'fatdiag', dropNI: true, horizontal: true },
       { title: 'Tamanho da equipe', eyebrow: 'Time', col: 7, kind: 'equipe', donut: true },
     ],
+  },
+  // funil só de anúncios (Facebook Ads), sem planilha de leads
+  {
+    key: 'seguidores',
+    name: 'Funil Seguidores',
+    adsOnly: true,
+    gid: '',
+    dateCol: 0,
+    statusCol: 0,
+    statusMap: {},
+    charts: [],
   },
 ]
 

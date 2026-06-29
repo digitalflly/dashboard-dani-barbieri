@@ -127,6 +127,30 @@ export interface AdsetRow {
   leads: number
   spend: number
 }
+// linha diária bruta do conector do Facebook (agregada no cliente por intervalo)
+export interface AdDailyRow {
+  date: string
+  campaign: string
+  ad: string
+  adset: string
+  thumb: string
+  impressions: number
+  reach: number
+  linkClicks: number
+  lpViews: number
+  leads: number
+  spend: number
+}
+// turbinamento — agregado por campanha (funil Seguidores)
+export interface TurbinaRow {
+  name: string
+  impressions: number
+  reach: number
+  linkClicks: number
+  lpViews: number
+  spend: number
+  thumb: string
+}
 
 // ---- Funnels (Google Sheet) ----
 export interface FunnelChartSpec {
@@ -147,6 +171,8 @@ export interface FunnelSpec {
   scoreCol?: number
   statusMap: Record<string, string>
   charts: FunnelChartSpec[]
+  // funil só de anúncios (ex.: Seguidores) — sem planilha de leads
+  adsOnly?: boolean
 }
 export interface FunnelData {
   rows: string[][]

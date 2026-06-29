@@ -67,7 +67,7 @@ export default function Header({ dash, candFilters }: { dash: Dashboard; candFil
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, lineHeight: 1, color: 'var(--text-strong)', letterSpacing: '-0.01em' }}>
               {M.profile.name}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>@{M.profile.handle} · análise de conteúdo</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>@{M.profile.handle} · análise de marketing</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
