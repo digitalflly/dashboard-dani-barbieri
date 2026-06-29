@@ -1,0 +1,36 @@
+/* ============================================================
+   FONTS — High Beauty PrØ  (licensed brand faces)
+   ------------------------------------------------------------
+   Display / titles / short text : Cammron Round  (CammronRound.otf)
+   Support / body / labels       : Arimo          (variable, roman + italic)
+   Binaries live in /assets/fonts — url() is resolved relative to THIS file.
+   ============================================================ */
+
+@font-face {
+  font-family: "Cammron Round";
+  src: url("../assets/fonts/CammronRound.otf") format("opentype");
+  font-weight: 400 700;   /* single demo weight mapped across the range (no faux-bold) */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arimo";
+  src: url("../assets/fonts/Arimo-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Arimo";
+  src: url("../assets/fonts/Arimo-Italic-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --font-display: "Cammron Round", "Didot", Georgia, serif;
+  --font-sans: "Arimo", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-mono: "Arimo", ui-monospace, monospace;
+}
