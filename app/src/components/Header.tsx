@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useRef, type CSSProperties } from 'react'
 import type { Dashboard, PageKey } from '../lib/useDashboard'
 import { headerVM, monthOptions, weekOptions } from '../lib/viewmodel'
 import type { CandFilters } from '../lib/funisvm'
@@ -16,11 +16,44 @@ const PAGES: { key: PageKey; label: string }[] = [
   { key: 'conteudos', label: 'Dados dos Conteúdos' },
   { key: 'insights', label: 'Insights dos Conteúdos' },
   { key: 'candidaturas', label: 'Dados dos Funis' },
+  { key: 'plano', label: 'Plano de Conteúdo' },
 ]
+const PAGE_KEYS = PAGES.map((p) => p.key)
+
+const arrowStyle: CSSProperties = {
+  fontFamily: 'var(--font-sans)',
+  fontSize: 16,
+  lineHeight: 1,
+  cursor: 'pointer',
+  padding: '6px 9px',
+  borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--border-soft)',
+  background: 'transparent',
+  color: 'var(--text-muted)',
+}
 
 export default function Header({ dash, candFilters }: { dash: Dashboard; candFilters: CandFilters }) {
   const { model: M, state: S, setState, setPage, onRefresh } = dash
   const hv = headerVM(M, S)
+  const stripRef = useRef<HTMLDivElement>(null)
+
+  // rola a aba ativa para dentro da faixa (quando há mais abas que largura)
+  const scrollTab = (key: PageKey): void => {
+    requestAnimationFrame(() => {
+      const strip = stripRef.current
+      if (!strip) return
+      const btn = strip.children[PAGE_KEYS.indexOf(key)] as HTMLElement | undefined
+      if (btn) strip.scrollTo({ left: Math.max(0, btn.offsetLeft - 14), behavior: 'smooth' })
+    })
+  }
+  const goToPage = (key: PageKey): void => {
+    setPage(key)
+    scrollTab(key)
+  }
+  const stepPage = (dir: number): void => {
+    const i = PAGE_KEYS.indexOf(S.page)
+    goToPage(PAGE_KEYS[(i + dir + PAGE_KEYS.length) % PAGE_KEYS.length])
+  }
 
   const navStyle = (active: boolean): CSSProperties => ({
     fontFamily: 'var(--font-sans)',
@@ -33,6 +66,8 @@ export default function Header({ dash, candFilters }: { dash: Dashboard; candFil
     borderBottom: `2px solid ${active ? ACCENT : 'transparent'}`,
     background: active ? 'var(--surface-page)' : 'transparent',
     color: active ? 'var(--text-strong)' : 'var(--text-muted)',
+    whiteSpace: 'nowrap',
+    flex: 'none',
   })
 
   return (
@@ -93,19 +128,25 @@ export default function Header({ dash, candFilters }: { dash: Dashboard; candFil
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'space-between',
-          gap: 24,
-          flexWrap: 'wrap',
+          gap: 16,
+          flexWrap: 'nowrap',
         }}
       >
-        <nav style={{ display: 'flex', gap: 4 }}>
-          {PAGES.map((p) => (
-            <button key={p.key} onClick={() => setPage(p.key)} style={navStyle(S.page === p.key)}>
-              {p.label}
-            </button>
-          ))}
+        <nav style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flex: '1 1 auto', minWidth: 0 }}>
+          <div id="tabstrip" ref={stripRef} style={{ display: 'flex', gap: 4, overflowX: 'auto', minWidth: 0, scrollbarWidth: 'none' }}>
+            {PAGES.map((p) => (
+              <button key={p.key} onClick={() => goToPage(p.key)} style={navStyle(S.page === p.key)}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 2, flex: 'none', alignSelf: 'center' }}>
+            <button onClick={() => stepPage(-1)} aria-label="Aba anterior" style={arrowStyle}>‹</button>
+            <button onClick={() => stepPage(1)} aria-label="Próxima aba" style={arrowStyle}>›</button>
+          </div>
         </nav>
 
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flex: 'none' }}>
           {hv.showFilters && (
             <>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

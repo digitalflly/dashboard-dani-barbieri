@@ -8,6 +8,7 @@ html { letter-spacing: var(--ls-body); }
 body { margin: 0; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
+#tabstrip::-webkit-scrollbar { height: 0; display: none; }
 ::-webkit-scrollbar-thumb {
   background: var(--accent);
   border-radius: 999px;

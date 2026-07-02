@@ -6,6 +6,7 @@ import ContaPage from './components/ContaPage'
 import ConteudosPage from './components/ConteudosPage'
 import InsightsPage from './components/InsightsPage'
 import FunisPage from './components/FunisPage'
+import PlanoPage from './components/PlanoPage'
 
 export default function App() {
   const dash = useDashboard()
@@ -55,6 +56,7 @@ export default function App() {
         {S.page === 'conteudos' && <ConteudosPage dash={dash} />}
         {S.page === 'insights' && <InsightsPage dash={dash} />}
         {S.page === 'candidaturas' && <FunisPage dash={dash} funis={funis} />}
+        {S.page === 'plano' && <PlanoPage />}
       </main>
     </div>
   )
