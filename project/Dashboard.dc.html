@@ -22,6 +22,7 @@
     body{ margin:0; }
     :root{ --warning-bg:#F5E7CF; }
     ::-webkit-scrollbar{ width:10px; height:10px; }
+    #tabstrip::-webkit-scrollbar{ height:0; display:none; }
     ::-webkit-scrollbar-thumb{ background:var(--accent); border-radius:999px; border:3px solid var(--surface-page); }
     *{ scrollbar-color: var(--accent) var(--surface-page); }
     .dash, .dash *:not([data-keepcase]){ text-transform: lowercase !important; }
@@ -77,13 +78,19 @@
       </div>
     </div>
 
-    <div style="max-width:1280px; margin:0 auto; padding:0 32px 14px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;">
-      <nav style="display:flex; gap:4px;">
-        <sc-for list="{{ pages }}" as="p" hint-placeholder-count="3">
-          <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
-        </sc-for>
+    <div style="max-width:1280px; margin:0 auto; padding:0 32px 14px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:nowrap;">
+      <nav style="display:flex; gap:8px; align-items:flex-end; flex:1 1 auto; min-width:0;">
+        <div id="tabstrip" style="display:flex; gap:4px; overflow-x:auto; min-width:0; scrollbar-width:none;">
+          <sc-for list="{{ pages }}" as="p" hint-placeholder-count="3">
+            <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex; gap:2px; flex:none; align-self:center;">
+          <button onClick="{{ onPrevPage }}" aria-label="Aba anterior" style="font-family:var(--font-sans); font-size:16px; line-height:1; cursor:pointer; padding:6px 9px; border-radius:var(--radius-md); border:1px solid var(--border-soft); background:transparent; color:var(--text-muted);">‹</button>
+          <button onClick="{{ onNextPage }}" aria-label="Próxima aba" style="font-family:var(--font-sans); font-size:16px; line-height:1; cursor:pointer; padding:6px 9px; border-radius:var(--radius-md); border:1px solid var(--border-soft); background:transparent; color:var(--text-muted);">›</button>
+        </div>
       </nav>
-      <div style="display:flex; align-items:flex-end; gap:12px;">
+      <div style="display:flex; align-items:flex-end; gap:12px; flex:none;">
         <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ true }}">
         <label style="display:flex; flex-direction:column; gap:4px;">
           <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Mês</span>
@@ -565,6 +572,311 @@
     </div>
     </sc-if>
 
+    <!-- ============ PAGE: PLANO DE CONTEUDO ============ -->
+    <sc-if value="{{ isPlano }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Plano de Conteúdo">
+
+      <!-- 01 panorama -->
+      <div style="margin:0 0 16px;">
+        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">01 · Panorama</div>
+        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Análise geral do perfil</div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:20px;">
+        <div class="b-card" style="padding:16px 18px; border-top:3px solid #771520;">
+          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);">Base atual</div>
+          <div style="font-size:26px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em; margin-top:8px;">38.221</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">seguidores</div>
+        </div>
+        <div class="b-card" style="padding:16px 18px; border-top:3px solid #771520;">
+          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);">Crescimento · 30 dias</div>
+          <div style="font-size:26px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em; margin-top:8px;">+534</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">~18/dia · ~1,4% no mês</div>
+        </div>
+        <div class="b-card" style="padding:16px 18px; border-top:3px solid #771520;">
+          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);">Volume · semestre</div>
+          <div style="font-size:26px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em; margin-top:8px;">133</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">45 Reels · 81 carrosséis · 7 imagens</div>
+        </div>
+        <div class="b-card" style="padding:16px 18px; border-top:3px solid #771520;">
+          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);">Alcance médio</div>
+          <div style="font-size:26px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em; margin-top:8px;">em queda</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">jan ~2.360 → jun ~1.470</div>
+        </div>
+      </div>
+
+      <!-- desempenho por formato -->
+      <div class="b-card" style="padding:22px 24px; margin-bottom:30px;">
+        <div style="font-family:var(--font-sans); font-weight:600; font-size:16px; color:var(--text-strong); margin-bottom:4px;">Desempenho por formato</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Taxa de engajamento = interações ÷ alcance × 100 — mede a qualidade do conteúdo, não o tamanho da base.</div>
+        <table style="width:100%; border-collapse:collapse;">
+          <thead><tr>
+            <th style="text-align:left; padding:0 8px 10px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Formato</th>
+            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Posts</th>
+            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Alcance médio</th>
+            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Saves/post</th>
+            <th style="text-align:right; padding:0 0 10px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Engajamento</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13.5px; font-weight:600; color:#771520;">Reels</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">45</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">2.719</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">10,4</td>
+              <td style="text-align:right; padding:11px 0 11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">6,4%</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13.5px; font-weight:600; color:var(--text-strong);">Carrossel</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">81</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1.666</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">7,5</td>
+              <td style="text-align:right; padding:11px 0 11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,7%</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13.5px; font-weight:600; color:var(--text-strong);">Imagem única</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">7</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1.996</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">15,1</td>
+              <td style="text-align:right; padding:11px 0 11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,1%</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="font-size:13px; color:var(--text-body); line-height:1.55; margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);"><strong style="color:var(--text-strong);">Leitura:</strong> Reels lideram alcance e engajamento com folga, mas são minoria da produção. Imagem única tem o maior save por post e está subutilizada.</div>
+      </div>
+
+      <!-- 02 carrosseis -->
+      <div style="margin:0 0 16px;">
+        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">02 · Carrosséis</div>
+        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">O problema não é o carrossel — é o excesso de venda dura</div>
+      </div>
+      <div class="b-card" style="padding:22px 24px; margin-bottom:16px;">
+        <table style="width:100%; border-collapse:collapse;">
+          <thead><tr>
+            <th style="text-align:left; padding:0 8px 10px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Tipo de carrossel</th>
+            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">n</th>
+            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Alcance</th>
+            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Saves</th>
+            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Shares</th>
+            <th style="text-align:left; padding:0 0 10px 12px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Leitura</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Pessoal</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">14</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">3.848</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">5,9</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6,2</td>
+              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Melhor alcance da conta; autêntico</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">Prova (case)</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1.460</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">7,0</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">13,2</td>
+              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Melhor share — capta público novo</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">Educativo</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1.261</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">18,3</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">3,3</td>
+              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Melhor save — constrói autoridade</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">Confirmação VBE</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">10</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">1.488</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">2,1</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">3,9</td>
+              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-muted);">Repetitivo, sem valor de conteúdo</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">Bastidor de evento</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">5</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">1.382</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">2,0</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">2,8</td>
+              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-muted);">Recap; alcance ok</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">Institucional</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">3</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">1.366</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">4,3</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">2,0</td>
+              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-muted);">Neutro</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Venda dura</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">34</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">1.109</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">9,4</td>
+              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,2</td>
+              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">42% dos carrosséis; puxou a média</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:grid; grid-template-columns:1.1fr 1fr; gap:16px; margin-bottom:30px;">
+        <div class="b-card" style="padding:20px 22px; background:var(--warning-bg); border-color:transparent;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:#771520; font-weight:600; margin-bottom:8px;">Ponto crítico</div>
+          <div style="font-size:13.5px; color:var(--wine-900); line-height:1.6;">A venda dura desabou em junho para <strong>705 de alcance</strong> (contra 1.255 em jan–mai), com a blitz NEA + HBP rodando junto. Os piores posts do ano (210, 229, 336) são todos desse bloco — foi isso que distorceu a média e criou a impressão de que "carrossel não funciona".</div>
+        </div>
+        <div class="b-card" style="padding:20px 22px;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:10px;">Validados para escalar em teste</div>
+          <div style="font-size:13px; color:var(--text-body); line-height:1.55; margin-bottom:10px;"><strong style="color:#771520;">Prova (case):</strong> maior share da conta (13,2/post) — captação direta para o funil. Só 6 no semestre.</div>
+          <div style="font-size:13px; color:var(--text-body); line-height:1.55;"><strong style="color:#771520;">Educativo salvável:</strong> maior save da conta (18,3/post) — o algoritmo recompensa com distribuição futura. Sumiu depois de fevereiro.</div>
+        </div>
+      </div>
+
+      <!-- 03 reels -->
+      <div style="margin:0 0 16px;">
+        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">03 · Reels</div>
+        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">A retenção é uma escada — com degrau brutal aos 15 segundos</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:14px;">Retenção × alcance</div>
+          <table style="width:100%; border-collapse:collapse;">
+            <thead><tr>
+              <th style="text-align:left; padding:0 8px 9px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Retenção</th>
+              <th style="text-align:right; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Reels</th>
+              <th style="text-align:right; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Alcance</th>
+              <th style="text-align:right; padding:0 0 9px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Coment./post</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">&lt; 6s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">7</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">1.233</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">0,1</td></tr>
+              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6–9s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">18</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">2.220</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,1</td></tr>
+              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">9–15s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">9</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">2.225</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,0</td></tr>
+              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">15–20s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">7</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">4.520</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">48,3</td></tr>
+              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">20s+</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">5.523</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">31,8</td></tr>
+            </tbody>
+          </table>
+          <div style="font-size:12.5px; color:var(--text-body); line-height:1.55; margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">Abaixo de 15s o alcance empaca em ~2.200. Passou de 15s, ele <strong style="color:#771520;">dobra</strong>. Reter menos de 7s = alcance 1.600; reter 15s+ = alcance 4.885 (3× mais, mesmo esforço).</div>
+        </div>
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:14px;">Assinatura dos vencedores</div>
+          <table style="width:100%; border-collapse:collapse;">
+            <thead><tr>
+              <th style="text-align:left; padding:0 8px 9px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Faixa</th>
+              <th style="text-align:right; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Retenção</th>
+              <th style="text-align:right; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Shares</th>
+              <th style="text-align:right; padding:0 0 9px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Coment.</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">Top (≥ 4k)</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">18,5s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">36,7</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">69,3</td></tr>
+              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">Médio (2–4k)</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">10,3s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6,2</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">5,3</td></tr>
+              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">Baixo (&lt; 2k)</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">9,1s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">4,5</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">0,8</td></tr>
+            </tbody>
+          </table>
+          <div style="font-size:12.5px; color:var(--text-body); line-height:1.55; margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">Os campeões <strong style="color:#771520;">retêm 15s+ E provocam conversa</strong> (69 comentários contra 5 no grupo médio). O Reel que funciona é o de opinião/posição que segura o tempo e dá motivo para responder. Reel que só informa fica no teto.</div>
+        </div>
+      </div>
+      <div class="b-card" style="padding:18px 22px; margin-bottom:30px; border-left:3px solid #771520;">
+        <div style="font-size:13.5px; color:var(--text-body); line-height:1.6;"><strong style="color:var(--text-strong);">Confirmação da queda recente:</strong> maio e junho caíram para 9,1s e 7,4s de retenção, e o alcance dos Reels travou em ~2.500. Quando a retenção cai, o alcance cai junto — não foi o algoritmo, foi o conteúdo segurando menos.</div>
+      </div>
+
+      <!-- 04 erros e acertos -->
+      <div style="margin:0 0 16px;">
+        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">04 · Balanço</div>
+        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Erros e acertos</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:30px;">
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:#1F8A5B; font-weight:600; margin-bottom:14px;">O que foi bom</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Reels de opinião com retenção alta + gatilho de comentário</strong> — os virais de mar/abr (15.167, 8.402, 7.996). É o motor de captação.</div>
+            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Carrossel pessoal</strong> — verdade e vida; o maior alcance de qualquer conteúdo (3.848).</div>
+            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Carrossel de prova</strong> — melhor share da conta e conexão direta com o funil, mas subaproveitado.</div>
+            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Educativo salvável de fevereiro</strong> — 18 a 30 saves por post, construindo autoridade.</div>
+          </div>
+        </div>
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:#771520; font-weight:600; margin-bottom:14px;">O que foi ruim</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Excesso de venda dura em carrossel</strong> — 34 posts (42%). Em junho saturou e derrubou a distribuição da conta inteira.</div>
+            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">10 carrosséis de confirmação quase idênticos</strong> — save de 2,1; volume sem valor que dilui o sinal de qualidade.</div>
+            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Abandono do educativo salvável depois de fevereiro</strong> — o formato de maior save sumiu na fase de lançamento.</div>
+            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Retenção de Reels despencou em mai/jun</strong> e <strong style="color:var(--text-strong);">volume sem seleção</strong> — abril teve 45 posts e o alcance caiu.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 05 plano -->
+      <div style="margin:0 0 16px;">
+        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">05 · Plano do próximo mês</div>
+        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Inverter o mix, não aumentar o volume</div>
+        <div style="font-size:14px; color:var(--text-body); line-height:1.55; margin-top:8px; max-width:820px;">Meta: sair de ~1,4%/mês para <strong style="color:#771520;">3–4%/mês</strong> (~1.100 a 1.500 seguidores/mês).</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1.15fr 1fr; gap:16px; margin-bottom:16px;">
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:14px;">Mix semanal · 5 a 6 posts</div>
+          <table style="width:100%; border-collapse:collapse;">
+            <thead><tr>
+              <th style="text-align:left; padding:0 8px 9px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Formato</th>
+              <th style="text-align:center; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">/semana</th>
+              <th style="text-align:left; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Função</th>
+              <th style="text-align:left; padding:0 0 9px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Sinal</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:10px 8px 10px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">Reels de opinião</td><td style="text-align:center; padding:10px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">3</td><td style="padding:10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Atração</td><td style="padding:10px 0 10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Alcance + comentário</td></tr>
+              <tr><td style="padding:10px 8px 10px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Carrossel de prova</td><td style="text-align:center; padding:10px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">1 → 2</td><td style="padding:10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Captação</td><td style="padding:10px 0 10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Shares</td></tr>
+              <tr><td style="padding:10px 8px 10px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Educativo salvável</td><td style="text-align:center; padding:10px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">1</td><td style="padding:10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Autoridade</td><td style="padding:10px 0 10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Saves</td></tr>
+              <tr><td style="padding:10px 8px 10px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Pessoal</td><td style="text-align:center; padding:10px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1</td><td style="padding:10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Conexão</td><td style="padding:10px 0 10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Alcance + afinidade</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:12px;">Teste de 4 semanas</div>
+          <div style="font-size:13px; color:var(--text-body); line-height:1.55; margin-bottom:16px;">Subir a prova para 2×/semana, reintroduzir 1 educativo salvável fixo por semana e <strong style="color:#771520;">cortar a venda dura de carrossel pela metade</strong>.</div>
+          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:10px;">Métricas de sucesso</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-bottom:8px; border-bottom:1px solid var(--border-soft);"><span style="font-size:13px; color:var(--text-body);">Share do carrossel de prova</span><span style="font-size:14px; font-weight:600; color:#771520;">≥ 12</span></div>
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-bottom:8px; border-bottom:1px solid var(--border-soft);"><span style="font-size:13px; color:var(--text-body);">Save do educativo</span><span style="font-size:14px; font-weight:600; color:#771520;">≥ 15</span></div>
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:13px; color:var(--text-body);">Retenção média dos Reels</span><span style="font-size:14px; font-weight:600; color:#771520;">≥ 15s</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 alavancas -->
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:16px;">
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-family:var(--font-display); font-size:34px; color:#771520; line-height:1; margin-bottom:12px;">1</div>
+          <div style="font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--text-strong); margin-bottom:8px;">Gancho + retenção nos Reels</div>
+          <div style="font-size:13px; color:var(--text-body); line-height:1.55;">3 primeiros segundos com tese forte, uma virada no meio, fechamento que pede comentário. Subir de 9s para 18s de retenção sozinho triplica o alcance dos Reels.</div>
+        </div>
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-family:var(--font-display); font-size:34px; color:#771520; line-height:1; margin-bottom:12px;">2</div>
+          <div style="font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--text-strong); margin-bottom:8px;">Cortar o volume morto</div>
+          <div style="font-size:13px; color:var(--text-body); line-height:1.55;">Confirmações repetidas e venda dura em excesso. Limpa o sinal de qualidade e recupera a distribuição geral da conta.</div>
+        </div>
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-family:var(--font-display); font-size:34px; color:#771520; line-height:1; margin-bottom:12px;">3</div>
+          <div style="font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--text-strong); margin-bottom:8px;">Consistência de Reels</div>
+          <div style="font-size:13px; color:var(--text-body); line-height:1.55;">Nunca abaixo de 3 por semana. Todo mês que a conta afrouxou em Reels, o alcance caiu.</div>
+        </div>
+      </div>
+
+      <!-- regra de ouro + checklist -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:40px;">
+        <div class="b-card" style="padding:22px 24px; background:#771520; border-color:transparent;">
+          <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(250,248,247,0.65); font-weight:600; margin-bottom:12px;">Regra de ouro</div>
+          <div style="font-size:14px; color:#FAF8F7; line-height:1.6;">Durante lançamento, a venda vai para o Reels e para os stories — <strong>não empilha carrossel de venda no feed</strong>. O feed segue entregando prova e conteúdo salvável, que é o que sustenta a distribuição de tudo, inclusive dos próprios posts de venda.</div>
+        </div>
+        <div class="b-card" style="padding:22px 24px;">
+          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:14px;">Checklist por Reel · antes de publicar</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; gap:12px; align-items:flex-start;"><span style="flex:none; width:24px; height:24px; border-radius:999px; background:var(--warning-bg); color:#771520; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;">1</span><span style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Gancho nos 3 primeiros segundos</strong> — tese/afirmação forte, não introdução.</span></div>
+            <div style="display:flex; gap:12px; align-items:flex-start;"><span style="flex:none; width:24px; height:24px; border-radius:999px; background:var(--warning-bg); color:#771520; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;">2</span><span style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Estrutura que segura até 15s+</strong> — uma virada no meio, não entregar tudo no começo.</span></div>
+            <div style="display:flex; gap:12px; align-items:flex-start;"><span style="flex:none; width:24px; height:24px; border-radius:999px; background:var(--warning-bg); color:#771520; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;">3</span><span style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Fechamento que pede resposta</strong> — pergunta ou afirmação que puxa comentário.</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    </sc-if>
+
   </main>
 </div>
 </x-dc>
@@ -783,6 +1095,7 @@ class Component extends DCLogic {
 
   /* ============ HANDLERS ============ */
   setPage(p){ this.setState({page:p}); }
+  scrollTab(key){ requestAnimationFrame(()=>{ const strip=document.getElementById('tabstrip'); if(!strip) return; const ks=['conta','conteudos','insights','candidaturas','plano']; const btn=strip.children[ks.indexOf(key)]; if(btn) strip.scrollTo({left:Math.max(0, btn.offsetLeft-14), behavior:'smooth'}); }); }
   onRefresh(){ this.fetchLive(); }
   nowStamp(){ const now=new Date(); const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return now.getDate()+' '+MN[now.getMonth()]+' '+now.getFullYear()+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'); }
   async fetchLive(){
@@ -1167,10 +1480,10 @@ class Component extends DCLogic {
     // selectors
     const monthOptions=[{value:'all',label:'Todos os meses'}].concat(M.months);
     const weekOptions=[{value:'all',label:'Todas as semanas'}].concat(M.weeks.map(w=>({value:w.iso,label:w.label})));
-    const pages=[{key:'conta',label:'Dados da Conta'},{key:'conteudos',label:'Dados dos Conteúdos'},{key:'insights',label:'Insights dos Conteúdos'},{key:'candidaturas',label:'Dados dos Funis'}].map(p=>({
+    const pages=[{key:'conta',label:'Dados da Conta'},{key:'conteudos',label:'Dados dos Conteúdos'},{key:'insights',label:'Insights dos Conteúdos'},{key:'candidaturas',label:'Dados dos Funis'},{key:'plano',label:'Plano de Conteúdo'}].map(p=>({
       label:p.label,
-      onClick:()=>this.setPage(p.key),
-      style:`font-family:var(--font-sans); font-size:13px; font-weight:${S.page===p.key?'600':'500'}; cursor:pointer; padding:8px 16px; border-radius:var(--radius-md) var(--radius-md) 0 0; border:1px solid ${S.page===p.key?'var(--border-soft)':'transparent'}; border-bottom:2px solid ${S.page===p.key?accent:'transparent'}; background:${S.page===p.key?'var(--surface-page)':'transparent'}; color:${S.page===p.key?'var(--text-strong)':'var(--text-muted)'};`
+      onClick:()=>{ this.setPage(p.key); this.scrollTab(p.key); },
+      style:`font-family:var(--font-sans); font-size:13px; font-weight:${S.page===p.key?'600':'500'}; cursor:pointer; padding:8px 16px; border-radius:var(--radius-md) var(--radius-md) 0 0; border:1px solid ${S.page===p.key?'var(--border-soft)':'transparent'}; border-bottom:2px solid ${S.page===p.key?accent:'transparent'}; background:${S.page===p.key?'var(--surface-page)':'transparent'}; color:${S.page===p.key?'var(--text-strong)':'var(--text-muted)'}; white-space:nowrap; flex:none;`
     }));
 
     const base={
@@ -1180,13 +1493,15 @@ class Component extends DCLogic {
       sourceColor: S.dataError? 'var(--danger)' : (S.mediaLoading? 'var(--warning)' : (S.live? 'var(--success)' : 'var(--ink-300)')),
       dormant: S.dormant && !S.mediaLoading,
       pages, month:S.month, week:S.week, monthOptions, weekOptions,
+      onPrevPage:()=>{ const ks=['conta','conteudos','insights','candidaturas','plano']; const i=ks.indexOf(S.page); const nk=ks[(i-1+ks.length)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
+      onNextPage:()=>{ const ks=['conta','conteudos','insights','candidaturas','plano']; const i=ks.indexOf(S.page); const nk=ks[(i+1)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
       onMonth:(e)=>this.setState({month:e.target.value, week:'all'}),
       onWeek:(e)=>this.setState({week:e.target.value}),
       accent, periodLabel: win.label,
-      isConta:S.page==='conta', isConteudos:S.page==='conteudos', isInsights:S.page==='insights', isCandidaturas:S.page==='candidaturas',
-      showFilters: S.page!=='candidaturas',
+      isConta:S.page==='conta', isConteudos:S.page==='conteudos', isInsights:S.page==='insights', isCandidaturas:S.page==='candidaturas', isPlano:S.page==='plano',
+      showFilters: S.page!=='candidaturas' && S.page!=='plano',
       showFunnelFilters: S.page==='candidaturas',
-      pageTitle: S.page==='conta'?'Dados da Conta': S.page==='conteudos'?'Dados dos Conteúdos': S.page==='insights'?'Insights dos Conteúdos':'Dados dos Funis',
+      pageTitle: S.page==='conta'?'Dados da Conta': S.page==='conteudos'?'Dados dos Conteúdos': S.page==='insights'?'Insights dos Conteúdos': S.page==='candidaturas'?'Dados dos Funis':'Plano de Conteúdo',
     };
 
     // CONTA

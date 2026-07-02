@@ -60,13 +60,15 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
         ? 'Dados dos Conteúdos'
         : S.page === 'insights'
           ? 'Insights dos Conteúdos'
-          : 'Dados dos Funis'
+          : S.page === 'candidaturas'
+            ? 'Dados dos Funis'
+            : 'Plano de Conteúdo'
   return {
     sourceLabel,
     sourceColor,
     dormant: S.dormant && !S.mediaLoading,
     pageTitle,
-    showFilters: S.page !== 'candidaturas',
+    showFilters: S.page !== 'candidaturas' && S.page !== 'plano',
     showFunnelFilters: S.page === 'candidaturas',
     refreshLabel: S.refreshing ? 'Atualizando…' : 'Atualizar',
   }

@@ -14,7 +14,7 @@ import { defaultFunnelRange } from './dates'
 import { FUNNELS } from './constants'
 import type { Model, FunnelData, AdDailyRow } from './types'
 
-export type PageKey = 'conta' | 'conteudos' | 'insights' | 'candidaturas'
+export type PageKey = 'conta' | 'conteudos' | 'insights' | 'candidaturas' | 'plano'
 
 export interface DashState {
   page: PageKey
