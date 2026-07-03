@@ -11,6 +11,7 @@ import { fetchAds } from './facebook'
 import { fetchFunnel as fetchFunnelCsv, funnelSpec } from './sheets'
 import { persistCovers } from './cache'
 import { defaultFunnelRange } from './dates'
+import { loadGtThumbs, saveGtThumbs, fetchGoldenThumbs, needsGtThumbs, type GtThumbs } from './goldenThumbs'
 import { FUNNELS } from './constants'
 import type { Model, FunnelData, AdDailyRow } from './types'
 
@@ -37,6 +38,7 @@ export interface DashState {
   candTo: string
   candStatusFilter: string
   imersao: string
+  gtThumbs: GtThumbs
   adsRaw: AdDailyRow[] | null
   adsMinD: string | null
   adsMaxD: string | null
@@ -79,6 +81,7 @@ export function useDashboard(): Dashboard {
     candTo: '',
     candStatusFilter: 'all',
     imersao: 'nea',
+    gtThumbs: loadGtThumbs(),
     adsRaw: null,
     adsMinD: null,
     adsMaxD: null,
@@ -235,6 +238,25 @@ export function useDashboard(): Dashboard {
     void loadAds()
     void fetchFunnel(FUNNELS[0].key)
   }, [fetchLive, loadAds, fetchFunnel])
+
+  // Golden Ticket — busca/embute as capas dos anúncios da imersão ativa (cache localStorage)
+  const gtBusyRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (state.page !== 'candidaturas' || state.funnel !== 'golden') return
+    const im = state.imersao
+    const have = state.gtThumbs[im] || {}
+    if (!needsGtThumbs(im, have) || gtBusyRef.current === im) return
+    gtBusyRef.current = im
+    void fetchGoldenThumbs(im, have).then((map) => {
+      gtBusyRef.current = null
+      if (!map) return
+      setState((s) => {
+        const next = { ...s.gtThumbs, [im]: map }
+        saveGtThumbs(next)
+        return { gtThumbs: next }
+      })
+    })
+  }, [state.page, state.funnel, state.imersao, state.gtThumbs, setState])
 
   const onRefresh = useCallback(() => {
     void fetchLive()

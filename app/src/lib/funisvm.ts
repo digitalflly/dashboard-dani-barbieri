@@ -115,7 +115,12 @@ export function funisVM(S: DashState): FunisVM {
     inactive: f.key !== key,
   }))
 
-  const adsState: AdsState = { adsRaw: S.adsRaw, adsError: S.adsError, adsLoading: S.adsLoading }
+  const adsState: AdsState = {
+    adsRaw: S.adsRaw,
+    adsError: S.adsError,
+    adsLoading: S.adsLoading,
+    gtThumbs: S.gtThumbs,
+  }
   const { from: winFrom, to: winTo } = effWindow(S)
 
   // ---- funil só de anúncios (ex.: Seguidores, Golden Ticket) — sem planilha de leads ----
