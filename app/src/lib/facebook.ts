@@ -123,13 +123,14 @@ export function turbinaAgg(
   rows.forEach((x) => {
     const t =
       byCamp[x.campaign] ||
-      (byCamp[x.campaign] = { name: x.campaign, impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, spend: 0, thumb: '' })
+      (byCamp[x.campaign] = { name: x.campaign, impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, spend: 0, thumb: '', permalink: '' })
     t.impressions += x.impressions
     t.reach += x.reach
     t.linkClicks += x.linkClicks
     t.lpViews += x.lpViews
     t.spend += x.spend
     if (!t.thumb && x.thumb) t.thumb = x.thumb
+    if (!t.permalink && x.permalink) t.permalink = x.permalink
   })
   return Object.values(byCamp).sort((a, b) => b.spend - a.spend)
 }

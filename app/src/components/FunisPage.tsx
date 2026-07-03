@@ -249,15 +249,25 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                           ))}
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 120, overflowY: 'auto' }}>
-                          {inv.turbina.map((t) => (
-                            <div key={t.idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '9px 11px', border: '1px solid var(--border-soft)', borderRadius: 5 }}>
-                              <span style={{ fontSize: 12, color: 'var(--text-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
-                              <span style={{ display: 'flex', gap: 14, flex: 'none', alignItems: 'baseline' }}>
-                                <span data-keepcase="1" style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{t.visitas} visitas</span>
-                                <span data-keepcase="1" style={{ fontSize: 12.5, fontWeight: 600, color: '#771520' }}>{t.spend}</span>
-                              </span>
-                            </div>
-                          ))}
+                          {inv.turbina.map((t) => {
+                            const rowStyle: CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '9px 11px', border: '1px solid var(--border-soft)', borderRadius: 5 }
+                            const inner = (
+                              <>
+                                <span style={{ fontSize: 12, color: 'var(--text-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                                <span style={{ display: 'flex', gap: 14, flex: 'none', alignItems: 'baseline' }}>
+                                  <span data-keepcase="1" style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{t.visitas} visitas</span>
+                                  <span data-keepcase="1" style={{ fontSize: 12.5, fontWeight: 600, color: '#771520' }}>{t.spend}</span>
+                                </span>
+                              </>
+                            )
+                            return t.permalink ? (
+                              <a key={t.idx} href={t.permalink} target="_blank" rel="noopener noreferrer" title="Abrir a publicação no Instagram" style={{ ...rowStyle, textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+                                {inner}
+                              </a>
+                            ) : (
+                              <div key={t.idx} style={rowStyle}>{inner}</div>
+                            )
+                          })}
                         </div>
                       </>
                     )}
