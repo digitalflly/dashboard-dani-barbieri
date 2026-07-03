@@ -22,6 +22,8 @@ export interface AdsState {
   adsLoading: boolean
   // capas do Golden Ticket por imersão (nome do anúncio -> dataURL)
   gtThumbs?: Record<string, Record<string, string>>
+  // links do Golden Ticket por imersão (nome do anúncio -> instagram_permalink_url)
+  gtLinks?: Record<string, Record<string, string>>
 }
 
 export interface InvestStage {
@@ -38,6 +40,7 @@ export interface InvestAdRow {
   idx: number
   name: string
   thumbStyle: CSSProperties
+  permalink: string
   impr: string
   clk: string
   lpv: string
@@ -153,7 +156,7 @@ export function investFunnel(
 
   const T = Math.max(total, 1)
   const agg = isGolden
-    ? goldenAgg(imersao, st.gtThumbs?.[imersao] || {})
+    ? goldenAgg(imersao, st.gtThumbs?.[imersao] || {}, st.gtLinks?.[imersao] || {})
     : adsAgg(st.adsRaw, ADS_CAMPAIGN_MATCH[key] || /^\b$/, from, to)
   const ads = agg.ads
   const fbPrefix = key === 'diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isGolden ? 'Golden Ticket' : 'Sessão Premium'
@@ -257,6 +260,7 @@ export function investFunnel(
           ? `#3D0A11 center/cover no-repeat url("${a.thumb}")`
           : 'linear-gradient(135deg, #771520, #3D0A11)',
       },
+      permalink: a.permalink || '',
       impr: fmtNum(a.impressions),
       clk: fmtNum(a.linkClicks),
       lpv: fmtNum(a.lpViews),
@@ -289,6 +293,7 @@ export function investFunnel(
           borderRadius: 5,
           background: `linear-gradient(135deg, ${thumbBg[i]}, #3D0A11)`,
         },
+        permalink: '',
         impr: fmtNum(impr),
         clk: fmtNum(clk),
         lpv: fmtNum(lpv),

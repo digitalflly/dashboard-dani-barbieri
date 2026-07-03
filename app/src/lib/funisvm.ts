@@ -120,6 +120,7 @@ export function funisVM(S: DashState): FunisVM {
     adsError: S.adsError,
     adsLoading: S.adsLoading,
     gtThumbs: S.gtThumbs,
+    gtLinks: S.gtLinks,
   }
   const { from: winFrom, to: winTo } = effWindow(S)
 
