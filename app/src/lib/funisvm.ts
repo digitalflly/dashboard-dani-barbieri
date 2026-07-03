@@ -61,6 +61,8 @@ export interface FunisVM {
   invest: InvestVM
   leadsView: boolean
   showStatusBtns: boolean
+  statusGroupLabel: string
+  statusMode: 'status' | 'imersao'
 }
 
 // janela de data efetiva (mês selecionado OU intervalo) — usada nos anúncios
@@ -116,7 +118,7 @@ export function funisVM(S: DashState): FunisVM {
   const adsState: AdsState = { adsRaw: S.adsRaw, adsError: S.adsError, adsLoading: S.adsLoading }
   const { from: winFrom, to: winTo } = effWindow(S)
 
-  // ---- funil só de anúncios (ex.: Seguidores) — sem planilha de leads ----
+  // ---- funil só de anúncios (ex.: Seguidores, Golden Ticket) — sem planilha de leads ----
   if (spec.adsOnly) {
     const candFilters: CandFilters = {
       month: S.candMonth,
@@ -126,6 +128,36 @@ export function funisVM(S: DashState): FunisVM {
       min: S.adsMinD || '',
       max: S.adsMaxD || '',
       hasFilter: S.candMonth !== 'all' || !!S.candFrom || !!S.candTo,
+    }
+    // Golden Ticket — seletor de imersão (IEB/AMB/NEA) no lugar do status; snapshot estático
+    if (spec.golden) {
+      const IM = [
+        { key: 'ieb', label: 'IEB' },
+        { key: 'amb', label: 'AMB' },
+        { key: 'nea', label: 'NEA' },
+      ]
+      const imBtns: StatusBtn[] = IM.map((b) => ({
+        key: b.key,
+        label: b.label,
+        active: S.imersao === b.key,
+        inactive: S.imersao !== b.key,
+      }))
+      return {
+        funnelTabs,
+        candFilters,
+        candStatusBtns: imBtns,
+        candReady: true,
+        candLoadingView: false,
+        candStatusLabel: '',
+        candKpis: [],
+        candCharts: [],
+        cfgs: {},
+        invest: investFunnel(key, 0, adsState, '', '', S.imersao),
+        leadsView: false,
+        showStatusBtns: true,
+        statusGroupLabel: 'Imersão',
+        statusMode: 'imersao',
+      }
     }
     return {
       funnelTabs,
@@ -140,6 +172,8 @@ export function funisVM(S: DashState): FunisVM {
       invest: investFunnel(key, 0, adsState, winFrom, winTo),
       leadsView: false,
       showStatusBtns: false,
+      statusGroupLabel: 'Status',
+      statusMode: 'status',
     }
   }
 
@@ -172,6 +206,8 @@ export function funisVM(S: DashState): FunisVM {
       invest: investFunnel(key, 0, adsState, winFrom, winTo),
       leadsView: true,
       showStatusBtns: true,
+      statusGroupLabel: 'Status',
+      statusMode: 'status',
     }
   }
 
@@ -234,5 +270,7 @@ export function funisVM(S: DashState): FunisVM {
     invest,
     leadsView: true,
     showStatusBtns: true,
+    statusGroupLabel: 'Status',
+    statusMode: 'status',
   }
 }

@@ -69,7 +69,7 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
     dormant: S.dormant && !S.mediaLoading,
     pageTitle,
     showFilters: S.page !== 'candidaturas' && S.page !== 'plano',
-    showFunnelFilters: S.page === 'candidaturas',
+    showFunnelFilters: S.page === 'candidaturas' && S.funnel !== 'golden',
     refreshLabel: S.refreshing ? 'Atualizando…' : 'Atualizar',
   }
 }

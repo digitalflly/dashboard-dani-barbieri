@@ -17,6 +17,7 @@
   <script src="assets/design-system/_ds_bundle.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="image-slot.js"></script>
+  <script src="golden-ticket-data.js"></script>
   <style>
     *{ box-sizing:border-box; }
     body{ margin:0; }
@@ -366,7 +367,7 @@
         </div>
         <sc-if value="{{ showStatusBtns }}" hint-placeholder-val="{{ true }}">
         <div style="display:flex; gap:6px; align-items:center;">
-          <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-right:4px;">Status</span>
+          <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-right:4px;">{{ statusGroupLabel }}</span>
           <sc-for list="{{ candStatusBtns }}" as="b" hint-placeholder-count="2">
             <sc-if value="{{ b.active }}" hint-placeholder-val="{{ false }}">
               <button onClick="{{ b.onClick }}" style="font-family:var(--font-sans); font-size:12px; font-weight:600; cursor:pointer; padding:7px 14px; border-radius:6px; border:1px solid #771520; background:#771520; color:var(--cream); transition:var(--transition-base);">{{ b.label }}</button>
@@ -906,6 +907,7 @@ class Component extends DCLogic {
       candFrom: '',
       candTo: '',
       candStatusFilter: 'all',
+      imersao: 'nea',
       ads: null,
       adsLoading: false,
       adsError: '',
@@ -933,6 +935,7 @@ class Component extends DCLogic {
           { title:'Tamanho da equipe', eyebrow:'Time', col:7, kind:'equipe', donut:true },
         ] },
       { key:'seguidores', name:'Funil Seguidores', adsOnly:true },
+      { key:'golden', name:'Funil Golden Ticket', adsOnly:true, golden:true },
     ];
     this.PAGE_ACCENTS = { conta:'#771520', conteudos:'#9A7637', insights:'#C2A05B' };
     this.WEEK_COLORS = ['#771520','#C2A05B','#A5293A','#9A7637','#BCA489','#5A0F18','#9C846C','#8E1A28'];
@@ -1203,7 +1206,7 @@ class Component extends DCLogic {
   }
 
   /* ============ CHARTS ============ */
-  componentDidMount(){ this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); }
+  componentDidMount(){ this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); }
 
   // Facebook Ads (Windsor) — contas com "barbieri" no nome, campanhas "SESSAO PREMIUM"
   async fetchAds(){
@@ -1239,6 +1242,46 @@ class Component extends DCLogic {
       s.impressions+=x.impressions; s.reach+=x.reach; s.linkClicks+=x.linkClicks; s.lpViews+=x.lpViews; s.leads+=x.leads; s.spend+=x.spend; });
     return { ads:Object.values(byAd).sort((a,b)=>b.impressions-a.impressions), adsets:Object.values(byAdset).sort((a,b)=>b.impressions-a.impressions) };
   }
+  // Golden Ticket — snapshot estático por imersão (IEB / AMB / NEA)
+  goldenAgg(imersao){
+    const G=(window.__GOLDEN_TICKET__||{})[imersao];
+    if(!G) return { ads:[], adsets:[], totals:null };
+    const TH=(this._gtThumbs&&this._gtThumbs[imersao])||{};
+    const mapA=(a)=>({ name:a.n, thumb:TH[a.n]||'', impressions:a.impr, reach:a.reach, linkClicks:a.lc, lpViews:a.lp, leads:a.lead, checkout:a.ic, purchases:a.pur, revenue:a.rev, spend:a.spend });
+    return { ads:(G.byAd||[]).map(mapA).sort((a,b)=>b.spend-a.spend), adsets:(G.byAdset||[]).map(mapA).sort((a,b)=>b.spend-a.spend), totals:G.totals, dateMin:G.dateMin, dateMax:G.dateMax };
+  }
+  // capas dos anúncios do Golden Ticket — cache local + embutir sob demanda (portável ao deploy)
+  loadGtThumbs(){ try{ return JSON.parse(localStorage.getItem('gt_thumbs_v1')||'{}'); }catch(e){ return {}; } }
+  saveGtThumbs(){ try{ localStorage.setItem('gt_thumbs_v1', JSON.stringify(this._gtThumbs||{})); }catch(e){} }
+  embedImg(url){ return new Promise(res=>{ const img=new Image(); img.crossOrigin='anonymous'; let done=false; const to=setTimeout(()=>{if(!done){done=true;res(null);}},8000);
+    img.onload=()=>{ if(done)return; done=true; clearTimeout(to); try{ const s=Math.min(1,150/Math.max(img.width,img.height)); const w=Math.max(1,Math.round(img.width*s)), h=Math.max(1,Math.round(img.height*s)); const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); res(c.toDataURL('image/jpeg',0.62)); }catch(e){ res(null); } };
+    img.onerror=()=>{ if(done)return; done=true; clearTimeout(to); res(null); }; img.src=url; }); }
+  async fetchGoldenThumbs(imersao){
+    if(!imersao) return;
+    this._gtThumbs = this._gtThumbs || this.loadGtThumbs();
+    const G=(window.__GOLDEN_TICKET__||{})[imersao];
+    if(!G) return;
+    const have=this._gtThumbs[imersao]||{};
+    const need=(G.byAd||[]).some(a=>!have[a.n]);
+    if(!need || this._gtThumbBusy===imersao) return;
+    this._gtThumbBusy=imersao;
+    const win={ieb:['2025-06-01','2025-08-31'],amb:['2025-12-01','2026-01-31'],nea:['2026-06-01','2026-06-30']}[imersao];
+    const re={ieb:/\[IEB\]/i,amb:/\[AMB\]/i,nea:/\[NEA\]/i}[imersao];
+    try{
+      const key=this.WINDSOR_KEY;
+      const url='https://connectors.windsor.ai/facebook?api_key='+key+'&date_from='+win[0]+'&date_to='+win[1]+'&fields='+encodeURIComponent('campaign,ad_name,thumbnail_url,spend')+'&_cb='+Date.now();
+      const r=await fetch(url,{cache:'no-store'}); const jj=await r.json();
+      const rows=(jj.data||[]).filter(x=>re.test(x.campaign||'') && x.thumbnail_url);
+      const best={}; rows.forEach(x=>{ const n=x.ad_name||'(sem nome)'; const sp=+x.spend||0; if(!best[n]||sp>best[n].sp) best[n]={url:x.thumbnail_url,sp}; });
+      const map=Object.assign({}, have);
+      const names=Object.keys(best).filter(n=>!map[n]);
+      let i=0; const worker=async()=>{ while(i<names.length){ const n=names[i++]; const d=await this.embedImg(best[n].url); if(d) map[n]=d; } };
+      await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+      this._gtThumbs[imersao]=map; this.saveGtThumbs();
+      if(this.state.funnel==='golden' && this.state.imersao===imersao) this.forceUpdate();
+    }catch(e){}
+    this._gtThumbBusy=null;
+  }
   // agrega turbinamento por campanha + intervalo de datas
   turbinaAgg(from, to){
     const re=this.ADS_CAMPAIGN_MATCH.turbinamento;
@@ -1254,6 +1297,7 @@ class Component extends DCLogic {
   parseRowDate(s){ const m=String(s||'').match(/(\d{2})\/(\d{2})\/(\d{4})/); if(m) return m[3]+'-'+m[2]+'-'+m[1]; const m2=String(s||'').match(/(\d{4})-(\d{2})-(\d{2})/); return m2? m2[0]:null; }
   setFunnel(key){
     this.setState({funnel:key, candMonth:'all', candFrom:'', candTo:'', candStatusFilter:'all'});
+    if(key==='golden') this.fetchGoldenThumbs(this.state.imersao);
     const spec=this.funnelSpec(key);
     if(spec && spec.adsOnly){ const r=this.defaultFunnelRange(this._adsMinD, this._adsMaxD); this.setState({candFrom:r.from, candTo:r.to}); return; }
     const d=this.state.funnelData[key];
@@ -1500,7 +1544,7 @@ class Component extends DCLogic {
       accent, periodLabel: win.label,
       isConta:S.page==='conta', isConteudos:S.page==='conteudos', isInsights:S.page==='insights', isCandidaturas:S.page==='candidaturas', isPlano:S.page==='plano',
       showFilters: S.page!=='candidaturas' && S.page!=='plano',
-      showFunnelFilters: S.page==='candidaturas',
+      showFunnelFilters: S.page==='candidaturas' && S.funnel!=='golden',
       pageTitle: S.page==='conta'?'Dados da Conta': S.page==='conteudos'?'Dados dos Conteúdos': S.page==='insights'?'Insights dos Conteúdos': S.page==='candidaturas'?'Dados dos Funis':'Plano de Conteúdo',
     };
 
@@ -1647,13 +1691,23 @@ class Component extends DCLogic {
       const segMonths=[];
       if(this._adsMinD && this._adsMaxD){ let ym=this._adsMinD.slice(0,7); const end=this._adsMaxD.slice(0,7); let g=0; while(ym<=end && g<48){ segMonths.push({value:ym, label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4)}); const y=+ym.slice(0,4),m=+ym.slice(5,7); const nd=new Date(Date.UTC(y,m,1)); ym=nd.getUTCFullYear()+'-'+String(nd.getUTCMonth()+1).padStart(2,'0'); g++; } }
       const segFilters={...candFilters, monthOptions:[{value:'all',label:'Todos os meses'}].concat(segMonths), min:this._adsMinD||'', max:this._adsMaxD||''};
+      // Golden Ticket — seletor de imersão (IEB/AMB/NEA) no lugar do status; dados estáticos por imersão
+      if(spec.golden){
+        const IM=[{key:'ieb',label:'IEB'},{key:'amb',label:'AMB'},{key:'nea',label:'NEA'}];
+        const imBtns=IM.map(b=>({ label:b.label, active:S.imersao===b.key, inactive:S.imersao!==b.key,
+          onClick:()=>{ this.setState({imersao:b.key}); this.fetchGoldenThumbs(b.key); } }));
+        const invG=this.investFunnel(key, 0, '', '');
+        return { funnelTabs, candFilters:segFilters, candStatusBtns:imBtns, statusGroupLabel:'Imersão',
+          candReady:true, candLoadingView:false, candStatusLabel:'', candKpis:[], candStatus:[], candCharts:[],
+          leadsView:false, showStatusBtns:true, ...invG };
+      }
       const inv=this.investFunnel(key, 0, winFrom, winTo);
-      return { funnelTabs, candFilters:segFilters, candStatusBtns:[], candReady:true, candLoadingView:false,
+      return { funnelTabs, candFilters:segFilters, candStatusBtns:[], statusGroupLabel:'Status', candReady:true, candLoadingView:false,
         candStatusLabel:'', candKpis:[], candStatus:[], candCharts:[], leadsView:false, showStatusBtns:false, ...inv };
     }
     if(!F){
       this._funnelCfgs=null;
-      return { funnelTabs, candFilters, candStatusBtns:[], candReady:false, candLoadingView:true, leadsView:true, showStatusBtns:true, investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'',
+      return { funnelTabs, candFilters, candStatusBtns:[], statusGroupLabel:'Status', candReady:false, candLoadingView:true, leadsView:true, showStatusBtns:true, investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'',
         candStatusLabel: err? ('erro ao ler a aba: '+err).slice(0,90) : (loading? 'lendo a planilha…' : 'aba não carregada'),
         candKpis:[], candStatus:[], candCharts:[] };
     }
@@ -1690,15 +1744,17 @@ class Component extends DCLogic {
       barStyle:`height:100%; width:${Math.round(s.count/stMax*100)}%; background:${ramp[i]}; border-radius:999px;` }));
 
     const inv=this.investFunnel(key, C.total, winFrom, winTo);
-    return { funnelTabs, candFilters, candStatusBtns, candReady:true, candLoadingView:false, leadsView:true, showStatusBtns:true,
+    return { funnelTabs, candFilters, candStatusBtns, candReady:true, candLoadingView:false, leadsView:true, showStatusBtns:true, statusGroupLabel:'Status',
       candStatusLabel: loading? 'atualizando…' : (C.name+' · '+this.fmtNum(C.total)+' leads'),
       candKpis, candStatus, candCharts, ...inv };
   }
 
   // Funil de investimento — Facebook Ads (contas barbieri · campanhas SESSAO PREMIUM) → leads da planilha.
   investFunnel(key, total, from, to){
-    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores'){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
+    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores' && key!=='golden'){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
     const isSeg = key==='seguidores';
+    const isGolden = key==='golden';
+    const noPlan = isSeg || isGolden;
     // Turbinamento (só no funil Seguidores) — substitui o card "Dados de conversão"
     let convShow=true, turbinaShow=false, turbina=[], turbinaSummary=[];
     if(isSeg){
@@ -1715,15 +1771,17 @@ class Component extends DCLogic {
         visitas:this.fmtNum(x.linkClicks), spend:'R$ '+this.fmtNum(x.spend) }));
     }
     const T=Math.max(total,1), money2=(v)=>'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-    const S=this.state, _agg=this.adsAgg(this.ADS_CAMPAIGN_MATCH[key]||/^\b$/, from, to), ads=_agg.ads;
-    const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : 'Sessão Premium';
-    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : isSeg ? 'funil seguidores' : 'funil sessão premium';
+    const IMLABEL={ieb:'IEB',amb:'AMB',nea:'NEA'};
+    const S=this.state, _agg = isGolden? this.goldenAgg(S.imersao) : this.adsAgg(this.ADS_CAMPAIGN_MATCH[key]||/^\b$/, from, to), ads=_agg.ads;
+    const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isGolden ? 'Golden Ticket' : 'Sessão Premium';
+    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : isSeg ? 'funil seguidores' : isGolden ? ('golden ticket · imersão '+(IMLABEL[S.imersao]||'')) : 'funil sessão premium';
     const hasReal = ads && ads.length>0;
-    let alcance,impressoes,cliques,lpViews,leadsGer,investido;
+    let alcance,impressoes,cliques,lpViews,leadsGer,investido,checkout=0,compras=0,receita=0;
     if(hasReal){
       const sum=(f)=>ads.reduce((a,x)=>a+(x[f]||0),0);
       alcance=sum('reach'); impressoes=sum('impressions'); cliques=sum('linkClicks');
       lpViews=sum('lpViews'); leadsGer=sum('leads'); investido=sum('spend');
+      checkout=sum('checkout'); compras=sum('purchases'); receita=sum('revenue');
     }else{
       // fallback estimado enquanto carrega / se não houver anúncios
       const leadsP=T; leadsGer=Math.round(T/0.85); lpViews=Math.round(leadsGer/0.16);
@@ -1735,17 +1793,30 @@ class Component extends DCLogic {
     const cpc=cliques? investido/cliques : 0;
     const custoGer=leadsGer? investido/leadsGer : 0;
     const custoPlan=leadsPlan? investido/leadsPlan : 0;
+    const custoCompra=compras? investido/compras : 0;
     const connectRate=cliques? lpViews/cliques*100 : 0;
     const div=(a,b)=> b? a/b : null;
-    const raw=[
-      { label:'Alcance', value:alcance, conv:null, cost:null },
-      { label:'Impressões', value:impressoes, conv:div(impressoes,alcance), freq:div(impressoes,alcance), cost:null },
-      { label:'Cliques no link', value:cliques, conv:div(cliques,impressoes), cost:money2(cpc) },
-      { label:'Visualizações da página', value:lpViews, conv:div(lpViews,cliques), cost:null },
-      { label:'Leads do gerenciador', value:leadsGer, conv:div(leadsGer,lpViews), cost:money2(custoGer) },
-    ];
-    if(!isSeg) raw.push({ label:'Leads da planilha', value:leadsPlan, conv:div(leadsPlan,leadsGer), cost:money2(custoPlan) });
-    const widths = isSeg ? [100,92,82,70,58] : [100,93,84,73,62,52];
+    let raw;
+    if(isGolden){
+      raw=[
+        { label:'Alcance', value:alcance, conv:null, cost:null },
+        { label:'Impressões', value:impressoes, conv:div(impressoes,alcance), freq:div(impressoes,alcance), cost:null },
+        { label:'Cliques no link', value:cliques, conv:div(cliques,impressoes), cost:money2(cpc) },
+        { label:'Visualizações da página', value:lpViews, conv:div(lpViews,cliques), cost:null },
+        { label:'Finalização de compra', value:checkout, conv:div(checkout,lpViews), cost:money2(checkout? investido/checkout : 0) },
+        { label:'Compras', value:compras, conv:div(compras,checkout), cost:money2(custoCompra) },
+      ];
+    }else{
+      raw=[
+        { label:'Alcance', value:alcance, conv:null, cost:null },
+        { label:'Impressões', value:impressoes, conv:div(impressoes,alcance), freq:div(impressoes,alcance), cost:null },
+        { label:'Cliques no link', value:cliques, conv:div(cliques,impressoes), cost:money2(cpc) },
+        { label:'Visualizações da página', value:lpViews, conv:div(lpViews,cliques), cost:null },
+        { label:'Leads do gerenciador', value:leadsGer, conv:div(leadsGer,lpViews), cost:money2(custoGer) },
+      ];
+      if(!noPlan) raw.push({ label:'Leads da planilha', value:leadsPlan, conv:div(leadsPlan,leadsGer), cost:money2(custoPlan) });
+    }
+    const widths = isGolden ? [100,92,83,74,65,56] : (noPlan ? [100,92,82,70,58] : [100,93,84,73,62,52]);
     const investStages=raw.map((s,i)=>{
       const convStr = s.freq!=null ? (s.freq).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : (s.conv==null? '' : this.fmtPct(s.conv*100));
       const left = convStr ? (s.cost ? convStr+'  -  '+s.cost : convStr) : '';
@@ -1756,15 +1827,15 @@ class Component extends DCLogic {
       { label:'CPM', value:money2(cpm) },
       { label:'Custo por clique', value:money2(cpc) },
       { label:'Connect rate', value:this.fmtPct(connectRate) },
-      { label: isSeg? 'Custo / lead gerenciador' : 'Custo / lead planilha', value:money2(isSeg? custoGer : custoPlan) },
+      { label: isGolden? 'Custo / compra' : (noPlan? 'Custo / lead gerenciador' : 'Custo / lead planilha'), value:money2(isGolden? custoCompra : (noPlan? custoGer : custoPlan)) },
     ];
     let investAds;
     if(hasReal){
       investAds=ads.slice(0,12).map((a,i)=>({ idx:i, name:a.name,
-        thumbStyle: a.thumb? `width:42px; height:42px; flex:none; border-radius:5px; background:#3D0A11 center/cover no-repeat url("${a.thumb}");`
-          : `width:42px; height:42px; flex:none; border-radius:5px; background:linear-gradient(135deg, #771520, #3D0A11);`,
+        thumbStyle: a.thumb? {width:'42px',height:'42px',flex:'none',borderRadius:'5px',backgroundColor:'#3D0A11',backgroundImage:`url("${a.thumb}")`,backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat'}
+          : {width:'42px',height:'42px',flex:'none',borderRadius:'5px',background:'linear-gradient(135deg, #771520, #3D0A11)'},
         impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews),
-        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(isSeg? a.linkClicks : a.leads) }));
+        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(isGolden? a.purchases : (isSeg? a.linkClicks : a.leads)) }));
     }else{
       const adNames=[fbPrefix+' · Depoimento',fbPrefix+' · VSL Curta',fbPrefix+' · Carrossel',fbPrefix+' · Reels Bastidores',fbPrefix+' · Prova Social'];
       const w=[0.30,0.24,0.19,0.15,0.12], adCr=[0.82,0.76,0.80,0.74,0.78], thumbBg=['#771520','#8A1A24','#5A0F18','#9E2230','#6B131D'];
@@ -1779,7 +1850,7 @@ class Component extends DCLogic {
     if(hasRealSet){
       investAdsets=adsets.slice(0,30).map((a,i)=>({ idx:i, name:a.name,
         impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews),
-        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(isSeg? a.linkClicks : a.leads) }));
+        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(isGolden? a.purchases : (isSeg? a.linkClicks : a.leads)) }));
     }else{
       const setNames=[fbPrefix+' · Aberto',fbPrefix+' · Lookalike',fbPrefix+' · Interesses',fbPrefix+' · Remarketing'];
       const w=[0.38,0.27,0.21,0.14], setCr=[0.80,0.78,0.81,0.83];
@@ -1800,9 +1871,9 @@ class Component extends DCLogic {
       adsWrapStyle: isSeg ? 'overflow:auto; margin:0 -4px; max-height:625px;' : 'overflow-x:auto; margin:0 -4px;',
       adsNameColStyle: 'text-align:left; padding:0 12px 10px 4px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;' + (isSeg? ' width:38%;' : ''),
       adsetWrapStyle: isSeg ? 'overflow:auto; margin:0 -4px; height:430px;' : 'overflow:auto; margin:0 -4px; flex:1 1 0; min-height:0;',
-      adsResultLabel: isSeg? 'Visitas ao perfil' : 'Leads do gerenciador',
-      adsetResultLabel: isSeg? 'Visitas ao perfil' : 'Leads',
-      investHeaderStyle: isSeg
+      adsResultLabel: isGolden? 'Compras' : (isSeg? 'Visitas ao perfil' : 'Leads do gerenciador'),
+      adsetResultLabel: isGolden? 'Compras' : (isSeg? 'Visitas ao perfil' : 'Leads'),
+      investHeaderStyle: noPlan
         ? 'margin:18px 0 18px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;'
         : 'border-top:1px solid var(--border-soft); margin:26px 0 18px; padding-top:24px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;' };
   }

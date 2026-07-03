@@ -117,6 +117,10 @@ export interface AdRow {
   lpViews: number
   leads: number
   spend: number
+  // Golden Ticket (e-commerce) — só no snapshot estático
+  checkout?: number
+  purchases?: number
+  revenue?: number
 }
 export interface AdsetRow {
   name: string
@@ -126,6 +130,9 @@ export interface AdsetRow {
   lpViews: number
   leads: number
   spend: number
+  checkout?: number
+  purchases?: number
+  revenue?: number
 }
 // linha diária bruta do conector do Facebook (agregada no cliente por intervalo)
 export interface AdDailyRow {
@@ -173,6 +180,8 @@ export interface FunnelSpec {
   charts: FunnelChartSpec[]
   // funil só de anúncios (ex.: Seguidores) — sem planilha de leads
   adsOnly?: boolean
+  // funil Golden Ticket — snapshot estático por imersão (IEB/AMB/NEA)
+  golden?: boolean
 }
 export interface FunnelData {
   rows: string[][]
