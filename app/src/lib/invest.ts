@@ -20,6 +20,8 @@ export interface AdsState {
   adsRaw: AdDailyRow[] | null
   adsError: string
   adsLoading: boolean
+  // capas do Golden Ticket por imersão (nome do anúncio -> dataURL)
+  gtThumbs?: Record<string, Record<string, string>>
 }
 
 export interface InvestStage {
@@ -150,7 +152,9 @@ export function investFunnel(
   }
 
   const T = Math.max(total, 1)
-  const agg = isGolden ? goldenAgg(imersao) : adsAgg(st.adsRaw, ADS_CAMPAIGN_MATCH[key] || /^\b$/, from, to)
+  const agg = isGolden
+    ? goldenAgg(imersao, st.gtThumbs?.[imersao] || {})
+    : adsAgg(st.adsRaw, ADS_CAMPAIGN_MATCH[key] || /^\b$/, from, to)
   const ads = agg.ads
   const fbPrefix = key === 'diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isGolden ? 'Golden Ticket' : 'Sessão Premium'
   const investEyebrow =
