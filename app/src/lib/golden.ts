@@ -7,9 +7,10 @@
 import { GOLDEN_TICKET, type GtRow } from './goldenTicketData'
 import type { AdRow, AdsetRow } from './types'
 
-const mapRow = (thumbs: Record<string, string>) => (a: GtRow): AdRow => ({
+const mapRow = (thumbs: Record<string, string>, links: Record<string, string>) => (a: GtRow): AdRow => ({
   name: a.n,
   thumb: thumbs[a.n] || '',
+  permalink: links[a.n] || '',
   impressions: a.impr,
   reach: a.reach,
   linkClicks: a.lc,
@@ -23,11 +24,12 @@ const mapRow = (thumbs: Record<string, string>) => (a: GtRow): AdRow => ({
 
 export function goldenAgg(
   imersao: string,
-  thumbs: Record<string, string> = {}
+  thumbs: Record<string, string> = {},
+  links: Record<string, string> = {}
 ): { ads: AdRow[]; adsets: AdsetRow[] } {
   const g = GOLDEN_TICKET[imersao]
   if (!g) return { ads: [], adsets: [] }
-  const map = mapRow(thumbs)
+  const map = mapRow(thumbs, links)
   const bySpend = (a: { spend: number }, b: { spend: number }): number => b.spend - a.spend
   return {
     ads: (g.byAd || []).map(map).sort(bySpend),

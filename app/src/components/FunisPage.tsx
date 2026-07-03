@@ -339,10 +339,23 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                           {inv.investAds.map((a) => (
                             <tr key={a.idx} style={{ borderTop: '1px solid var(--border-soft)' }}>
                               <td style={{ padding: '10px 12px 10px 4px', minWidth: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                                  <div style={a.thumbStyle}></div>
-                                  <span style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-strong)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: 1 }}>{a.name}</span>
-                                </div>
+                                {a.permalink ? (
+                                  <a
+                                    href={a.permalink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Abrir o anúncio no Instagram"
+                                    style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                                  >
+                                    <div style={a.thumbStyle}></div>
+                                    <span style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-strong)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: 1, borderBottom: '1px solid transparent' }}>{a.name}</span>
+                                  </a>
+                                ) : (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                    <div style={a.thumbStyle}></div>
+                                    <span style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-strong)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: 1 }}>{a.name}</span>
+                                  </div>
+                                )}
                               </td>
                               <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.impr}</td>
                               <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.clk}</td>

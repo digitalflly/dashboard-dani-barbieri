@@ -111,6 +111,8 @@ export interface Agg {
 export interface AdRow {
   name: string
   thumb: string
+  // link do post no Instagram (instagram_permalink_url do Windsor) — abre a peça
+  permalink?: string
   impressions: number
   reach: number
   linkClicks: number
@@ -141,6 +143,7 @@ export interface AdDailyRow {
   ad: string
   adset: string
   thumb: string
+  permalink: string
   impressions: number
   reach: number
   linkClicks: number

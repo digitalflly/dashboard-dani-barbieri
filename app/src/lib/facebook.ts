@@ -23,7 +23,7 @@ export async function fetchAds(): Promise<AdsResult> {
   const to = new Date()
   const from = new Date(to.getTime() - 180 * 86400000)
   const fields =
-    'account_id,date,campaign,adset_name,ad_name,thumbnail_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend'
+    'account_id,date,campaign,adset_name,ad_name,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend'
   const url =
     'https://connectors.windsor.ai/facebook?api_key=' +
     encodeURIComponent(WINDSOR_KEY) +
@@ -49,6 +49,7 @@ export async function fetchAds(): Promise<AdsResult> {
     ad: (x.ad_name as string) || '(sem nome)',
     adset: (x.adset_name as string) || '(sem conjunto)',
     thumb: (x.thumbnail_url as string) || '',
+    permalink: (x.instagram_permalink_url as string) || '',
     impressions: num(x.impressions),
     reach: num(x.reach),
     linkClicks: num(x.inline_link_clicks),
@@ -82,7 +83,7 @@ export function adsAgg(
   rows.forEach((x) => {
     const a =
       byAd[x.ad] ||
-      (byAd[x.ad] = { name: x.ad, thumb: '', impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, leads: 0, spend: 0 })
+      (byAd[x.ad] = { name: x.ad, thumb: '', permalink: '', impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, leads: 0, spend: 0 })
     a.impressions += x.impressions
     a.reach += x.reach
     a.linkClicks += x.linkClicks
@@ -90,6 +91,7 @@ export function adsAgg(
     a.leads += x.leads
     a.spend += x.spend
     if (!a.thumb && x.thumb) a.thumb = x.thumb
+    if (!a.permalink && x.permalink) a.permalink = x.permalink
 
     const s =
       byAdset[x.adset] ||

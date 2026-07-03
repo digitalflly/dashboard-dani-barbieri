@@ -11,7 +11,16 @@ import { fetchAds } from './facebook'
 import { fetchFunnel as fetchFunnelCsv, funnelSpec } from './sheets'
 import { persistCovers } from './cache'
 import { defaultFunnelRange } from './dates'
-import { loadGtThumbs, saveGtThumbs, fetchGoldenThumbs, needsGtThumbs, type GtThumbs } from './goldenThumbs'
+import {
+  loadGtThumbs,
+  saveGtThumbs,
+  loadGtLinks,
+  saveGtLinks,
+  fetchGoldenAssets,
+  needsGtAssets,
+  type GtThumbs,
+  type GtLinks,
+} from './goldenThumbs'
 import { FUNNELS } from './constants'
 import type { Model, FunnelData, AdDailyRow } from './types'
 
@@ -39,6 +48,7 @@ export interface DashState {
   candStatusFilter: string
   imersao: string
   gtThumbs: GtThumbs
+  gtLinks: GtLinks
   adsRaw: AdDailyRow[] | null
   adsMinD: string | null
   adsMaxD: string | null
@@ -82,6 +92,7 @@ export function useDashboard(): Dashboard {
     candStatusFilter: 'all',
     imersao: 'nea',
     gtThumbs: loadGtThumbs(),
+    gtLinks: loadGtLinks(),
     adsRaw: null,
     adsMinD: null,
     adsMaxD: null,
@@ -239,24 +250,27 @@ export function useDashboard(): Dashboard {
     void fetchFunnel(FUNNELS[0].key)
   }, [fetchLive, loadAds, fetchFunnel])
 
-  // Golden Ticket — busca/embute as capas dos anúncios da imersão ativa (cache localStorage)
+  // Golden Ticket — busca/embute capas + links dos anúncios da imersão ativa (cache localStorage)
   const gtBusyRef = useRef<string | null>(null)
   useEffect(() => {
     if (state.page !== 'candidaturas' || state.funnel !== 'golden') return
     const im = state.imersao
-    const have = state.gtThumbs[im] || {}
-    if (!needsGtThumbs(im, have) || gtBusyRef.current === im) return
+    const haveThumbs = state.gtThumbs[im] || {}
+    const haveLinks = state.gtLinks[im] || {}
+    if (!needsGtAssets(im, haveThumbs, haveLinks) || gtBusyRef.current === im) return
     gtBusyRef.current = im
-    void fetchGoldenThumbs(im, have).then((map) => {
+    void fetchGoldenAssets(im, haveThumbs, haveLinks).then((res) => {
       gtBusyRef.current = null
-      if (!map) return
+      if (!res) return
       setState((s) => {
-        const next = { ...s.gtThumbs, [im]: map }
-        saveGtThumbs(next)
-        return { gtThumbs: next }
+        const nextThumbs = { ...s.gtThumbs, [im]: res.thumbs }
+        const nextLinks = { ...s.gtLinks, [im]: res.links }
+        saveGtThumbs(nextThumbs)
+        saveGtLinks(nextLinks)
+        return { gtThumbs: nextThumbs, gtLinks: nextLinks }
       })
     })
-  }, [state.page, state.funnel, state.imersao, state.gtThumbs, setState])
+  }, [state.page, state.funnel, state.imersao, state.gtThumbs, state.gtLinks, setState])
 
   const onRefresh = useCallback(() => {
     void fetchLive()
