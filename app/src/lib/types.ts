@@ -160,6 +160,7 @@ export interface TurbinaRow {
   lpViews: number
   spend: number
   thumb: string
+  permalink: string
 }
 
 // ---- Funnels (Google Sheet) ----

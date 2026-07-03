@@ -61,6 +61,7 @@ export interface TurbinaItem {
   name: string
   visitas: string
   spend: string
+  permalink: string
 }
 export interface TurbinaSummary {
   label: string
@@ -151,6 +152,7 @@ export function investFunnel(
           .slice(0, 70) || '(sem título)',
       visitas: fmtNum(x.linkClicks),
       spend: 'R$ ' + fmtNum(x.spend),
+      permalink: x.permalink || '',
     }))
   }
 
