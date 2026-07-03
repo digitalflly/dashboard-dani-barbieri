@@ -36,6 +36,7 @@ export interface DashState {
   candFrom: string
   candTo: string
   candStatusFilter: string
+  imersao: string
   adsRaw: AdDailyRow[] | null
   adsMinD: string | null
   adsMaxD: string | null
@@ -77,6 +78,7 @@ export function useDashboard(): Dashboard {
     candFrom: '',
     candTo: '',
     candStatusFilter: 'all',
+    imersao: 'nea',
     adsRaw: null,
     adsMinD: null,
     adsMaxD: null,

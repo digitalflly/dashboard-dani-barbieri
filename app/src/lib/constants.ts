@@ -64,6 +64,18 @@ export const FUNNELS: FunnelSpec[] = [
     statusMap: {},
     charts: [],
   },
+  // funil Golden Ticket — snapshot estático por imersão (IEB/AMB/NEA)
+  {
+    key: 'golden',
+    name: 'Funil Golden Ticket',
+    adsOnly: true,
+    golden: true,
+    gid: '',
+    dateCol: 0,
+    statusCol: 0,
+    statusMap: {},
+    charts: [],
+  },
 ]
 
 export const PAGE_ACCENTS: Record<string, string> = {

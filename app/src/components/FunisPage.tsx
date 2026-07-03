@@ -52,7 +52,7 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
   const adsCell: CSSProperties = isSeg
     ? { gridColumn: 2, gridRow: 2, minWidth: 0, display: 'flex' }
     : { gridColumn: '1 / -1', gridRow: 2, minWidth: 0, display: 'flex' }
-  const investHeader: CSSProperties = isSeg
+  const investHeader: CSSProperties = inv.noPlan
     ? { margin: '18px 0 18px', display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }
     : { borderTop: '1px solid var(--border-soft)', margin: '26px 0 18px', paddingTop: 24, display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }
   const adsetWrap: CSSProperties = isSeg
@@ -90,11 +90,15 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
         </div>
         {v.showStatusBtns && (
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ ...eyebrow, fontSize: 10, marginRight: 4 }}>Status</span>
+            <span style={{ ...eyebrow, fontSize: 10, marginRight: 4 }}>{v.statusGroupLabel}</span>
             {v.candStatusBtns.map((b) => (
               <button
                 key={b.key}
-                onClick={() => setState((st) => ({ candStatusFilter: st.candStatusFilter === b.key ? 'all' : b.key }))}
+                onClick={() =>
+                  v.statusMode === 'imersao'
+                    ? setState({ imersao: b.key })
+                    : setState((st) => ({ candStatusFilter: st.candStatusFilter === b.key ? 'all' : b.key }))
+                }
                 style={{
                   fontFamily: 'var(--font-sans)',
                   fontSize: 12,
