@@ -416,16 +416,16 @@ export function investFunnel(
       carreg: carreg == null ? '—' : fmtPct(carreg),
     }
   })
-  const investDailyShow = investDaily.length > 0
+  const investDailyShow = isNea2 && investDaily.length > 0
 
-  // ── gráfico "Ingressos por dia" (barra) + CPA (linha) ──
+  // ── gráfico "Ingressos por dia" (barra) + CPA (linha) — só na NEA 2ª Edição ──
   const chartSrc = daySrc.slice().reverse() // cronológico
   const chartData = chartSrc.map((o) => resultOf(o))
   const cpaData = chartSrc.map((o, i) => {
     const res = chartData[i]
     return res ? +(o.spend / res).toFixed(2) : null
   })
-  const investChart: ChartConfiguration | null = chartSrc.length
+  const investChart: ChartConfiguration | null = isNea2 && chartSrc.length
     ? ({
         type: 'bar',
         data: {
