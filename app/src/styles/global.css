@@ -9,6 +9,9 @@ body { margin: 0; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 #tabstrip::-webkit-scrollbar { height: 0; display: none; }
+.dash thead th { cursor: pointer; user-select: none; }
+.dash thead th:hover { color: var(--accent) !important; }
+.dash thead th .sortarrow { display: inline-block; margin-left: 3px; font-size: 9px; opacity: 0.85; vertical-align: middle; }
 ::-webkit-scrollbar-thumb {
   background: var(--accent);
   border-radius: 999px;

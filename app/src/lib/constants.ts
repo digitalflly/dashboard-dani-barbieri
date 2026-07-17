@@ -76,6 +76,20 @@ export const FUNNELS: FunnelSpec[] = [
     statusMap: {},
     charts: [],
   },
+  // NEA 2ª Edição — imersão fixa 'nea', com seção de vendas (snapshot manual)
+  {
+    key: 'nea2',
+    name: 'NEA 2ª Edição',
+    adsOnly: true,
+    golden: true,
+    imersaoFixed: 'nea',
+    noImersao: true,
+    gid: '',
+    dateCol: 0,
+    statusCol: 0,
+    statusMap: {},
+    charts: [],
+  },
 ]
 
 export const PAGE_ACCENTS: Record<string, string> = {

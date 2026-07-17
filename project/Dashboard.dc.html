@@ -18,6 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="image-slot.js"></script>
   <script src="golden-ticket-data.js"></script>
+  <script src="nea-vendas-data.js"></script>
   <style>
     *{ box-sizing:border-box; }
     body{ margin:0; }
@@ -25,6 +26,9 @@
     ::-webkit-scrollbar{ width:10px; height:10px; }
     #tabstrip::-webkit-scrollbar{ height:0; display:none; }
     ::-webkit-scrollbar-thumb{ background:var(--accent); border-radius:999px; border:3px solid var(--surface-page); }
+    .dash thead th{ cursor:pointer; user-select:none; }
+    .dash thead th:hover{ color:var(--accent) !important; }
+    .dash thead th .sortarrow{ display:inline-block; margin-left:3px; font-size:9px; opacity:.85; vertical-align:middle; }
     *{ scrollbar-color: var(--accent) var(--surface-page); }
     .dash, .dash *:not([data-keepcase]){ text-transform: lowercase !important; }
     .dash [data-keepcase]{ text-transform: none !important; }
@@ -420,6 +424,61 @@
         </div>
         </sc-if>
 
+        <sc-if value="{{ neaVendasShow }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="margin:18px 0 16px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+            <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Informações gerais</div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:16px;">
+            <sc-for list="{{ neaKpis }}" as="st" hint-placeholder-count="10">
+              <div class="b-card" style="padding:14px 16px; min-height:88px; display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #771520;">
+                <div style="font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); line-height:1.3;">{{ st.label }}</div>
+                <div data-keepcase="1" style="font-size:19px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em;">{{ st.value }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div class="b-card" style="padding:22px 24px; margin-top:16px;">
+            <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">Indicadores por dia</div>
+            <div style="overflow-x:auto; margin:0 -4px;">
+              <table style="border-collapse:collapse; width:100%; min-width:920px;">
+                <thead>
+                  <tr style="text-align:right;">
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:left; padding:0 10px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Dia</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Invest. c/ imposto</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Ingressos</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Faturamento</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Orderbumps</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Conv. orderbump</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Ritmo (compras)</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Ticket médio</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Custo/compra</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Ingressos [ads]</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:right; padding:0 4px 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Ingressos [org]</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ neaDaily }}" as="r" hint-placeholder-count="13">
+                    <tr style="text-align:right; border-top:1px solid var(--border-soft);">
+                      <td style="text-align:left; padding:10px 10px 10px 4px; font-size:12px; font-weight:500; color:var(--text-strong); white-space:nowrap;">{{ r.d }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.inv }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.ing }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.fat }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.ob }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.conv }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.compras }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.tk }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.cst }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.ads }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 10px; font-size:12.5px; font-weight:600; color:#771520; white-space:nowrap;">{{ r.org }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
         <sc-if value="{{ investShow }}" hint-placeholder-val="{{ false }}">
         <div style="{{ investHeaderStyle }}">
           <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Investimento do funil</div>
@@ -432,6 +491,47 @@
             </div>
           </sc-for>
         </div>
+        <sc-if value="{{ investDailyShow }}" hint-placeholder-val="{{ false }}">
+        <div class="b-card" style="padding:22px 24px; margin-bottom:16px;">
+          <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">Dados diários</div>
+          <div style="overflow-x:auto; margin:0 -4px; max-height:520px;">
+            <table style="border-collapse:collapse; width:100%; min-width:820px;">
+              <thead>
+                <tr style="text-align:right;">
+                  <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:left; padding:0 10px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Data</th>
+                  <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Valor Gasto</th>
+                  <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Compras</th>
+                  <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">CPA</th>
+                  <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">CTR</th>
+                  <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">CPM</th>
+                  <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Tx. Conversão</th>
+                  <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:right; padding:0 4px 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Tx. Carregamento</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ investDaily }}" as="r" hint-placeholder-count="10">
+                  <tr style="text-align:right; border-top:1px solid var(--border-soft);">
+                    <td style="text-align:left; padding:10px 10px 10px 4px; font-size:12px; font-weight:500; color:var(--text-strong); white-space:nowrap;">{{ r.d }}</td>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.gasto }}</td>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; font-weight:600; color:#771520;">{{ r.compras }}</td>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.cpa }}</td>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.ctr }}</td>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.cpm }}</td>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.conv }}</td>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.carreg }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ investChartShow }}" hint-placeholder-val="{{ false }}">
+        <div class="b-card" style="padding:22px 24px; margin-bottom:16px;">
+          <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">Ingressos por dia</div>
+          <div style="height:260px;"><canvas id="inv-ingressos-day"></canvas></div>
+        </div>
+        </sc-if>
         <div style="{{ investGridStyle }}">
           <div style="{{ funnelCellStyle }}">
           <div id="inv-funnel" class="b-card" style="padding:22px 24px; flex:1; width:100%; display:flex; flex-direction:column;">
@@ -544,7 +644,12 @@
                     <td style="padding:10px 12px 10px 4px; min-width:0;">
                       <div style="display:flex; align-items:center; gap:10px; min-width:0;">
                         <div style="{{ a.thumbStyle }}"></div>
+                        <sc-if value="{{ a.link }}" hint-placeholder-val="{{ false }}">
+                        <a href="{{ a.link }}" target="_blank" rel="noopener" title="Abrir anúncio" style="font-size:12.5px; font-weight:500; color:var(--text-strong); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1;" style-hover="text-decoration:underline; color:#771520;">{{ a.name }}</a>
+                        </sc-if>
+                        <sc-if value="{{ a.noLink }}" hint-placeholder-val="{{ true }}">
                         <span style="font-size:12.5px; font-weight:500; color:var(--text-strong); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1;">{{ a.name }}</span>
+                        </sc-if>
                       </div>
                     </td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.impr }}</td>
@@ -936,6 +1041,7 @@ class Component extends DCLogic {
         ] },
       { key:'seguidores', name:'Funil Seguidores', adsOnly:true },
       { key:'golden', name:'Funil Golden Ticket', adsOnly:true, golden:true },
+      { key:'nea2', name:'NEA 2ª Edição', adsOnly:true, golden:true, imersaoFixed:'nea', noImersao:true },
     ];
     this.PAGE_ACCENTS = { conta:'#771520', conteudos:'#9A7637', insights:'#C2A05B' };
     this.WEEK_COLORS = ['#771520','#C2A05B','#A5293A','#9A7637','#BCA489','#5A0F18','#9C846C','#8E1A28'];
@@ -1206,7 +1312,47 @@ class Component extends DCLogic {
   }
 
   /* ============ CHARTS ============ */
-  componentDidMount(){ this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); }
+  componentDidMount(){ this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); this.wireSort(); }
+
+  /* ============ ORDENAÇÃO DE TABELAS ============ */
+  // ordena qualquer tabela clicando no cabeçalho (delegação no documento, funciona em todas as tabelas)
+  wireSort(){
+    if(this._sortWired) return; this._sortWired=true;
+    const parseVal=(td)=>{
+      const raw=(td.textContent||'').trim();
+      if(raw===''||raw==='—'||raw==='-') return {n:NaN, s:''};
+      let c=raw.replace(/[^\d,.\-]/g,'');
+      if(c.indexOf(',')>=0) c=c.replace(/\./g,'').replace(',', '.');       // pt-BR: ponto=milhar, vírgula=decimal
+      else if((c.match(/\./g)||[]).length>1) c=c.replace(/\./g,'');        // 1.234.567 sem decimal
+      const n=parseFloat(c);
+      return {n:(c===''||isNaN(n))?NaN:n, s:raw.toLowerCase()};
+    };
+    document.addEventListener('click',(e)=>{
+      const th=e.target.closest && e.target.closest('th');
+      if(!th) return;
+      const tr=th.parentElement, thead=tr&&tr.parentElement;
+      if(!thead||thead.tagName!=='THEAD') return;
+      const table=thead.closest('table'); if(!table) return;
+      const tbody=table.querySelector('tbody'); if(!tbody) return;
+      const rows=[...tbody.querySelectorAll(':scope > tr')].filter(r=>r.querySelector('td'));
+      if(rows.length<2) return;
+      const ths=[...tr.children], idx=ths.indexOf(th); if(idx<0) return;
+      const dir = (table.__sortIdx===idx && table.__sortDir===1) ? -1 : 1;
+      table.__sortIdx=idx; table.__sortDir=dir;
+      rows.sort((a,b)=>{
+        const av=parseVal(a.children[idx]||a.lastElementChild), bv=parseVal(b.children[idx]||b.lastElementChild);
+        let cmp;
+        if(!isNaN(av.n)&&!isNaN(bv.n)) cmp=av.n-bv.n;
+        else if(isNaN(av.n)&&isNaN(bv.n)) cmp=av.s.localeCompare(bv.s,'pt');
+        else cmp=isNaN(av.n)?1:-1;   // vazios sempre no fim
+        return cmp*dir;
+      });
+      rows.forEach(r=>tbody.appendChild(r));
+      ths.forEach(h=>{ const a=h.querySelector('.sortarrow'); if(a)a.remove(); });
+      const arrow=document.createElement('span'); arrow.className='sortarrow'; arrow.textContent=dir===1?'▲':'▼';
+      th.appendChild(arrow);
+    }, true);
+  }
 
   // Facebook Ads (Windsor) — contas com "barbieri" no nome, campanhas "SESSAO PREMIUM"
   async fetchAds(){
@@ -1216,7 +1362,7 @@ class Component extends DCLogic {
       const key=this.WINDSOR_KEY;
       const to=new Date(); const from=new Date(to.getTime()-180*86400000);
       const fd=(d)=>this.ymd(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));
-      const fields='account_id,date,campaign,adset_name,ad_name,thumbnail_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend';
+      const fields='account_id,date,campaign,adset_name,ad_name,ad_id,instagram_permalink_url,thumbnail_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend';
       const url='https://connectors.windsor.ai/facebook?api_key='+encodeURIComponent(key)+'&date_from='+fd(from)+'&date_to='+fd(to)+'&fields='+encodeURIComponent(fields)+'&_cb='+Date.now();
       const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('Facebook HTTP '+r.status);
       const j=await r.json(); if(j.error) throw new Error(String(j.error).slice(0,120));
@@ -1224,7 +1370,7 @@ class Component extends DCLogic {
       const acct=this.ADS_ACCOUNT_ID;
       const base=all.filter(x=>String(x.account_id||'').replace(/\D/g,'')===acct);
       // guarda as linhas diárias para filtrar por data no client
-      this._adsRaw = base.map(x=>({ date:String(x.date||'').slice(0,10), campaign:x.campaign||'', ad:x.ad_name||'(sem nome)', adset:x.adset_name||'(sem conjunto)', thumb:x.thumbnail_url||'', impressions:num(x.impressions), reach:num(x.reach), linkClicks:num(x.inline_link_clicks), lpViews:num(x.actions_landing_page_view), leads:num(x.actions_lead), spend:num(x.spend) }));
+      this._adsRaw = base.map(x=>({ date:String(x.date||'').slice(0,10), campaign:x.campaign||'', ad:x.ad_name||'(sem nome)', adset:x.adset_name||'(sem conjunto)', thumb:x.thumbnail_url||'', adId:String(x.ad_id||''), permalink:x.instagram_permalink_url||'', impressions:num(x.impressions), reach:num(x.reach), linkClicks:num(x.inline_link_clicks), lpViews:num(x.actions_landing_page_view), leads:num(x.actions_lead), spend:num(x.spend) }));
       let mn=null,mx=null; this._adsRaw.forEach(rw=>{ if(/^\d{4}-\d{2}-\d{2}$/.test(rw.date)){ if(!mn||rw.date<mn)mn=rw.date; if(!mx||rw.date>mx)mx=rw.date; } });
       this._adsMinD=mn; this._adsMaxD=mx;
       this.setState({adsLoading:false, adsReady:true});
@@ -1236,18 +1382,26 @@ class Component extends DCLogic {
   adsAgg(camRe, from, to){
     const rows=(this._adsRaw||[]).filter(x=> camRe.test(x.campaign) && (!from||x.date>=from) && (!to||x.date<=to));
     const byAd={}, byAdset={};
-    rows.forEach(x=>{ const a=byAd[x.ad]||(byAd[x.ad]={name:x.ad,thumb:'',impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,spend:0});
-      a.impressions+=x.impressions; a.reach+=x.reach; a.linkClicks+=x.linkClicks; a.lpViews+=x.lpViews; a.leads+=x.leads; a.spend+=x.spend; if(!a.thumb&&x.thumb)a.thumb=x.thumb;
+    rows.forEach(x=>{ const a=byAd[x.ad]||(byAd[x.ad]={name:x.ad,thumb:'',link:'',impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,spend:0});
+      a.impressions+=x.impressions; a.reach+=x.reach; a.linkClicks+=x.linkClicks; a.lpViews+=x.lpViews; a.leads+=x.leads; a.spend+=x.spend; if(!a.thumb&&x.thumb)a.thumb=x.thumb; if(!a.link){ a.link = x.permalink || (x.adId? 'https://www.facebook.com/ads/library/?id='+x.adId : ''); }
       const s=byAdset[x.adset]||(byAdset[x.adset]={name:x.adset,impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,spend:0});
       s.impressions+=x.impressions; s.reach+=x.reach; s.linkClicks+=x.linkClicks; s.lpViews+=x.lpViews; s.leads+=x.leads; s.spend+=x.spend; });
     return { ads:Object.values(byAd).sort((a,b)=>b.impressions-a.impressions), adsets:Object.values(byAdset).sort((a,b)=>b.impressions-a.impressions) };
+  }
+  // agrega métricas de anúncio por DIA (para a tabela "Dados diários")
+  dailyAgg(camRe, from, to){
+    const rows=(this._adsRaw||[]).filter(x=> camRe.test(x.campaign) && (!from||x.date>=from) && (!to||x.date<=to));
+    const byDay={};
+    rows.forEach(x=>{ const d=x.date; if(!d)return; const o=byDay[d]||(byDay[d]={spend:0,imp:0,clk:0,lpv:0,leads:0});
+      o.spend+=x.spend; o.imp+=x.impressions; o.clk+=x.linkClicks; o.lpv+=x.lpViews; o.leads+=x.leads; });
+    return Object.entries(byDay).sort((a,b)=>b[0].localeCompare(a[0])).map(([d,o])=>({date:d,...o}));
   }
   // Golden Ticket — snapshot estático por imersão (IEB / AMB / NEA)
   goldenAgg(imersao){
     const G=(window.__GOLDEN_TICKET__||{})[imersao];
     if(!G) return { ads:[], adsets:[], totals:null };
     const TH=(this._gtThumbs&&this._gtThumbs[imersao])||{};
-    const mapA=(a)=>({ name:a.n, thumb:TH[a.n]||'', impressions:a.impr, reach:a.reach, linkClicks:a.lc, lpViews:a.lp, leads:a.lead, checkout:a.ic, purchases:a.pur, revenue:a.rev, spend:a.spend });
+    const mapA=(a)=>({ name:a.n, thumb:TH[a.n]||'', link:(G.links&&G.links[a.n])||'', impressions:a.impr, reach:a.reach, linkClicks:a.lc, lpViews:a.lp, leads:a.lead, checkout:a.ic, purchases:a.pur, revenue:a.rev, spend:a.spend });
     return { ads:(G.byAd||[]).map(mapA).sort((a,b)=>b.spend-a.spend), adsets:(G.byAdset||[]).map(mapA).sort((a,b)=>b.spend-a.spend), totals:G.totals, dateMin:G.dateMin, dateMax:G.dateMax };
   }
   // capas dos anúncios do Golden Ticket — cache local + embutir sob demanda (portável ao deploy)
@@ -1297,7 +1451,8 @@ class Component extends DCLogic {
   parseRowDate(s){ const m=String(s||'').match(/(\d{2})\/(\d{2})\/(\d{4})/); if(m) return m[3]+'-'+m[2]+'-'+m[1]; const m2=String(s||'').match(/(\d{4})-(\d{2})-(\d{2})/); return m2? m2[0]:null; }
   setFunnel(key){
     this.setState({funnel:key, candMonth:'all', candFrom:'', candTo:'', candStatusFilter:'all'});
-    if(key==='golden') this.fetchGoldenThumbs(this.state.imersao);
+    const _sp=this.funnelSpec(key);
+    if(_sp && _sp.golden) this.fetchGoldenThumbs((_sp.imersaoFixed)||this.state.imersao);
     const spec=this.funnelSpec(key);
     if(spec && spec.adsOnly){ const r=this.defaultFunnelRange(this._adsMinD, this._adsMaxD); this.setState({candFrom:r.from, candTo:r.to}); return; }
     const d=this.state.funnelData[key];
@@ -1445,6 +1600,7 @@ class Component extends DCLogic {
     if(window.Chart.defaults){ window.Chart.defaults.font.family='Arimo'; }
     Object.values(this.charts).forEach(c=>{ try{c.destroy();}catch(e){} }); this.charts={};
     const cfgs = this.state.page==='conta' ? this._chartCfgs : (this.state.page==='candidaturas' ? this._funnelCfgs : null);
+    if(this.state.page==='candidaturas' && this._investChartCfg){ const el=document.getElementById('inv-ingressos-day'); if(el){ this.charts['inv-ingressos-day']=new window.Chart(el.getContext('2d'), this._investChartCfg); } }
     if(!cfgs) return;
     Object.keys(cfgs).forEach(id=>{ const el=document.getElementById(id); if(!el) return; this.charts[id]=new window.Chart(el.getContext('2d'), cfgs[id]); });
   }
@@ -1697,9 +1853,38 @@ class Component extends DCLogic {
         const imBtns=IM.map(b=>({ label:b.label, active:S.imersao===b.key, inactive:S.imersao!==b.key,
           onClick:()=>{ this.setState({imersao:b.key}); this.fetchGoldenThumbs(b.key); } }));
         const invG=this.investFunnel(key, 0, '', '');
-        return { funnelTabs, candFilters:segFilters, candStatusBtns:imBtns, statusGroupLabel:'Imersão',
+        const NV = (key==='nea2') ? (window.__NEA_VENDAS__||null) : null;
+        const dec=(v,n)=>Number(v).toLocaleString('pt-BR',{minimumFractionDigits:n,maximumFractionDigits:n});
+        const rMoney=(v)=>'R$ '+dec(v,2);
+        const neaKpis = NV ? [
+          { label:'Investimento com imposto', value:rMoney(NV.investimentoComImposto) },
+          { label:'Ingressos', value:this.fmtNum(NV.ingressos) },
+          { label:'Faturamento bruto aprox.', value:rMoney(NV.faturamentoBruto) },
+          { label:'Orderbumps', value:this.fmtNum(NV.orderbumps) },
+          { label:'Taxa de conversão orderbump', value:dec(NV.taxaConvOrderbump,1)+'%' },
+          { label:'Ritmo médio', value:dec(NV.ritmoMedio,1)+' /dia' },
+          { label:'Ticket médio', value:rMoney(NV.ticketMedio) },
+          { label:'Custo / compra geral', value:rMoney(NV.custoCompraGeral) },
+          { label:'Ingressos [ads]', value:this.fmtNum(NV.ingressosAds) },
+          { label:'Ingressos [org]', value:this.fmtNum(NV.ingressosOrg) },
+        ] : [];
+        const neaDaily = NV ? (NV.porDia||[]).map(r=>({
+          d:r.d,
+          inv:rMoney(r.inv),
+          ing:this.fmtNum(r.ing),
+          fat:rMoney(r.fat),
+          ob:this.fmtNum(r.ob),
+          conv: r.conv? dec(r.conv,1)+'%' : '—',
+          compras:this.fmtNum(r.compras),
+          tk: r.tk==null? '—' : rMoney(r.tk),
+          cst: r.cst==null? '—' : rMoney(r.cst),
+          ads:this.fmtNum(r.ads),
+          org:this.fmtNum(r.org)
+        })) : [];
+        return { funnelTabs, candFilters:segFilters, candStatusBtns: spec.noImersao? [] : imBtns, statusGroupLabel:'Imersão',
           candReady:true, candLoadingView:false, candStatusLabel:'', candKpis:[], candStatus:[], candCharts:[],
-          leadsView:false, showStatusBtns:true, ...invG };
+          neaKpis, neaVendasShow: neaKpis.length>0, neaDaily, neaVendasNote: NV? ('planilha vendas-nea · '+NV.periodo+' · atualizado '+NV.atualizadoEm) : '',
+          leadsView:false, showStatusBtns: !spec.noImersao, ...invG };
       }
       const inv=this.investFunnel(key, 0, winFrom, winTo);
       return { funnelTabs, candFilters:segFilters, candStatusBtns:[], statusGroupLabel:'Status', candReady:true, candLoadingView:false,
@@ -1751,9 +1936,11 @@ class Component extends DCLogic {
 
   // Funil de investimento — Facebook Ads (contas barbieri · campanhas SESSAO PREMIUM) → leads da planilha.
   investFunnel(key, total, from, to){
-    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores' && key!=='golden'){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
+    const _spec=this.funnelSpec(key);
+    const isGolden = !!(_spec && _spec.golden);
+    const imersaoKey = (_spec && _spec.imersaoFixed) ? _spec.imersaoFixed : this.state.imersao;
+    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores' && !isGolden){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
     const isSeg = key==='seguidores';
-    const isGolden = key==='golden';
     const noPlan = isSeg || isGolden;
     // Turbinamento (só no funil Seguidores) — substitui o card "Dados de conversão"
     let convShow=true, turbinaShow=false, turbina=[], turbinaSummary=[];
@@ -1772,9 +1959,9 @@ class Component extends DCLogic {
     }
     const T=Math.max(total,1), money2=(v)=>'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     const IMLABEL={ieb:'IEB',amb:'AMB',nea:'NEA'};
-    const S=this.state, _agg = isGolden? this.goldenAgg(S.imersao) : this.adsAgg(this.ADS_CAMPAIGN_MATCH[key]||/^\b$/, from, to), ads=_agg.ads;
+    const S=this.state, _agg = isGolden? this.goldenAgg(imersaoKey) : this.adsAgg(this.ADS_CAMPAIGN_MATCH[key]||/^\b$/, from, to), ads=_agg.ads;
     const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isGolden ? 'Golden Ticket' : 'Sessão Premium';
-    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : isSeg ? 'funil seguidores' : isGolden ? ('golden ticket · imersão '+(IMLABEL[S.imersao]||'')) : 'funil sessão premium';
+    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : isSeg ? 'funil seguidores' : isGolden ? ((_spec && _spec.imersaoFixed) ? 'nea 2ª edição' : ('golden ticket · imersão '+(IMLABEL[imersaoKey]||''))) : 'funil sessão premium';
     const hasReal = ads && ads.length>0;
     let alcance,impressoes,cliques,lpViews,leadsGer,investido,checkout=0,compras=0,receita=0;
     if(hasReal){
@@ -1831,7 +2018,7 @@ class Component extends DCLogic {
     ];
     let investAds;
     if(hasReal){
-      investAds=ads.slice(0,12).map((a,i)=>({ idx:i, name:a.name,
+      investAds=ads.slice(0,12).map((a,i)=>({ idx:i, name:a.name, link:a.link||'', noLink:!(a.link),
         thumbStyle: a.thumb? {width:'42px',height:'42px',flex:'none',borderRadius:'5px',backgroundColor:'#3D0A11',backgroundImage:`url("${a.thumb}")`,backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat'}
           : {width:'42px',height:'42px',flex:'none',borderRadius:'5px',background:'linear-gradient(135deg, #771520, #3D0A11)'},
         impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews),
@@ -1840,7 +2027,7 @@ class Component extends DCLogic {
       const adNames=[fbPrefix+' · Depoimento',fbPrefix+' · VSL Curta',fbPrefix+' · Carrossel',fbPrefix+' · Reels Bastidores',fbPrefix+' · Prova Social'];
       const w=[0.30,0.24,0.19,0.15,0.12], adCr=[0.82,0.76,0.80,0.74,0.78], thumbBg=['#771520','#8A1A24','#5A0F18','#9E2230','#6B131D'];
       investAds=adNames.map((nm,i)=>{ const impr=Math.round(impressoes*w[i]), clk=Math.round(cliques*w[i]), lpv=Math.round(clk*adCr[i]), leads=Math.round(leadsGer*w[i]);
-        return { idx:i, name:nm, thumbStyle:`width:42px; height:42px; flex:none; border-radius:5px; background:linear-gradient(135deg, ${thumbBg[i]}, #3D0A11);`,
+        return { idx:i, name:nm, link:'', noLink:true, thumbStyle:`width:42px; height:42px; flex:none; border-radius:5px; background:linear-gradient(135deg, ${thumbBg[i]}, #3D0A11);`,
           impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(isSeg? clk : leads) }; });
     }
     const adsStatus = S.adsError? ('Facebook Ads: '+S.adsError).slice(0,80) : (S.adsLoading? 'carregando anúncios do Facebook…' : (hasReal? '' : 'dados estimados'));
@@ -1857,7 +2044,48 @@ class Component extends DCLogic {
       investAdsets=setNames.map((nm,i)=>{ const impr=Math.round(impressoes*w[i]), clk=Math.round(cliques*w[i]), lpv=Math.round(clk*setCr[i]), leads=Math.round(leadsGer*w[i]);
         return { idx:i, name:nm, impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(isSeg? clk : leads) }; });
     }
-    return { investShow:true, investStages, investStats, investAds, investAdsets, investEyebrow, adsStatus,
+    // Dados diários (por dia) — do gerenciador, por funil
+    const dailyRe = isGolden ? (_spec && _spec.imersaoFixed==='nea' ? /\[NEA\]\s*\[VENDAS\]/i : new RegExp('\\['+(imersaoKey||'nea').toUpperCase()+'\\]','i'))
+      : (this.ADS_CAMPAIGN_MATCH[key]||/^\b$/);
+    const NVD = (key==='nea2' && window.__NEA_VENDAS__) ? (window.__NEA_VENDAS__.porDia||[]) : null;
+    const nvByDay={}; if(NVD){ NVD.forEach(r=>{ const p=r.d.split('/'); nvByDay['2026-'+p[1]+'-'+p[0]]=r; }); }
+    const fmtD=(iso)=>{ const p=(iso||'').split('-'); return p.length===3? p[2]+'/'+p[1] : iso; };
+    const investDaily = this.dailyAgg(dailyRe, from, to).filter(o=>o.spend>0||o.leads>0||o.clk>0).map(o=>{
+      const nv = nvByDay[o.date];
+      const res = nv? nv.compras : (isSeg? o.clk : o.leads);   // "Compras" = resultado do funil
+      const cpa = res? o.spend/res : null;
+      const ctr = o.imp? o.clk/o.imp*100 : null;
+      const cpmD = o.imp? o.spend/o.imp*1000 : null;
+      const conv = o.lpv? res/o.lpv*100 : null;              // Tx. Conversão (resultado ÷ visualizações)
+      const carreg = o.clk? o.lpv/o.clk*100 : null;          // Tx. Carregamento (visualizações ÷ cliques)
+      return {
+        d: fmtD(o.date),
+        gasto: money2(o.spend),
+        compras: this.fmtNum(res),
+        cpa: cpa==null? '—' : money2(cpa),
+        ctr: ctr==null? '—' : this.fmtPct(ctr),
+        cpm: cpmD==null? '—' : money2(cpmD),
+        conv: conv==null? '—' : this.fmtPct(conv),
+        carreg: carreg==null? '—' : this.fmtPct(carreg)
+      };
+    });
+    const investDailyShow = investDaily.length>0;
+    const chartSrc = this.dailyAgg(dailyRe, from, to).filter(o=>o.spend>0||o.leads>0||o.clk>0).slice().reverse();
+    const chartData = chartSrc.map(o=>{ const nv=nvByDay[o.date]; return nv? nv.compras : (isSeg? o.clk : o.leads); });
+    const cpaData = chartSrc.map((o,i)=>{ const res=chartData[i]; return res? +(o.spend/res).toFixed(2) : null; });
+    this._investChartCfg = chartSrc.length ? {
+      data:{ labels:chartSrc.map(o=>fmtD(o.date)), datasets:[
+        { type:'bar', label:'ingressos', data:chartData, backgroundColor:'#771520', borderRadius:4, borderSkipped:false, maxBarThickness:38, yAxisID:'y', order:2 },
+        { type:'line', label:'CPA', data:cpaData, borderColor:'#C2A05B', backgroundColor:'#C2A05B', borderWidth:2, pointRadius:3, pointBackgroundColor:'#C2A05B', tension:0.3, spanGaps:true, yAxisID:'y1', order:1 }
+      ] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:true, position:'top', align:'end', labels:{ boxWidth:12, boxHeight:12, font:{family:'Arimo', size:11}, color:'#6E595D', usePointStyle:true } },
+          tooltip:{ backgroundColor:'#271217', titleColor:'#F6EFE8', bodyColor:'#EAD9C9', borderColor:'#4A3338', borderWidth:1, padding:10, cornerRadius:8, titleFont:{family:'Arimo',weight:'600'}, bodyFont:{family:'Arimo'}, callbacks:{ label:(c)=> c.dataset.label==='CPA' ? ('CPA: R$ '+(c.parsed.y==null?'—':c.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}))) : (this.fmtNum(c.parsed.y)+' ingressos') } } },
+        scales:{ x:{ grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10}, color:'#6E595D', autoSkip:false } },
+          y:{ beginAtZero:true, position:'left', grid:{ color:'rgba(119,21,32,0.07)' }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#6E595D', precision:0, callback:(v)=>this.fmtNum(v) } },
+          y1:{ beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#9A7637', callback:(v)=>'R$ '+this.fmtNum(v) } } } }
+    } : null;
+    return { investShow:true, investStages, investStats, investAds, investAdsets, investEyebrow, adsStatus, investDaily, investDailyShow, investChartShow: !!this._investChartCfg,
       convShow, turbinaShow, turbina, turbinaSummary, showLpCr: !isSeg,
       investGridStyle: isSeg
         ? 'display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch; margin-bottom:16px;'

@@ -10,6 +10,7 @@ import { buildFunnel } from './funnel'
 import { lineCfg, barCfg, doughnutCfg } from './charts'
 import { investFunnel, type InvestVM, type AdsState } from './invest'
 import { FUNNELS } from './constants'
+import { NEA_VENDAS } from './neaVendasData'
 import { MONTH_NAMES, lastDayOf } from './dates'
 import type { ChartConfiguration } from 'chart.js'
 import type { MonthDef } from './types'
@@ -63,7 +64,62 @@ export interface FunisVM {
   showStatusBtns: boolean
   statusGroupLabel: string
   statusMode: 'status' | 'imersao'
+  // NEA 2ª Edição — seção de vendas
+  neaVendasShow: boolean
+  neaVendasNote: string
+  neaKpis: { label: string; value: string }[]
+  neaDaily: NeaDailyView[]
 }
+
+export interface NeaDailyView {
+  d: string
+  inv: string
+  ing: string
+  fat: string
+  ob: string
+  conv: string
+  compras: string
+  tk: string
+  cst: string
+  ads: string
+  org: string
+}
+
+// KPIs + indicadores por dia da NEA 2ª Edição (a partir do snapshot manual)
+function neaVendasVM(): { kpis: { label: string; value: string }[]; daily: NeaDailyView[]; note: string } {
+  const NV = NEA_VENDAS
+  const dec = (v: number, n: number): string => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: n, maximumFractionDigits: n })
+  const rMoney = (v: number): string => 'R$ ' + dec(v, 2)
+  const kpis = [
+    { label: 'Investimento com imposto', value: rMoney(NV.investimentoComImposto) },
+    { label: 'Ingressos', value: fmtNum(NV.ingressos) },
+    { label: 'Faturamento bruto aprox.', value: rMoney(NV.faturamentoBruto) },
+    { label: 'Orderbumps', value: fmtNum(NV.orderbumps) },
+    { label: 'Taxa de conversão orderbump', value: dec(NV.taxaConvOrderbump, 1) + '%' },
+    { label: 'Ritmo médio', value: dec(NV.ritmoMedio, 1) + ' /dia' },
+    { label: 'Ticket médio', value: rMoney(NV.ticketMedio) },
+    { label: 'Custo / compra geral', value: rMoney(NV.custoCompraGeral) },
+    { label: 'Ingressos [ads]', value: fmtNum(NV.ingressosAds) },
+    { label: 'Ingressos [org]', value: fmtNum(NV.ingressosOrg) },
+  ]
+  const daily: NeaDailyView[] = NV.porDia.map((r) => ({
+    d: r.d,
+    inv: rMoney(r.inv),
+    ing: fmtNum(r.ing),
+    fat: rMoney(r.fat),
+    ob: fmtNum(r.ob),
+    conv: r.conv ? dec(r.conv, 1) + '%' : '—',
+    compras: fmtNum(r.compras),
+    tk: r.tk == null ? '—' : rMoney(r.tk),
+    cst: r.cst == null ? '—' : rMoney(r.cst),
+    ads: fmtNum(r.ads),
+    org: fmtNum(r.org),
+  }))
+  const note = 'planilha vendas-nea · ' + NV.periodo + ' · atualizado ' + NV.atualizadoEm
+  return { kpis, daily, note }
+}
+
+const NO_NEA = { neaVendasShow: false, neaVendasNote: '', neaKpis: [], neaDaily: [] as NeaDailyView[] }
 
 // janela de data efetiva (mês selecionado OU intervalo) — usada nos anúncios
 function effWindow(S: DashState): { from: string; to: string } {
@@ -148,10 +204,11 @@ export function funisVM(S: DashState): FunisVM {
         active: S.imersao === b.key,
         inactive: S.imersao !== b.key,
       }))
+      const nea = key === 'nea2' ? neaVendasVM() : null
       return {
         funnelTabs,
         candFilters,
-        candStatusBtns: imBtns,
+        candStatusBtns: spec.noImersao ? [] : imBtns,
         candReady: true,
         candLoadingView: false,
         candStatusLabel: '',
@@ -160,9 +217,13 @@ export function funisVM(S: DashState): FunisVM {
         cfgs: {},
         invest: investFunnel(key, 0, adsState, '', '', S.imersao),
         leadsView: false,
-        showStatusBtns: true,
+        showStatusBtns: !spec.noImersao,
         statusGroupLabel: 'Imersão',
         statusMode: 'imersao',
+        neaVendasShow: !!nea,
+        neaVendasNote: nea?.note || '',
+        neaKpis: nea?.kpis || [],
+        neaDaily: nea?.daily || [],
       }
     }
     return {
@@ -172,6 +233,7 @@ export function funisVM(S: DashState): FunisVM {
       candReady: true,
       candLoadingView: false,
       candStatusLabel: '',
+      ...NO_NEA,
       candKpis: [],
       candCharts: [],
       cfgs: {},
@@ -214,6 +276,7 @@ export function funisVM(S: DashState): FunisVM {
       showStatusBtns: true,
       statusGroupLabel: 'Status',
       statusMode: 'status',
+      ...NO_NEA,
     }
   }
 
@@ -278,5 +341,6 @@ export function funisVM(S: DashState): FunisVM {
     showStatusBtns: true,
     statusGroupLabel: 'Status',
     statusMode: 'status',
+    ...NO_NEA,
   }
 }
