@@ -10,10 +10,12 @@
 // ============================================================
 
 import type { CSSProperties } from 'react'
+import type { ChartConfiguration } from 'chart.js'
 import { fmtNum, fmtPct } from './format'
-import { adsAgg, turbinaAgg } from './facebook'
+import { adsAgg, turbinaAgg, dailyAgg } from './facebook'
 import { goldenAgg } from './golden'
-import { ADS_CAMPAIGN_MATCH } from './constants'
+import { ADS_CAMPAIGN_MATCH, FUNNELS } from './constants'
+import { NEA_VENDAS } from './neaVendasData'
 import type { AdRow, AdDailyRow } from './types'
 
 export interface AdsState {
@@ -67,11 +69,24 @@ export interface TurbinaSummary {
   label: string
   value: string
 }
+export interface InvestDailyRow {
+  d: string
+  gasto: string
+  compras: string
+  cpa: string
+  ctr: string
+  cpm: string
+  conv: string
+  carreg: string
+}
 export interface InvestVM {
   investShow: boolean
   isSeg: boolean
   isGolden: boolean
   noPlan: boolean
+  investDaily: InvestDailyRow[]
+  investDailyShow: boolean
+  investChart: ChartConfiguration | null
   investStages: InvestStage[]
   investStats: InvestStat[]
   investAds: InvestAdRow[]
@@ -93,6 +108,9 @@ const EMPTY_INVEST: InvestVM = {
   isSeg: false,
   isGolden: false,
   noPlan: false,
+  investDaily: [],
+  investDailyShow: false,
+  investChart: null,
   investStages: [],
   investStats: [],
   investAds: [],
@@ -119,11 +137,14 @@ export function investFunnel(
   to = '',
   imersao = ''
 ): InvestVM {
-  if (key !== 'premium' && key !== 'diagnostico' && key !== 'seguidores' && key !== 'golden') {
+  const spec = FUNNELS.find((f) => f.key === key)
+  const isGolden = !!spec?.golden
+  const isNea2 = key === 'nea2'
+  const imersaoKey = spec?.imersaoFixed || imersao
+  if (key !== 'premium' && key !== 'diagnostico' && key !== 'seguidores' && !isGolden) {
     return EMPTY_INVEST
   }
   const isSeg = key === 'seguidores'
-  const isGolden = key === 'golden'
   const noPlan = isSeg || isGolden
   const IMLABEL: Record<string, string> = { ieb: 'IEB', amb: 'AMB', nea: 'NEA' }
 
@@ -158,7 +179,7 @@ export function investFunnel(
 
   const T = Math.max(total, 1)
   const agg = isGolden
-    ? goldenAgg(imersao, st.gtThumbs?.[imersao] || {}, st.gtLinks?.[imersao] || {})
+    ? goldenAgg(imersaoKey, st.gtThumbs?.[imersaoKey] || {}, st.gtLinks?.[imersaoKey] || {})
     : adsAgg(st.adsRaw, ADS_CAMPAIGN_MATCH[key] || /^\b$/, from, to)
   const ads = agg.ads
   const fbPrefix = key === 'diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isGolden ? 'Golden Ticket' : 'Sessão Premium'
@@ -168,7 +189,9 @@ export function investFunnel(
       : isSeg
         ? 'funil seguidores'
         : isGolden
-          ? 'golden ticket · imersão ' + (IMLABEL[imersao] || '')
+          ? isNea2
+            ? 'nea 2ª edição'
+            : 'golden ticket · imersão ' + (IMLABEL[imersaoKey] || '')
           : 'funil sessão premium'
   const hasReal = ads.length > 0
 
@@ -352,11 +375,99 @@ export function investFunnel(
     })
   }
 
+  // ── Dados diários (por dia) — do gerenciador, por funil ──
+  const dailyRe = isGolden
+    ? isNea2
+      ? /\[NEA\]\s*\[VENDAS\]/i
+      : new RegExp('\\[' + (imersaoKey || 'nea').toUpperCase() + '\\]', 'i')
+    : ADS_CAMPAIGN_MATCH[key] || /^\b$/
+  // NEA vendas: "Compras" por dia vem da planilha (por data DD/MM -> 2026-MM-DD)
+  const nvByDay: Record<string, (typeof NEA_VENDAS.porDia)[number]> = {}
+  if (isNea2) {
+    NEA_VENDAS.porDia.forEach((r) => {
+      const p = r.d.split('/')
+      nvByDay['2026-' + p[1] + '-' + p[0]] = r
+    })
+  }
+  const fmtD = (iso: string): string => {
+    const p = (iso || '').split('-')
+    return p.length === 3 ? p[2] + '/' + p[1] : iso
+  }
+  const daySrc = dailyAgg(st.adsRaw, dailyRe, from, to).filter((o) => o.spend > 0 || o.leads > 0 || o.clk > 0)
+  const resultOf = (o: (typeof daySrc)[number]): number => {
+    const nv = nvByDay[o.date]
+    return nv ? nv.compras : isSeg ? o.clk : o.leads
+  }
+  const investDaily: InvestDailyRow[] = daySrc.map((o) => {
+    const res = resultOf(o)
+    const cpa = res ? o.spend / res : null
+    const ctr = o.imp ? (o.clk / o.imp) * 100 : null
+    const cpmD = o.imp ? (o.spend / o.imp) * 1000 : null
+    const conv = o.lpv ? (res / o.lpv) * 100 : null
+    const carreg = o.clk ? (o.lpv / o.clk) * 100 : null
+    return {
+      d: fmtD(o.date),
+      gasto: money2(o.spend),
+      compras: fmtNum(res),
+      cpa: cpa == null ? '—' : money2(cpa),
+      ctr: ctr == null ? '—' : fmtPct(ctr),
+      cpm: cpmD == null ? '—' : money2(cpmD),
+      conv: conv == null ? '—' : fmtPct(conv),
+      carreg: carreg == null ? '—' : fmtPct(carreg),
+    }
+  })
+  const investDailyShow = investDaily.length > 0
+
+  // ── gráfico "Ingressos por dia" (barra) + CPA (linha) ──
+  const chartSrc = daySrc.slice().reverse() // cronológico
+  const chartData = chartSrc.map((o) => resultOf(o))
+  const cpaData = chartSrc.map((o, i) => {
+    const res = chartData[i]
+    return res ? +(o.spend / res).toFixed(2) : null
+  })
+  const investChart: ChartConfiguration | null = chartSrc.length
+    ? ({
+        type: 'bar',
+        data: {
+          labels: chartSrc.map((o) => fmtD(o.date)),
+          datasets: [
+            { type: 'bar', label: 'ingressos', data: chartData, backgroundColor: '#771520', borderRadius: 4, borderSkipped: false, maxBarThickness: 38, yAxisID: 'y', order: 2 },
+            { type: 'line', label: 'CPA', data: cpaData, borderColor: '#C2A05B', backgroundColor: '#C2A05B', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#C2A05B', tension: 0.3, spanGaps: true, yAxisID: 'y1', order: 1 },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 12, boxHeight: 12, font: { family: 'Arimo', size: 11 }, color: '#6E595D', usePointStyle: true } },
+            tooltip: {
+              backgroundColor: '#271217', titleColor: '#F6EFE8', bodyColor: '#EAD9C9', borderColor: '#4A3338', borderWidth: 1, padding: 10, cornerRadius: 8,
+              titleFont: { family: 'Arimo', weight: 600 }, bodyFont: { family: 'Arimo' },
+              callbacks: {
+                label: (c: { dataset: { label?: string }; parsed: { y: number | null } }) =>
+                  c.dataset.label === 'CPA'
+                    ? 'CPA: R$ ' + (c.parsed.y == null ? '—' : c.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+                    : fmtNum(c.parsed.y || 0) + ' ingressos',
+              },
+            },
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { family: 'Arimo', size: 10 }, color: '#6E595D', autoSkip: false } },
+            y: { beginAtZero: true, position: 'left', grid: { color: 'rgba(119,21,32,0.07)' }, ticks: { font: { family: 'Arimo', size: 10.5 }, color: '#6E595D', precision: 0, callback: (v: number | string) => fmtNum(+v) } },
+            y1: { beginAtZero: true, position: 'right', grid: { display: false }, ticks: { font: { family: 'Arimo', size: 10.5 }, color: '#9A7637', callback: (v: number | string) => 'R$ ' + fmtNum(+v) } },
+          },
+        },
+      } as unknown as ChartConfiguration)
+    : null
+
   return {
     investShow: true,
     isSeg,
     isGolden,
     noPlan,
+    investDaily,
+    investDailyShow,
+    investChart,
     investStages,
     investStats,
     investAds,

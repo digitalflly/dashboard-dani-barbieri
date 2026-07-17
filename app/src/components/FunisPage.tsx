@@ -180,6 +180,52 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
             </>
           )}
 
+          {v.neaVendasShow && (
+            <div>
+              <div style={{ margin: '18px 0 16px', display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, letterSpacing: '-0.01em', fontSize: 22, color: 'var(--text-strong)' }}>
+                  Informações gerais
+                </div>
+                {v.neaVendasNote && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{v.neaVendasNote}</span>}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 }}>
+                {v.neaKpis.map((k, i) => (
+                  <div key={i} className="b-card" style={{ padding: '14px 16px', minHeight: 88, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '3px solid #771520' }}>
+                    <div style={{ fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1.3 }}>{k.label}</div>
+                    <div data-keepcase="1" style={{ fontSize: 19, fontWeight: 600, color: 'var(--text-strong)', letterSpacing: '-0.02em' }}>{k.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="b-card" style={{ padding: '22px 24px', marginTop: 16 }}>
+                <div style={{ ...eyebrow, marginBottom: 14 }}>Indicadores por dia</div>
+                <div style={{ overflowX: 'auto', margin: '0 -4px' }}>
+                  <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 920 }}>
+                    <thead>
+                      <tr style={{ textAlign: 'right' }}>
+                        <th style={th({ textAlign: 'left', padding: '0 10px 10px 4px', whiteSpace: 'nowrap' })}>Dia</th>
+                        {['Invest. c/ imposto', 'Ingressos', 'Faturamento', 'Orderbumps', 'Conv. orderbump', 'Ritmo (compras)', 'Ticket médio', 'Custo/compra', 'Ingressos [ads]'].map((h) => (
+                          <th key={h} style={th({ padding: '0 10px 10px', whiteSpace: 'nowrap' })}>{h}</th>
+                        ))}
+                        <th style={th({ textAlign: 'right', padding: '0 4px 10px 10px', whiteSpace: 'nowrap' })}>Ingressos [org]</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {v.neaDaily.map((r, i) => (
+                        <tr key={i} style={{ textAlign: 'right', borderTop: '1px solid var(--border-soft)' }}>
+                          <td style={{ textAlign: 'left', padding: '10px 10px 10px 4px', fontSize: 12, fontWeight: 500, color: 'var(--text-strong)', whiteSpace: 'nowrap' }}>{r.d}</td>
+                          {[r.inv, r.ing, r.fat, r.ob, r.conv, r.compras, r.tk, r.cst, r.ads].map((c, j) => (
+                            <td key={j} data-keepcase="1" style={{ textAlign: 'right', padding: '10px 10px', fontSize: 12.5, color: 'var(--text-strong)', whiteSpace: 'nowrap' }}>{c}</td>
+                          ))}
+                          <td data-keepcase="1" style={{ textAlign: 'right', padding: '10px 4px 10px 10px', fontSize: 12.5, fontWeight: 600, color: '#771520', whiteSpace: 'nowrap' }}>{r.org}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {inv.investShow && (
             <>
               <div style={investHeader}>
@@ -200,6 +246,48 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                   </div>
                 ))}
               </div>
+
+              {inv.investDailyShow && (
+                <div className="b-card" style={{ padding: '22px 24px', marginBottom: 16 }}>
+                  <div style={{ ...eyebrow, marginBottom: 14 }}>Dados diários</div>
+                  <div style={{ overflowX: 'auto', margin: '0 -4px', maxHeight: 520 }}>
+                    <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 820 }}>
+                      <thead>
+                        <tr style={{ textAlign: 'right' }}>
+                          <th style={th({ textAlign: 'left', padding: '0 10px 10px 4px', whiteSpace: 'nowrap' })}>Data</th>
+                          {['Valor Gasto', 'Compras', 'CPA', 'CTR', 'CPM', 'Tx. Conversão'].map((h) => (
+                            <th key={h} style={th({ padding: '0 10px 10px', whiteSpace: 'nowrap' })}>{h}</th>
+                          ))}
+                          <th style={th({ textAlign: 'right', padding: '0 4px 10px 10px', whiteSpace: 'nowrap' })}>Tx. Carregamento</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inv.investDaily.map((r, i) => (
+                          <tr key={i} style={{ textAlign: 'right', borderTop: '1px solid var(--border-soft)' }}>
+                            <td style={{ textAlign: 'left', padding: '10px 10px 10px 4px', fontSize: 12, fontWeight: 500, color: 'var(--text-strong)', whiteSpace: 'nowrap' }}>{r.d}</td>
+                            <td data-keepcase="1" style={{ textAlign: 'right', padding: '10px 10px', fontSize: 12.5, color: 'var(--text-strong)', whiteSpace: 'nowrap' }}>{r.gasto}</td>
+                            <td data-keepcase="1" style={{ textAlign: 'right', padding: '10px 10px', fontSize: 12.5, fontWeight: 600, color: '#771520' }}>{r.compras}</td>
+                            <td data-keepcase="1" style={{ textAlign: 'right', padding: '10px 10px', fontSize: 12.5, color: 'var(--text-strong)', whiteSpace: 'nowrap' }}>{r.cpa}</td>
+                            <td data-keepcase="1" style={{ textAlign: 'right', padding: '10px 10px', fontSize: 12.5, color: 'var(--text-strong)' }}>{r.ctr}</td>
+                            <td data-keepcase="1" style={{ textAlign: 'right', padding: '10px 10px', fontSize: 12.5, color: 'var(--text-strong)', whiteSpace: 'nowrap' }}>{r.cpm}</td>
+                            <td data-keepcase="1" style={{ textAlign: 'right', padding: '10px 10px', fontSize: 12.5, color: 'var(--text-strong)' }}>{r.conv}</td>
+                            <td data-keepcase="1" style={{ textAlign: 'right', padding: '10px 4px 10px 10px', fontSize: 12.5, color: 'var(--text-strong)' }}>{r.carreg}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {inv.investChart && (
+                <div className="b-card" style={{ padding: '22px 24px', marginBottom: 16 }}>
+                  <div style={{ ...eyebrow, marginBottom: 14 }}>Ingressos por dia</div>
+                  <div style={{ height: 260, position: 'relative' }}>
+                    <ChartCanvas id="inv-ingressos-day" config={inv.investChart} />
+                  </div>
+                </div>
+              )}
 
               <div style={investGrid}>
                 {/* conversion funnel / turbinamento card */}

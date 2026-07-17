@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { useDashboard } from './lib/useDashboard'
 import { headerVM } from './lib/viewmodel'
 import { funisVM } from './lib/funisvm'
+import { installTableSort } from './lib/tableSort'
 import Header from './components/Header'
 import ContaPage from './components/ContaPage'
 import ConteudosPage from './components/ConteudosPage'
@@ -13,6 +15,9 @@ export default function App() {
   const { model: M, state: S } = dash
   const hv = headerVM(M, S)
   const funis = funisVM(S)
+
+  // ordenação de tabelas por clique no cabeçalho (delegação global)
+  useEffect(() => installTableSort(), [])
 
   return (
     <div

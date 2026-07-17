@@ -23,7 +23,7 @@ export async function fetchAds(): Promise<AdsResult> {
   const to = new Date()
   const from = new Date(to.getTime() - 180 * 86400000)
   const fields =
-    'account_id,date,campaign,adset_name,ad_name,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend'
+    'account_id,date,campaign,adset_name,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend'
   const url =
     'https://connectors.windsor.ai/facebook?api_key=' +
     encodeURIComponent(WINDSOR_KEY) +
@@ -50,6 +50,7 @@ export async function fetchAds(): Promise<AdsResult> {
     adset: (x.adset_name as string) || '(sem conjunto)',
     thumb: (x.thumbnail_url as string) || '',
     permalink: (x.instagram_permalink_url as string) || '',
+    adId: String(x.ad_id || ''),
     impressions: num(x.impressions),
     reach: num(x.reach),
     linkClicks: num(x.inline_link_clicks),
@@ -91,7 +92,8 @@ export function adsAgg(
     a.leads += x.leads
     a.spend += x.spend
     if (!a.thumb && x.thumb) a.thumb = x.thumb
-    if (!a.permalink && x.permalink) a.permalink = x.permalink
+    // link do anúncio: permalink do IG, senão a biblioteca de anúncios do Facebook
+    if (!a.permalink) a.permalink = x.permalink || (x.adId ? 'https://www.facebook.com/ads/library/?id=' + x.adId : '')
 
     const s =
       byAdset[x.adset] ||
@@ -107,6 +109,34 @@ export function adsAgg(
     ads: Object.values(byAd).sort((a, b) => b.impressions - a.impressions),
     adsets: Object.values(byAdset).sort((a, b) => b.impressions - a.impressions),
   }
+}
+
+// métricas de anúncio agregadas por DIA (para a tabela "Dados diários")
+export interface DayAgg {
+  date: string
+  spend: number
+  imp: number
+  clk: number
+  lpv: number
+  leads: number
+}
+export function dailyAgg(raw: AdDailyRow[] | null, camRe: RegExp, from: string, to: string): DayAgg[] {
+  const rows = (raw || []).filter(
+    (x) => camRe.test(x.campaign) && (!from || x.date >= from) && (!to || x.date <= to)
+  )
+  const byDay: Record<string, DayAgg> = {}
+  rows.forEach((x) => {
+    const d = x.date
+    if (!d) return
+    const o = byDay[d] || (byDay[d] = { date: d, spend: 0, imp: 0, clk: 0, lpv: 0, leads: 0 })
+    o.spend += x.spend
+    o.imp += x.impressions
+    o.clk += x.linkClicks
+    o.lpv += x.lpViews
+    o.leads += x.leads
+  })
+  // mais recente primeiro
+  return Object.values(byDay).sort((a, b) => b.date.localeCompare(a.date))
 }
 
 // agrega turbinamento por campanha + intervalo de datas

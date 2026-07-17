@@ -253,8 +253,9 @@ export function useDashboard(): Dashboard {
   // Golden Ticket — busca/embute capas + links dos anúncios da imersão ativa (cache localStorage)
   const gtBusyRef = useRef<string | null>(null)
   useEffect(() => {
-    if (state.page !== 'candidaturas' || state.funnel !== 'golden') return
-    const im = state.imersao
+    const spec = funnelSpec(state.funnel)
+    if (state.page !== 'candidaturas' || !spec?.golden) return
+    const im = spec.imersaoFixed || state.imersao
     const haveThumbs = state.gtThumbs[im] || {}
     const haveLinks = state.gtLinks[im] || {}
     if (!needsGtAssets(im, haveThumbs, haveLinks) || gtBusyRef.current === im) return

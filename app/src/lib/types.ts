@@ -144,6 +144,7 @@ export interface AdDailyRow {
   adset: string
   thumb: string
   permalink: string
+  adId: string
   impressions: number
   reach: number
   linkClicks: number
@@ -186,6 +187,10 @@ export interface FunnelSpec {
   adsOnly?: boolean
   // funil Golden Ticket — snapshot estático por imersão (IEB/AMB/NEA)
   golden?: boolean
+  // imersão fixa (ex.: NEA 2ª Edição usa sempre 'nea')
+  imersaoFixed?: string
+  // esconde o seletor de imersão (funil de imersão única)
+  noImersao?: boolean
 }
 export interface FunnelData {
   rows: string[][]
