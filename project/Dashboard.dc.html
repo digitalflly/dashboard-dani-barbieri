@@ -2069,7 +2069,7 @@ class Component extends DCLogic {
         carreg: carreg==null? '—' : this.fmtPct(carreg)
       };
     });
-    const investDailyShow = investDaily.length>0;
+    const investDailyShow = key==='nea2' && investDaily.length>0;
     const chartSrc = this.dailyAgg(dailyRe, from, to).filter(o=>o.spend>0||o.leads>0||o.clk>0).slice().reverse();
     const chartData = chartSrc.map(o=>{ const nv=nvByDay[o.date]; return nv? nv.compras : (isSeg? o.clk : o.leads); });
     const cpaData = chartSrc.map((o,i)=>{ const res=chartData[i]; return res? +(o.spend/res).toFixed(2) : null; });
@@ -2085,7 +2085,8 @@ class Component extends DCLogic {
           y:{ beginAtZero:true, position:'left', grid:{ color:'rgba(119,21,32,0.07)' }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#6E595D', precision:0, callback:(v)=>this.fmtNum(v) } },
           y1:{ beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#9A7637', callback:(v)=>'R$ '+this.fmtNum(v) } } } }
     } : null;
-    return { investShow:true, investStages, investStats, investAds, investAdsets, investEyebrow, adsStatus, investDaily, investDailyShow, investChartShow: !!this._investChartCfg,
+    const investChartShow = key==='nea2' && !!this._investChartCfg;
+    return { investShow:true, investStages, investStats, investAds, investAdsets, investEyebrow, adsStatus, investDaily, investDailyShow, investChartShow,
       convShow, turbinaShow, turbina, turbinaSummary, showLpCr: !isSeg,
       investGridStyle: isSeg
         ? 'display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch; margin-bottom:16px;'
