@@ -66,6 +66,18 @@ export function lastDayOf(ym: string): string {
   return ym + '-' + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0')
 }
 
+// últimos 30 dias (para a NEA 2ª Edição) — limitado ao período disponível
+export function last30Range(minD: string | null, maxD: string | null): { from: string; to: string } {
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  const iso = (d: Date): string => d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate())
+  const end = maxD ? new Date(maxD + 'T00:00:00Z') : new Date()
+  const start = new Date(end.getTime() - 29 * 86400000)
+  let from = iso(start)
+  const to = iso(end)
+  if (minD && from < minD) from = minD
+  return { from, to }
+}
+
 // intervalo padrão dos funis: mês atual + 2 meses anteriores, limitado ao período disponível
 export function defaultFunnelRange(
   minD: string | null,
