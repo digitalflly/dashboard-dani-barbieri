@@ -9,8 +9,8 @@ import { funnelSpec, parseRowDate } from './sheets'
 import { buildFunnel } from './funnel'
 import { lineCfg, barCfg, doughnutCfg } from './charts'
 import { investFunnel, type InvestVM, type AdsState } from './invest'
-import { FUNNELS } from './constants'
-import { NEA_VENDAS } from './neaVendasData'
+import { adsAgg, dailyAgg } from './facebook'
+import { FUNNELS, ADS_CAMPAIGN_MATCH } from './constants'
 import { MONTH_NAMES, lastDayOf } from './dates'
 import type { ChartConfiguration } from 'chart.js'
 import type { MonthDef } from './types'
@@ -85,38 +85,49 @@ export interface NeaDailyView {
   org: string
 }
 
-// KPIs + indicadores por dia da NEA 2ª Edição (a partir do snapshot manual)
-function neaVendasVM(): { kpis: { label: string; value: string }[]; daily: NeaDailyView[]; note: string } {
-  const NV = NEA_VENDAS
+// KPIs + indicadores por dia da NEA 2ª Edição — 100% dados reais das
+// campanhas "NEA 2.0" do gerenciador (compras/receita), sem planilha.
+function neaLiveVM(S: DashState, from: string, to: string): { kpis: { label: string; value: string }[]; daily: NeaDailyView[] } {
+  const agg = adsAgg(S.adsRaw, ADS_CAMPAIGN_MATCH.nea2, from, to)
+  const days = dailyAgg(S.adsRaw, ADS_CAMPAIGN_MATCH.nea2, from, to).filter((o) => o.spend > 0 || o.pur > 0)
+  const liveSpend = agg.ads.reduce((a, x) => a + (x.spend || 0), 0)
+  const livePurch = agg.ads.reduce((a, x) => a + (x.purchases || 0), 0)
+  const liveRev = agg.ads.reduce((a, x) => a + (x.revenue || 0), 0)
+  const liveDays = days.length
   const dec = (v: number, n: number): string => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: n, maximumFractionDigits: n })
   const rMoney = (v: number): string => 'R$ ' + dec(v, 2)
   const kpis = [
-    { label: 'Investimento com imposto', value: rMoney(NV.investimentoComImposto) },
-    { label: 'Ingressos', value: fmtNum(NV.ingressos) },
-    { label: 'Faturamento bruto aprox.', value: rMoney(NV.faturamentoBruto) },
-    { label: 'Orderbumps', value: fmtNum(NV.orderbumps) },
-    { label: 'Taxa de conversão orderbump', value: dec(NV.taxaConvOrderbump, 1) + '%' },
-    { label: 'Ritmo médio', value: dec(NV.ritmoMedio, 1) + ' /dia' },
-    { label: 'Ticket médio', value: rMoney(NV.ticketMedio) },
-    { label: 'Custo / compra geral', value: rMoney(NV.custoCompraGeral) },
-    { label: 'Ingressos [ads]', value: fmtNum(NV.ingressosAds) },
-    { label: 'Ingressos [org]', value: fmtNum(NV.ingressosOrg) },
+    { label: 'Investimento com imposto', value: rMoney(liveSpend * 1.1215) },
+    { label: 'Ingressos', value: fmtNum(livePurch) },
+    { label: 'Faturamento bruto aprox.', value: rMoney(liveRev) },
+    { label: 'Orderbumps', value: fmtNum(0) },
+    { label: 'Taxa de conversão orderbump', value: '0,0%' },
+    { label: 'Ritmo médio', value: dec(liveDays ? livePurch / liveDays : 0, 1) + ' /dia' },
+    { label: 'Ticket médio', value: rMoney(livePurch ? liveRev / livePurch : 0) },
+    { label: 'Custo / compra geral', value: rMoney(livePurch ? liveSpend / livePurch : 0) },
+    { label: 'Ingressos [ads]', value: fmtNum(livePurch) },
+    { label: 'Ingressos [org]', value: fmtNum(0) },
   ]
-  const daily: NeaDailyView[] = NV.porDia.map((r) => ({
-    d: r.d,
-    inv: rMoney(r.inv),
-    ing: fmtNum(r.ing),
-    fat: rMoney(r.fat),
-    ob: fmtNum(r.ob),
-    conv: r.conv ? dec(r.conv, 1) + '%' : '—',
-    compras: fmtNum(r.compras),
-    tk: r.tk == null ? '—' : rMoney(r.tk),
-    cst: r.cst == null ? '—' : rMoney(r.cst),
-    ads: fmtNum(r.ads),
-    org: fmtNum(r.org),
-  }))
-  const note = 'planilha vendas-nea · ' + NV.periodo + ' · atualizado ' + NV.atualizadoEm
-  return { kpis, daily, note }
+  const daily: NeaDailyView[] = days
+    .slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((o) => {
+      const dd = o.date.split('-')
+      return {
+        d: dd[2] + '/' + dd[1],
+        inv: rMoney(o.spend * 1.1215),
+        ing: fmtNum(o.pur),
+        fat: rMoney(o.rev),
+        ob: fmtNum(0),
+        conv: '—',
+        compras: fmtNum(o.pur),
+        tk: o.pur ? rMoney(o.rev / o.pur) : '—',
+        cst: o.pur ? rMoney(o.spend / o.pur) : '—',
+        ads: fmtNum(o.pur),
+        org: fmtNum(0),
+      }
+    })
+  return { kpis, daily }
 }
 
 const NO_NEA = { neaVendasShow: false, neaVendasNote: '', neaKpis: [], neaDaily: [] as NeaDailyView[] }
@@ -204,7 +215,6 @@ export function funisVM(S: DashState): FunisVM {
         active: S.imersao === b.key,
         inactive: S.imersao !== b.key,
       }))
-      const nea = key === 'nea2' ? neaVendasVM() : null
       return {
         funnelTabs,
         candFilters,
@@ -220,12 +230,11 @@ export function funisVM(S: DashState): FunisVM {
         showStatusBtns: !spec.noImersao,
         statusGroupLabel: 'Imersão',
         statusMode: 'imersao',
-        neaVendasShow: !!nea,
-        neaVendasNote: nea?.note || '',
-        neaKpis: nea?.kpis || [],
-        neaDaily: nea?.daily || [],
+        ...NO_NEA,
       }
     }
+    // NEA 2ª Edição — 100% dados reais das campanhas "NEA 2.0" (seção de vendas)
+    const nea = spec.nea2 ? neaLiveVM(S, winFrom, winTo) : null
     return {
       funnelTabs,
       candFilters,
@@ -233,7 +242,6 @@ export function funisVM(S: DashState): FunisVM {
       candReady: true,
       candLoadingView: false,
       candStatusLabel: '',
-      ...NO_NEA,
       candKpis: [],
       candCharts: [],
       cfgs: {},
@@ -242,6 +250,10 @@ export function funisVM(S: DashState): FunisVM {
       showStatusBtns: false,
       statusGroupLabel: 'Status',
       statusMode: 'status',
+      neaVendasShow: !!nea,
+      neaVendasNote: '',
+      neaKpis: nea?.kpis || [],
+      neaDaily: nea?.daily || [],
     }
   }
 

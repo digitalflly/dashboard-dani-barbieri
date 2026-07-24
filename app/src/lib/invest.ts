@@ -15,7 +15,6 @@ import { fmtNum, fmtPct } from './format'
 import { adsAgg, turbinaAgg, dailyAgg } from './facebook'
 import { goldenAgg } from './golden'
 import { ADS_CAMPAIGN_MATCH, FUNNELS } from './constants'
-import { NEA_VENDAS } from './neaVendasData'
 import type { AdRow, AdDailyRow } from './types'
 
 export interface AdsState {
@@ -140,12 +139,13 @@ export function investFunnel(
   const spec = FUNNELS.find((f) => f.key === key)
   const isGolden = !!spec?.golden
   const isNea2 = key === 'nea2'
+  const usePurchase = isGolden || isNea2 // funil de compras (checkout → compras)
   const imersaoKey = spec?.imersaoFixed || imersao
-  if (key !== 'premium' && key !== 'diagnostico' && key !== 'seguidores' && !isGolden) {
+  if (key !== 'premium' && key !== 'diagnostico' && key !== 'seguidores' && !isGolden && !isNea2) {
     return EMPTY_INVEST
   }
   const isSeg = key === 'seguidores'
-  const noPlan = isSeg || isGolden
+  const noPlan = isSeg || isGolden || isNea2
   const IMLABEL: Record<string, string> = { ieb: 'IEB', amb: 'AMB', nea: 'NEA' }
 
   // Turbinamento (só no funil Seguidores) — substitui o card "Dados de conversão"
@@ -182,17 +182,17 @@ export function investFunnel(
     ? goldenAgg(imersaoKey, st.gtThumbs?.[imersaoKey] || {}, st.gtLinks?.[imersaoKey] || {})
     : adsAgg(st.adsRaw, ADS_CAMPAIGN_MATCH[key] || /^\b$/, from, to)
   const ads = agg.ads
-  const fbPrefix = key === 'diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isGolden ? 'Golden Ticket' : 'Sessão Premium'
+  const fbPrefix = key === 'diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isNea2 ? 'NEA 2.0' : isGolden ? 'Golden Ticket' : 'Sessão Premium'
   const investEyebrow =
     key === 'diagnostico'
       ? 'funil diagnóstico'
       : isSeg
         ? 'funil seguidores'
-        : isGolden
-          ? isNea2
-            ? 'nea 2ª edição'
-            : 'golden ticket · imersão ' + (IMLABEL[imersaoKey] || '')
-          : 'funil sessão premium'
+        : isNea2
+          ? 'nea 2ª edição'
+          : isGolden
+            ? 'golden ticket · imersão ' + (IMLABEL[imersaoKey] || '')
+            : 'funil sessão premium'
   const hasReal = ads.length > 0
 
   let alcance: number, impressoes: number, cliques: number, lpViews: number, leadsGer: number, investido: number
@@ -228,7 +228,7 @@ export function investFunnel(
 
   type Stage = { label: string; value: number; conv: number | null; cost: string | null; freq: number | null }
   let raw: Stage[]
-  if (isGolden) {
+  if (usePurchase) {
     raw = [
       { label: 'Alcance', value: alcance, conv: null, cost: null, freq: null },
       { label: 'Impressões', value: impressoes, conv: div(impressoes, alcance), freq: div(impressoes, alcance), cost: null },
@@ -248,7 +248,7 @@ export function investFunnel(
     if (!noPlan)
       raw.push({ label: 'Leads da planilha', value: leadsPlan, conv: div(leadsPlan, leadsGer), cost: money2(custoPlan), freq: null })
   }
-  const widths = isGolden ? [100, 92, 83, 74, 65, 56] : noPlan ? [100, 92, 82, 70, 58] : [100, 93, 84, 73, 62, 52]
+  const widths = usePurchase ? [100, 92, 83, 74, 65, 56] : noPlan ? [100, 92, 82, 70, 58] : [100, 93, 84, 73, 62, 52]
   const investStages: InvestStage[] = raw.map((s, i) => {
     const convStr =
       s.freq != null
@@ -266,8 +266,8 @@ export function investFunnel(
     { label: 'Custo por clique', value: money2(cpc) },
     { label: 'Connect rate', value: fmtPct(connectRate) },
     {
-      label: isGolden ? 'Custo / compra' : noPlan ? 'Custo / lead gerenciador' : 'Custo / lead planilha',
-      value: money2(isGolden ? custoCompra : noPlan ? custoGer : custoPlan),
+      label: usePurchase ? 'Custo / compra' : noPlan ? 'Custo / lead gerenciador' : 'Custo / lead planilha',
+      value: money2(usePurchase ? custoCompra : noPlan ? custoGer : custoPlan),
     },
   ]
 
@@ -290,7 +290,7 @@ export function investFunnel(
       clk: fmtNum(a.linkClicks),
       lpv: fmtNum(a.lpViews),
       cr: fmtPct(a.linkClicks ? (a.lpViews / a.linkClicks) * 100 : 0),
-      leads: fmtNum(isGolden ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
+      leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
     }))
   } else {
     const adNames = [
@@ -347,7 +347,7 @@ export function investFunnel(
       clk: fmtNum(a.linkClicks),
       lpv: fmtNum(a.lpViews),
       cr: fmtPct(a.linkClicks ? (a.lpViews / a.linkClicks) * 100 : 0),
-      leads: fmtNum(isGolden ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
+      leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
     }))
   } else {
     const setNames = [
@@ -377,27 +377,15 @@ export function investFunnel(
 
   // ── Dados diários (por dia) — do gerenciador, por funil ──
   const dailyRe = isGolden
-    ? isNea2
-      ? /\[NEA\]\s*\[VENDAS\]/i
-      : new RegExp('\\[' + (imersaoKey || 'nea').toUpperCase() + '\\]', 'i')
+    ? new RegExp('\\[' + (imersaoKey || 'nea').toUpperCase() + '\\]', 'i')
     : ADS_CAMPAIGN_MATCH[key] || /^\b$/
-  // NEA vendas: "Compras" por dia vem da planilha (por data DD/MM -> 2026-MM-DD)
-  const nvByDay: Record<string, (typeof NEA_VENDAS.porDia)[number]> = {}
-  if (isNea2) {
-    NEA_VENDAS.porDia.forEach((r) => {
-      const p = r.d.split('/')
-      nvByDay['2026-' + p[1] + '-' + p[0]] = r
-    })
-  }
   const fmtD = (iso: string): string => {
     const p = (iso || '').split('-')
     return p.length === 3 ? p[2] + '/' + p[1] : iso
   }
-  const daySrc = dailyAgg(st.adsRaw, dailyRe, from, to).filter((o) => o.spend > 0 || o.leads > 0 || o.clk > 0)
-  const resultOf = (o: (typeof daySrc)[number]): number => {
-    const nv = nvByDay[o.date]
-    return nv ? nv.compras : isSeg ? o.clk : o.leads
-  }
+  const daySrc = dailyAgg(st.adsRaw, dailyRe, from, to).filter((o) => o.spend > 0 || o.pur > 0 || o.leads > 0 || o.clk > 0)
+  // "resultado" por dia = compras (NEA 2.0 / Golden), visitas (Seguidores) ou leads
+  const resultOf = (o: (typeof daySrc)[number]): number => (usePurchase ? o.pur : isSeg ? o.clk : o.leads)
   const investDaily: InvestDailyRow[] = daySrc.map((o) => {
     const res = resultOf(o)
     const cpa = res ? o.spend / res : null
@@ -479,7 +467,7 @@ export function investFunnel(
     turbina,
     turbinaSummary,
     showLpCr: !isSeg,
-    adsResultLabel: isGolden ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads do gerenciador',
-    adsetResultLabel: isGolden ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads',
+    adsResultLabel: usePurchase ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads do gerenciador',
+    adsetResultLabel: usePurchase ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads',
   }
 }

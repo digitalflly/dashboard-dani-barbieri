@@ -44,25 +44,34 @@ export interface LiveAccount {
 /** Phase 1: account + daily series. Throws on insufficient data. */
 export async function fetchAccount(): Promise<LiveAccount> {
   const to = new Date()
-  const [profR, dRows, fRows] = await Promise.all([
-    getF('followers_count,name,username,media_count', 7, to),
-    getF('date,views,reach,total_interactions,shares,likes,comments,saves,profile_links_taps,username', 60, to),
-    getF('date,follows_and_unfollows,username', 60, to),
-  ])
-  const daily: DailyRow[] = dRows
-    .map((r) => ({
-      date: String(r.date).slice(0, 10),
-      views: num(r.views),
-      reach: num(r.reach),
-      interactions: num(r.total_interactions),
-      taps: r.profile_links_taps == null ? null : num(r.profile_links_taps),
-      shares: num(r.shares),
-      likes: num(r.likes),
-      comments: num(r.comments),
-      saves: num(r.saves),
-    }))
-    .filter((r) => isDate(r.date))
-    .sort((a, b) => (a.date < b.date ? -1 : 1))
+  // o conector às vezes devolve resposta parcial (sem série diária) — tenta até 14x
+  let profR: Record<string, unknown>[] = []
+  let fRows: Record<string, unknown>[] = []
+  let daily: DailyRow[] = []
+  for (let attempt = 0; attempt < 14; attempt++) {
+    let dRows: Record<string, unknown>[]
+    ;[profR, dRows, fRows] = await Promise.all([
+      getF('followers_count,name,username,media_count', 7, to),
+      getF('date,views,reach,total_interactions,shares,likes,comments,saves,profile_links_taps,username', 60, to),
+      getF('date,follows_and_unfollows,username', 60, to),
+    ])
+    daily = dRows
+      .map((r) => ({
+        date: String(r.date).slice(0, 10),
+        views: num(r.views),
+        reach: num(r.reach),
+        interactions: num(r.total_interactions),
+        taps: r.profile_links_taps == null ? null : num(r.profile_links_taps),
+        shares: num(r.shares),
+        likes: num(r.likes),
+        comments: num(r.comments),
+        saves: num(r.saves),
+      }))
+      .filter((r) => isDate(r.date))
+      .sort((a, b) => (a.date < b.date ? -1 : 1))
+    if (daily.length >= 2) break
+    await new Promise((res) => setTimeout(res, 1500))
+  }
   if (daily.length < 2) throw new Error('Sem série diária suficiente para @' + HANDLE + ' nesse período.')
 
   const fmap: Record<string, number | null> = {}

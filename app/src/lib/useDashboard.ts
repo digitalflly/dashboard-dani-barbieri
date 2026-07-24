@@ -10,7 +10,7 @@ import { fetchAccount, fetchMedia, type LiveAccount } from './windsor'
 import { fetchAds } from './facebook'
 import { fetchFunnel as fetchFunnelCsv, funnelSpec } from './sheets'
 import { persistCovers } from './cache'
-import { defaultFunnelRange } from './dates'
+import { defaultFunnelRange, last30Range } from './dates'
 import {
   loadGtThumbs,
   saveGtThumbs,
@@ -187,8 +187,9 @@ export function useDashboard(): Dashboard {
       // se já estiver num funil só de anúncios e sem filtro, aplica o intervalo padrão
       setState((s) => {
         const patch: Partial<DashState> = { adsLoading: false, adsRaw: raw, adsMinD: minD, adsMaxD: maxD }
-        if (funnelSpec(s.funnel)?.adsOnly && !s.candFrom && !s.candTo && s.candMonth === 'all') {
-          const r = defaultFunnelRange(minD, maxD)
+        const sp = funnelSpec(s.funnel)
+        if (sp?.adsOnly && !s.candFrom && !s.candTo && s.candMonth === 'all') {
+          const r = sp.nea2 ? last30Range(minD, maxD) : defaultFunnelRange(minD, maxD)
           patch.candFrom = r.from
           patch.candTo = r.to
         }
@@ -283,9 +284,11 @@ export function useDashboard(): Dashboard {
     (key: string) => {
       setState({ funnel: key, candMonth: 'all', candFrom: '', candTo: '', candStatusFilter: 'all' })
       const spec = funnelSpec(key)
-      // funil só de anúncios (ex.: Seguidores) — sem planilha, só o intervalo padrão
+      // funil só de anúncios (ex.: Seguidores, NEA 2ª Edição) — sem planilha, só o intervalo padrão
       if (spec?.adsOnly) {
-        const r = defaultFunnelRange(adsMinDRef.current, adsMaxDRef.current)
+        const r = spec.nea2
+          ? last30Range(adsMinDRef.current, adsMaxDRef.current)
+          : defaultFunnelRange(adsMinDRef.current, adsMaxDRef.current)
         setState({ candFrom: r.from, candTo: r.to })
         return
       }

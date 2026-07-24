@@ -150,6 +150,9 @@ export interface AdDailyRow {
   linkClicks: number
   lpViews: number
   leads: number
+  checkout: number
+  purchases: number
+  revenue: number
   spend: number
 }
 // turbinamento — agregado por campanha (funil Seguidores)
@@ -187,10 +190,14 @@ export interface FunnelSpec {
   adsOnly?: boolean
   // funil Golden Ticket — snapshot estático por imersão (IEB/AMB/NEA)
   golden?: boolean
-  // imersão fixa (ex.: NEA 2ª Edição usa sempre 'nea')
+  // imersão fixa (ex.: Golden com uma única imersão)
   imersaoFixed?: string
   // esconde o seletor de imersão (funil de imersão única)
   noImersao?: boolean
+  // NEA 2ª Edição — 100% dados reais das campanhas "NEA 2.0"
+  nea2?: boolean
+  // funil de compras (usa checkout → compras em vez de leads)
+  purchaseFunnel?: boolean
 }
 export interface FunnelData {
   rows: string[][]

@@ -16,6 +16,7 @@ export const ADS_CAMPAIGN_MATCH: Record<string, RegExp> = {
   diagnostico: /diagn[oó]stico/i,
   seguidores: /seguidores/i,
   turbinamento: /do instagram/i,
+  nea2: /nea\s*2\.?0/i,
 }
 
 export const SHEET_ID = '1SEHe4kbnkOj_D5l4vCvnvEM2pPObgCrX25elBh_FH1o'
@@ -76,14 +77,14 @@ export const FUNNELS: FunnelSpec[] = [
     statusMap: {},
     charts: [],
   },
-  // NEA 2ª Edição — imersão fixa 'nea', com seção de vendas (snapshot manual)
+  // NEA 2ª Edição — 100% dados reais das campanhas "NEA 2.0" (funil de compras)
   {
     key: 'nea2',
     name: 'NEA 2ª Edição',
     adsOnly: true,
-    golden: true,
-    imersaoFixed: 'nea',
     noImersao: true,
+    nea2: true,
+    purchaseFunnel: true,
     gid: '',
     dateCol: 0,
     statusCol: 0,

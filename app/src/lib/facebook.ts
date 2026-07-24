@@ -19,28 +19,39 @@ export interface AdsResult {
   maxD: string | null
 }
 
+const sleep = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))
+
 export async function fetchAds(): Promise<AdsResult> {
   const to = new Date()
   const from = new Date(to.getTime() - 180 * 86400000)
   const fields =
-    'account_id,date,campaign,adset_name,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend'
-  const url =
-    'https://connectors.windsor.ai/facebook?api_key=' +
-    encodeURIComponent(WINDSOR_KEY) +
-    '&date_from=' +
-    fd(from) +
-    '&date_to=' +
-    fd(to) +
-    '&fields=' +
-    encodeURIComponent(fields) +
-    '&_cb=' +
-    Date.now()
-  const r = await fetch(url, { cache: 'no-store' })
-  if (!r.ok) throw new Error('Facebook HTTP ' + r.status)
-  const j = await r.json()
-  if (j.error) throw new Error(String(j.error).slice(0, 120))
-  const all: Record<string, unknown>[] = j.data || []
-  const base = all.filter((x) => String(x.account_id || '').replace(/\D/g, '') === ADS_ACCOUNT_ID)
+    'account_id,date,campaign,adset_name,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend'
+  // o conector às vezes devolve resposta parcial (capada) sem a conta da Dani —
+  // tenta até 6x com cache-buster até a conta aparecer
+  let base: Record<string, unknown>[] = []
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const url =
+      'https://connectors.windsor.ai/facebook?api_key=' +
+      encodeURIComponent(WINDSOR_KEY) +
+      '&date_from=' +
+      fd(from) +
+      '&date_to=' +
+      fd(to) +
+      '&fields=' +
+      encodeURIComponent(fields) +
+      '&_cb=' +
+      Date.now() +
+      '_' +
+      attempt
+    const r = await fetch(url, { cache: 'no-store' })
+    if (!r.ok) throw new Error('Facebook HTTP ' + r.status)
+    const j = await r.json()
+    if (j.error) throw new Error(String(j.error).slice(0, 120))
+    const all: Record<string, unknown>[] = j.data || []
+    base = all.filter((x) => String(x.account_id || '').replace(/\D/g, '') === ADS_ACCOUNT_ID)
+    if (base.length > 0) break
+    await sleep(1500)
+  }
 
   // guarda as linhas diárias para filtrar por data no cliente
   const raw: AdDailyRow[] = base.map((x) => ({
@@ -56,6 +67,9 @@ export async function fetchAds(): Promise<AdsResult> {
     linkClicks: num(x.inline_link_clicks),
     lpViews: num(x.actions_landing_page_view),
     leads: num(x.actions_lead),
+    checkout: num(x.actions_initiate_checkout),
+    purchases: num(x.actions_purchase),
+    revenue: num(x.action_values_purchase),
     spend: num(x.spend),
   }))
   let mn: string | null = null
@@ -84,25 +98,31 @@ export function adsAgg(
   rows.forEach((x) => {
     const a =
       byAd[x.ad] ||
-      (byAd[x.ad] = { name: x.ad, thumb: '', permalink: '', impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, leads: 0, spend: 0 })
+      (byAd[x.ad] = { name: x.ad, thumb: '', permalink: '', impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, leads: 0, checkout: 0, purchases: 0, revenue: 0, spend: 0 })
     a.impressions += x.impressions
     a.reach += x.reach
     a.linkClicks += x.linkClicks
     a.lpViews += x.lpViews
     a.leads += x.leads
+    a.checkout = (a.checkout || 0) + x.checkout
+    a.purchases = (a.purchases || 0) + x.purchases
+    a.revenue = (a.revenue || 0) + x.revenue
     a.spend += x.spend
     if (!a.thumb && x.thumb) a.thumb = x.thumb
-    // link do anúncio: permalink do IG, senão a biblioteca de anúncios do Facebook
-    if (!a.permalink) a.permalink = x.permalink || (x.adId ? 'https://www.facebook.com/ads/library/?id=' + x.adId : '')
+    // link do anúncio: biblioteca de anúncios do Facebook (via ad_id), senão o permalink do IG
+    if (!a.permalink) a.permalink = x.adId ? 'https://www.facebook.com/ads/library/?id=' + x.adId : x.permalink || ''
 
     const s =
       byAdset[x.adset] ||
-      (byAdset[x.adset] = { name: x.adset, impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, leads: 0, spend: 0 })
+      (byAdset[x.adset] = { name: x.adset, impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, leads: 0, checkout: 0, purchases: 0, revenue: 0, spend: 0 })
     s.impressions += x.impressions
     s.reach += x.reach
     s.linkClicks += x.linkClicks
     s.lpViews += x.lpViews
     s.leads += x.leads
+    s.checkout = (s.checkout || 0) + x.checkout
+    s.purchases = (s.purchases || 0) + x.purchases
+    s.revenue = (s.revenue || 0) + x.revenue
     s.spend += x.spend
   })
   return {
@@ -119,6 +139,8 @@ export interface DayAgg {
   clk: number
   lpv: number
   leads: number
+  pur: number
+  rev: number
 }
 export function dailyAgg(raw: AdDailyRow[] | null, camRe: RegExp, from: string, to: string): DayAgg[] {
   const rows = (raw || []).filter(
@@ -128,12 +150,14 @@ export function dailyAgg(raw: AdDailyRow[] | null, camRe: RegExp, from: string, 
   rows.forEach((x) => {
     const d = x.date
     if (!d) return
-    const o = byDay[d] || (byDay[d] = { date: d, spend: 0, imp: 0, clk: 0, lpv: 0, leads: 0 })
+    const o = byDay[d] || (byDay[d] = { date: d, spend: 0, imp: 0, clk: 0, lpv: 0, leads: 0, pur: 0, rev: 0 })
     o.spend += x.spend
     o.imp += x.impressions
     o.clk += x.linkClicks
     o.lpv += x.lpViews
     o.leads += x.leads
+    o.pur += x.purchases
+    o.rev += x.revenue
   })
   // mais recente primeiro
   return Object.values(byDay).sort((a, b) => b.date.localeCompare(a.date))

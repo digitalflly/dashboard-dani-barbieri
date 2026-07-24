@@ -1018,7 +1018,7 @@ class Component extends DCLogic {
       adsError: '',
     };
     this.ADS_ACCOUNT_ID = '450830237045296';
-    this.ADS_CAMPAIGN_MATCH = { premium:/sess[aã]o\s*premium/i, diagnostico:/diagn[oó]stico/i, seguidores:/seguidores/i, turbinamento:/do instagram/i };
+    this.ADS_CAMPAIGN_MATCH = { premium:/sess[aã]o\s*premium/i, diagnostico:/diagn[oó]stico/i, seguidores:/seguidores/i, turbinamento:/do instagram/i, nea2:/nea\s*2\.?0/i };
     this.SHEET_ID = '1SEHe4kbnkOj_D5l4vCvnvEM2pPObgCrX25elBh_FH1o';
     // degradê do vermelho da marca (intenso → claro)
     this.RED_RAMP = ['#771520','#6B131D','#5F111A','#530F17','#470C13','#3B0A10','#2F070C'];
@@ -1041,7 +1041,7 @@ class Component extends DCLogic {
         ] },
       { key:'seguidores', name:'Funil Seguidores', adsOnly:true },
       { key:'golden', name:'Funil Golden Ticket', adsOnly:true, golden:true },
-      { key:'nea2', name:'NEA 2ª Edição', adsOnly:true, golden:true, imersaoFixed:'nea', noImersao:true },
+      { key:'nea2', name:'NEA 2ª Edição', adsOnly:true, noImersao:true, nea2:true, purchaseFunnel:true },
     ];
     this.PAGE_ACCENTS = { conta:'#771520', conteudos:'#9A7637', insights:'#C2A05B' };
     this.WEEK_COLORS = ['#771520','#C2A05B','#A5293A','#9A7637','#BCA489','#5A0F18','#9C846C','#8E1A28'];
@@ -1218,13 +1218,19 @@ class Component extends DCLogic {
     const isDate=(s)=>/^\d{4}-\d{2}-\d{2}$/.test(s);
     try{
       // ── Phase 1: account + daily (fast) → Conta page goes live quickly ──
-      const [profR,dRows,fRows]=await Promise.all([
-        getF('followers_count,name,username,media_count', 7),
-        getF('date,views,reach,total_interactions,shares,likes,comments,saves,profile_links_taps,username', 60),
-        getF('date,follows_and_unfollows,username', 60),
-      ]);
-      const daily=dRows.map(r=>({ date:String(r.date).slice(0,10), views:num(r.views), reach:num(r.reach), interactions:num(r.total_interactions), taps:(r.profile_links_taps==null?null:num(r.profile_links_taps)), shares:num(r.shares), likes:num(r.likes), comments:num(r.comments), saves:num(r.saves) }))
-        .filter(r=>isDate(r.date)).sort((a,b)=> a.date<b.date?-1:1);
+      // o conector às vezes devolve resposta parcial (sem série diária) — tenta até 6x
+      let profR, dRows, fRows, daily=[];
+      for(let attempt=0; attempt<14; attempt++){
+        [profR,dRows,fRows]=await Promise.all([
+          getF('followers_count,name,username,media_count', 7),
+          getF('date,views,reach,total_interactions,shares,likes,comments,saves,profile_links_taps,username', 60),
+          getF('date,follows_and_unfollows,username', 60),
+        ]);
+        daily=dRows.map(r=>({ date:String(r.date).slice(0,10), views:num(r.views), reach:num(r.reach), interactions:num(r.total_interactions), taps:(r.profile_links_taps==null?null:num(r.profile_links_taps)), shares:num(r.shares), likes:num(r.likes), comments:num(r.comments), saves:num(r.saves) }))
+          .filter(r=>isDate(r.date)).sort((a,b)=> a.date<b.date?-1:1);
+        if(daily.length>=2) break;
+        await new Promise(res=>setTimeout(res, 1500));
+      }
       if(daily.length<2) throw new Error('Sem série diária suficiente para @'+H+' nesse período.');
       const fmap={}; fRows.forEach(r=>{ const d=String(r.date).slice(0,10); if(isDate(d)) fmap[d]=(r.follows_and_unfollows==null?null:num(r.follows_and_unfollows)); });
       const follows=daily.map(d=>({ date:d.date, net:(d.date in fmap)?fmap[d.date]:0 }));
@@ -1362,38 +1368,47 @@ class Component extends DCLogic {
       const key=this.WINDSOR_KEY;
       const to=new Date(); const from=new Date(to.getTime()-180*86400000);
       const fd=(d)=>this.ymd(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));
-      const fields='account_id,date,campaign,adset_name,ad_name,ad_id,instagram_permalink_url,thumbnail_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,spend';
-      const url='https://connectors.windsor.ai/facebook?api_key='+encodeURIComponent(key)+'&date_from='+fd(from)+'&date_to='+fd(to)+'&fields='+encodeURIComponent(fields)+'&_cb='+Date.now();
-      const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('Facebook HTTP '+r.status);
-      const j=await r.json(); if(j.error) throw new Error(String(j.error).slice(0,120));
-      const all=j.data||[]; const num=(v)=>(v==null||v==='')?0:(+v||0);
+      const fields='account_id,date,campaign,adset_name,ad_name,ad_id,instagram_permalink_url,thumbnail_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend';
       const acct=this.ADS_ACCOUNT_ID;
-      const base=all.filter(x=>String(x.account_id||'').replace(/\D/g,'')===acct);
+      // o conector às vezes devolve uma resposta parcial (capada) sem a conta da Dani —
+      // tenta até 6x com cache-buster até a conta aparecer
+      let base=[]; let all=[];
+      for(let attempt=0; attempt<6; attempt++){
+        const url='https://connectors.windsor.ai/facebook?api_key='+encodeURIComponent(key)+'&date_from='+fd(from)+'&date_to='+fd(to)+'&fields='+encodeURIComponent(fields)+'&_cb='+Date.now()+'_'+attempt;
+        const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('Facebook HTTP '+r.status);
+        const j=await r.json(); if(j.error) throw new Error(String(j.error).slice(0,120));
+        all=j.data||[];
+        base=all.filter(x=>String(x.account_id||'').replace(/\D/g,'')===acct);
+        if(base.length>0) break;
+        await new Promise(res=>setTimeout(res, 1500));
+      }
+      const num=(v)=>(v==null||v==='')?0:(+v||0);
       // guarda as linhas diárias para filtrar por data no client
-      this._adsRaw = base.map(x=>({ date:String(x.date||'').slice(0,10), campaign:x.campaign||'', ad:x.ad_name||'(sem nome)', adset:x.adset_name||'(sem conjunto)', thumb:x.thumbnail_url||'', adId:String(x.ad_id||''), permalink:x.instagram_permalink_url||'', impressions:num(x.impressions), reach:num(x.reach), linkClicks:num(x.inline_link_clicks), lpViews:num(x.actions_landing_page_view), leads:num(x.actions_lead), spend:num(x.spend) }));
+      this._adsRaw = base.map(x=>({ date:String(x.date||'').slice(0,10), campaign:x.campaign||'', ad:x.ad_name||'(sem nome)', adset:x.adset_name||'(sem conjunto)', thumb:x.thumbnail_url||'', adId:String(x.ad_id||''), permalink:x.instagram_permalink_url||'', impressions:num(x.impressions), reach:num(x.reach), linkClicks:num(x.inline_link_clicks), lpViews:num(x.actions_landing_page_view), leads:num(x.actions_lead), checkout:num(x.actions_initiate_checkout), purchases:num(x.actions_purchase), revenue:num(x.action_values_purchase), spend:num(x.spend) }));
       let mn=null,mx=null; this._adsRaw.forEach(rw=>{ if(/^\d{4}-\d{2}-\d{2}$/.test(rw.date)){ if(!mn||rw.date<mn)mn=rw.date; if(!mx||rw.date>mx)mx=rw.date; } });
       this._adsMinD=mn; this._adsMaxD=mx;
       this.setState({adsLoading:false, adsReady:true});
       // se já estiver no funil seguidores e sem filtro, aplica o intervalo padrão
       if(this.state.funnel==='seguidores' && !this.state.candFrom && !this.state.candTo && this.state.candMonth==='all'){ const dr=this.defaultFunnelRange(mn,mx); this.setState({candFrom:dr.from, candTo:dr.to}); }
+      if(this.state.funnel==='nea2' && !this.state.candFrom && !this.state.candTo && this.state.candMonth==='all'){ const dr=this.last30Range(mn,mx); this.setState({candFrom:dr.from, candTo:dr.to}); }
     }catch(e){ this.setState({adsLoading:false, adsError:(e&&e.message)||'Falha ao ler Facebook Ads.'}); }
   }
   // agrega anúncios/conjuntos por campanha (regex) e intervalo de datas
   adsAgg(camRe, from, to){
     const rows=(this._adsRaw||[]).filter(x=> camRe.test(x.campaign) && (!from||x.date>=from) && (!to||x.date<=to));
     const byAd={}, byAdset={};
-    rows.forEach(x=>{ const a=byAd[x.ad]||(byAd[x.ad]={name:x.ad,thumb:'',link:'',impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,spend:0});
-      a.impressions+=x.impressions; a.reach+=x.reach; a.linkClicks+=x.linkClicks; a.lpViews+=x.lpViews; a.leads+=x.leads; a.spend+=x.spend; if(!a.thumb&&x.thumb)a.thumb=x.thumb; if(!a.link){ a.link = x.permalink || (x.adId? 'https://www.facebook.com/ads/library/?id='+x.adId : ''); }
-      const s=byAdset[x.adset]||(byAdset[x.adset]={name:x.adset,impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,spend:0});
-      s.impressions+=x.impressions; s.reach+=x.reach; s.linkClicks+=x.linkClicks; s.lpViews+=x.lpViews; s.leads+=x.leads; s.spend+=x.spend; });
+    rows.forEach(x=>{ const a=byAd[x.ad]||(byAd[x.ad]={name:x.ad,thumb:'',link:'',impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,checkout:0,purchases:0,revenue:0,spend:0});
+      a.impressions+=x.impressions; a.reach+=x.reach; a.linkClicks+=x.linkClicks; a.lpViews+=x.lpViews; a.leads+=x.leads; a.checkout+=(x.checkout||0); a.purchases+=(x.purchases||0); a.revenue+=(x.revenue||0); a.spend+=x.spend; if(!a.thumb&&x.thumb)a.thumb=x.thumb; if(!a.link){ a.link = x.adId? ('https://www.facebook.com/ads/library/?id='+x.adId) : (x.permalink||''); }
+      const s=byAdset[x.adset]||(byAdset[x.adset]={name:x.adset,impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,checkout:0,purchases:0,revenue:0,spend:0});
+      s.impressions+=x.impressions; s.reach+=x.reach; s.linkClicks+=x.linkClicks; s.lpViews+=x.lpViews; s.leads+=x.leads; s.checkout+=(x.checkout||0); s.purchases+=(x.purchases||0); s.revenue+=(x.revenue||0); s.spend+=x.spend; });
     return { ads:Object.values(byAd).sort((a,b)=>b.impressions-a.impressions), adsets:Object.values(byAdset).sort((a,b)=>b.impressions-a.impressions) };
   }
   // agrega métricas de anúncio por DIA (para a tabela "Dados diários")
   dailyAgg(camRe, from, to){
     const rows=(this._adsRaw||[]).filter(x=> camRe.test(x.campaign) && (!from||x.date>=from) && (!to||x.date<=to));
     const byDay={};
-    rows.forEach(x=>{ const d=x.date; if(!d)return; const o=byDay[d]||(byDay[d]={spend:0,imp:0,clk:0,lpv:0,leads:0});
-      o.spend+=x.spend; o.imp+=x.impressions; o.clk+=x.linkClicks; o.lpv+=x.lpViews; o.leads+=x.leads; });
+    rows.forEach(x=>{ const d=x.date; if(!d)return; const o=byDay[d]||(byDay[d]={spend:0,imp:0,clk:0,lpv:0,leads:0,pur:0,rev:0});
+      o.spend+=x.spend; o.imp+=x.impressions; o.clk+=x.linkClicks; o.lpv+=x.lpViews; o.leads+=x.leads; o.pur+=(x.purchases||0); o.rev+=(x.revenue||0); });
     return Object.entries(byDay).sort((a,b)=>b[0].localeCompare(a[0])).map(([d,o])=>({date:d,...o}));
   }
   // Golden Ticket — snapshot estático por imersão (IEB / AMB / NEA)
@@ -1454,7 +1469,7 @@ class Component extends DCLogic {
     const _sp=this.funnelSpec(key);
     if(_sp && _sp.golden) this.fetchGoldenThumbs((_sp.imersaoFixed)||this.state.imersao);
     const spec=this.funnelSpec(key);
-    if(spec && spec.adsOnly){ const r=this.defaultFunnelRange(this._adsMinD, this._adsMaxD); this.setState({candFrom:r.from, candTo:r.to}); return; }
+    if(spec && spec.adsOnly){ const r = spec.nea2 ? this.last30Range(this._adsMinD, this._adsMaxD) : this.defaultFunnelRange(this._adsMinD, this._adsMaxD); this.setState({candFrom:r.from, candTo:r.to}); return; }
     const d=this.state.funnelData[key];
     if(!d && !this.state.funnelLoading[key]) this.fetchFunnel(key);
     else if(d){ const r=this.defaultFunnelRange(d.minD,d.maxD); this.setState({candFrom:r.from, candTo:r.to}); }
@@ -1467,6 +1482,15 @@ class Component extends DCLogic {
     let from=iso(first), to=iso(last);
     if(minD && from<minD) from=minD;
     if(maxD && to>maxD) to=maxD;
+    return {from,to};
+  }
+  // últimos 30 dias (para a NEA 2ª Edição) — limitado ao período disponível
+  last30Range(minD,maxD){
+    const pad=n=>String(n).padStart(2,'0'), iso=d=>d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());
+    const end = maxD ? new Date(maxD+'T00:00:00Z') : new Date();
+    const start = new Date(end.getTime()-29*86400000);
+    let from=iso(start), to=iso(end);
+    if(minD && from<minD) from=minD;
     return {from,to};
   }
   async fetchFunnel(key, force){
@@ -1887,8 +1911,39 @@ class Component extends DCLogic {
           leadsView:false, showStatusBtns: !spec.noImersao, ...invG };
       }
       const inv=this.investFunnel(key, 0, winFrom, winTo);
+      const NV = (key==='nea2') ? (window.__NEA_VENDAS__||null) : null;
+      const dec=(v,n)=>Number(v).toLocaleString('pt-BR',{minimumFractionDigits:n,maximumFractionDigits:n});
+      const rMoney=(v)=>'R$ '+dec(v,2);
+      // NEA 2ª Edição = 100% dados reais das campanhas NEA2.0 (gerenciador); sem planilha de vendas → 0
+      const _lag = (key==='nea2') ? this.adsAgg(this.ADS_CAMPAIGN_MATCH.nea2, winFrom, winTo) : null;
+      const _lday = (key==='nea2') ? this.dailyAgg(this.ADS_CAMPAIGN_MATCH.nea2, winFrom, winTo).filter(o=>o.spend>0||o.pur>0) : [];
+      const _liveAds = _lag ? _lag.ads : [];
+      const liveSpend = _liveAds.reduce((a,x)=>a+(x.spend||0),0);
+      const livePurch = _liveAds.reduce((a,x)=>a+(x.purchases||0),0);
+      const liveRev = _liveAds.reduce((a,x)=>a+(x.revenue||0),0);
+      const liveDays = _lday.length;
+      const neaKpis = (key==='nea2') ? [
+        { label:'Investimento com imposto', value:rMoney(liveSpend*1.1215) },
+        { label:'Ingressos', value:this.fmtNum(livePurch) },
+        { label:'Faturamento bruto aprox.', value:rMoney(liveRev) },
+        { label:'Orderbumps', value:this.fmtNum(0) },
+        { label:'Taxa de conversão orderbump', value:'0,0%' },
+        { label:'Ritmo médio', value:dec(liveDays? livePurch/liveDays : 0,1)+' /dia' },
+        { label:'Ticket médio', value:rMoney(livePurch? liveRev/livePurch : 0) },
+        { label:'Custo / compra geral', value:rMoney(livePurch? liveSpend/livePurch : 0) },
+        { label:'Ingressos [ads]', value:this.fmtNum(livePurch) },
+        { label:'Ingressos [org]', value:this.fmtNum(0) },
+      ] : [];
+      const neaDaily = (key==='nea2') ? _lday.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(o=>{
+        const dd=o.date.split('-');
+        return { d:dd[2]+'/'+dd[1], inv:rMoney(o.spend*1.1215), ing:this.fmtNum(o.pur), fat:rMoney(o.rev),
+          ob:this.fmtNum(0), conv:'—', compras:this.fmtNum(o.pur),
+          tk: o.pur? rMoney(o.rev/o.pur) : '—', cst: o.pur? rMoney(o.spend/o.pur) : '—',
+          ads:this.fmtNum(o.pur), org:this.fmtNum(0) };
+      }) : [];
       return { funnelTabs, candFilters:segFilters, candStatusBtns:[], statusGroupLabel:'Status', candReady:true, candLoadingView:false,
-        candStatusLabel:'', candKpis:[], candStatus:[], candCharts:[], leadsView:false, showStatusBtns:false, ...inv };
+        candStatusLabel:'', candKpis:[], candStatus:[], candCharts:[], leadsView:false, showStatusBtns:false,
+        neaKpis, neaVendasShow: neaKpis.length>0, neaDaily, ...inv };
     }
     if(!F){
       this._funnelCfgs=null;
@@ -1938,10 +1993,12 @@ class Component extends DCLogic {
   investFunnel(key, total, from, to){
     const _spec=this.funnelSpec(key);
     const isGolden = !!(_spec && _spec.golden);
+    const isNea2 = key==='nea2';
+    const usePurchase = isGolden || isNea2;
     const imersaoKey = (_spec && _spec.imersaoFixed) ? _spec.imersaoFixed : this.state.imersao;
-    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores' && !isGolden){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
+    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores' && !isGolden && !isNea2){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
     const isSeg = key==='seguidores';
-    const noPlan = isSeg || isGolden;
+    const noPlan = isSeg || isGolden || isNea2;
     // Turbinamento (só no funil Seguidores) — substitui o card "Dados de conversão"
     let convShow=true, turbinaShow=false, turbina=[], turbinaSummary=[];
     if(isSeg){
@@ -1960,8 +2017,8 @@ class Component extends DCLogic {
     const T=Math.max(total,1), money2=(v)=>'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     const IMLABEL={ieb:'IEB',amb:'AMB',nea:'NEA'};
     const S=this.state, _agg = isGolden? this.goldenAgg(imersaoKey) : this.adsAgg(this.ADS_CAMPAIGN_MATCH[key]||/^\b$/, from, to), ads=_agg.ads;
-    const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isGolden ? 'Golden Ticket' : 'Sessão Premium';
-    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : isSeg ? 'funil seguidores' : isGolden ? ((_spec && _spec.imersaoFixed) ? 'nea 2ª edição' : ('golden ticket · imersão '+(IMLABEL[imersaoKey]||''))) : 'funil sessão premium';
+    const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isNea2 ? 'NEA 2.0' : isGolden ? 'Golden Ticket' : 'Sessão Premium';
+    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : isSeg ? 'funil seguidores' : isNea2 ? 'nea 2ª edição' : isGolden ? ((_spec && _spec.imersaoFixed) ? 'nea 2ª edição' : ('golden ticket · imersão '+(IMLABEL[imersaoKey]||''))) : 'funil sessão premium';
     const hasReal = ads && ads.length>0;
     let alcance,impressoes,cliques,lpViews,leadsGer,investido,checkout=0,compras=0,receita=0;
     if(hasReal){
@@ -1984,7 +2041,7 @@ class Component extends DCLogic {
     const connectRate=cliques? lpViews/cliques*100 : 0;
     const div=(a,b)=> b? a/b : null;
     let raw;
-    if(isGolden){
+    if(usePurchase){
       raw=[
         { label:'Alcance', value:alcance, conv:null, cost:null },
         { label:'Impressões', value:impressoes, conv:div(impressoes,alcance), freq:div(impressoes,alcance), cost:null },
@@ -2003,7 +2060,7 @@ class Component extends DCLogic {
       ];
       if(!noPlan) raw.push({ label:'Leads da planilha', value:leadsPlan, conv:div(leadsPlan,leadsGer), cost:money2(custoPlan) });
     }
-    const widths = isGolden ? [100,92,83,74,65,56] : (noPlan ? [100,92,82,70,58] : [100,93,84,73,62,52]);
+    const widths = usePurchase ? [100,92,83,74,65,56] : (noPlan ? [100,92,82,70,58] : [100,93,84,73,62,52]);
     const investStages=raw.map((s,i)=>{
       const convStr = s.freq!=null ? (s.freq).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : (s.conv==null? '' : this.fmtPct(s.conv*100));
       const left = convStr ? (s.cost ? convStr+'  -  '+s.cost : convStr) : '';
@@ -2014,7 +2071,7 @@ class Component extends DCLogic {
       { label:'CPM', value:money2(cpm) },
       { label:'Custo por clique', value:money2(cpc) },
       { label:'Connect rate', value:this.fmtPct(connectRate) },
-      { label: isGolden? 'Custo / compra' : (noPlan? 'Custo / lead gerenciador' : 'Custo / lead planilha'), value:money2(isGolden? custoCompra : (noPlan? custoGer : custoPlan)) },
+      { label: usePurchase? 'Custo / compra' : (noPlan? 'Custo / lead gerenciador' : 'Custo / lead planilha'), value:money2(usePurchase? custoCompra : (noPlan? custoGer : custoPlan)) },
     ];
     let investAds;
     if(hasReal){
@@ -2022,7 +2079,7 @@ class Component extends DCLogic {
         thumbStyle: a.thumb? {width:'42px',height:'42px',flex:'none',borderRadius:'5px',backgroundColor:'#3D0A11',backgroundImage:`url("${a.thumb}")`,backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat'}
           : {width:'42px',height:'42px',flex:'none',borderRadius:'5px',background:'linear-gradient(135deg, #771520, #3D0A11)'},
         impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews),
-        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(isGolden? a.purchases : (isSeg? a.linkClicks : a.leads)) }));
+        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(usePurchase? a.purchases : (isSeg? a.linkClicks : a.leads)) }));
     }else{
       const adNames=[fbPrefix+' · Depoimento',fbPrefix+' · VSL Curta',fbPrefix+' · Carrossel',fbPrefix+' · Reels Bastidores',fbPrefix+' · Prova Social'];
       const w=[0.30,0.24,0.19,0.15,0.12], adCr=[0.82,0.76,0.80,0.74,0.78], thumbBg=['#771520','#8A1A24','#5A0F18','#9E2230','#6B131D'];
@@ -2037,7 +2094,7 @@ class Component extends DCLogic {
     if(hasRealSet){
       investAdsets=adsets.slice(0,30).map((a,i)=>({ idx:i, name:a.name,
         impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews),
-        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(isGolden? a.purchases : (isSeg? a.linkClicks : a.leads)) }));
+        cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(usePurchase? a.purchases : (isSeg? a.linkClicks : a.leads)) }));
     }else{
       const setNames=[fbPrefix+' · Aberto',fbPrefix+' · Lookalike',fbPrefix+' · Interesses',fbPrefix+' · Remarketing'];
       const w=[0.38,0.27,0.21,0.14], setCr=[0.80,0.78,0.81,0.83];
