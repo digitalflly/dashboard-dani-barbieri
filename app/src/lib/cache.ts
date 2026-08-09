@@ -12,11 +12,14 @@ import type { MediaPost } from './types'
 interface CacheBlob {
   posts: MediaPost[]
   savedAt: string
+  // versão do backfill de `follows` já aplicado (0 = ausente; 2 = re-seed de 365 dias)
+  followsBackfill?: number
 }
 
-export function readCache(ckey: string): { cached: MediaPost[]; seeded: boolean } {
+export function readCache(ckey: string): { cached: MediaPost[]; seeded: boolean; followsBackfill: number } {
   let cached: MediaPost[] = []
   let seeded = false
+  let followsBackfill = 0
   try {
     const raw = localStorage.getItem(ckey)
     if (raw) {
@@ -24,18 +27,24 @@ export function readCache(ckey: string): { cached: MediaPost[]; seeded: boolean 
       if (o && Array.isArray(o.posts)) {
         cached = o.posts
         seeded = o.posts.length > 0
+        followsBackfill = o.followsBackfill || 0
       }
     }
   } catch {
     /* ignore */
   }
-  return { cached, seeded }
+  return { cached, seeded, followsBackfill }
 }
 
 // grava o cache; se estourar a cota, regrava sem as capas embutidas
-export function saveCache(ckey: string, media: MediaPost[], savedAt: string): boolean {
+export function saveCache(
+  ckey: string,
+  media: MediaPost[],
+  savedAt: string,
+  flags: Record<string, unknown> = {}
+): boolean {
   try {
-    localStorage.setItem(ckey, JSON.stringify({ posts: media, savedAt }))
+    localStorage.setItem(ckey, JSON.stringify({ posts: media, savedAt, ...flags }))
     return true
   } catch {
     try {
@@ -48,6 +57,7 @@ export function saveCache(ckey: string, media: MediaPost[], savedAt: string): bo
             return q
           }),
           savedAt,
+          ...flags,
         })
       )
     } catch {
@@ -97,14 +107,14 @@ export function embedCover(url: string): Promise<string | null> {
   })
 }
 
-// embute, em background, as capas dos posts desde mai/2026 ainda não guardadas
+// embute, em background, as capas dos posts de 2026 ainda não guardadas
 export async function persistCovers(
   media: MediaPost[],
   ckey: string,
   savedAt: string,
   onProgress?: () => void
 ): Promise<void> {
-  const SINCE = '2026-05-01'
+  const SINCE = '2026-01-01'
   const targets = media.filter((p) => p && p.ts >= SINCE && !p.coverData && (p.thumb || p.cover))
   if (!targets.length) return
   let i = 0
@@ -118,5 +128,5 @@ export async function persistCovers(
   }
   await Promise.all(Array.from({ length: conc }, work))
   if (onProgress) onProgress()
-  saveCache(ckey, media, savedAt)
+  saveCache(ckey, media, savedAt, { followsBackfill: 2 })
 }

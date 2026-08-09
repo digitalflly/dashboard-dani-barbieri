@@ -16,6 +16,14 @@ const sectionTitle: CSSProperties = {
   fontSize: 20,
   color: 'var(--text-strong)',
 }
+const thStyle: CSSProperties = {
+  fontSize: 10,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  color: 'var(--text-muted)',
+  fontWeight: 600,
+}
+const tdStyle: CSSProperties = { padding: '10px 10px', fontSize: 13, color: 'var(--text-body)' }
 
 export default function InsightsPage({ dash }: { dash: Dashboard }) {
   const { model: M, state: S, setState } = dash
@@ -88,6 +96,46 @@ export default function InsightsPage({ dash }: { dash: Dashboard }) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* desempenho por tema */}
+      {v.themeShow && (
+        <div className="b-card" style={{ padding: '22px 24px', marginBottom: 18 }}>
+          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 16, color: 'var(--text-strong)', marginBottom: 4 }}>
+            Desempenho por tema
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
+            Publicações agrupadas pelo assunto tratado — mostra quais conteúdos sustentam o perfil, não posts isolados.
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ textAlign: 'right' }}>
+                  <th style={{ textAlign: 'left', padding: '0 10px 10px 0', ...thStyle }}>Tema</th>
+                  <th style={{ padding: '0 10px 10px', ...thStyle }}>Posts</th>
+                  <th style={{ padding: '0 10px 10px', ...thStyle }}>Alcance médio</th>
+                  <th style={{ padding: '0 10px 10px', ...thStyle }}>Engajamento</th>
+                  <th style={{ padding: '0 10px 10px', ...thStyle }}>Salvamento</th>
+                  <th style={{ padding: '0 10px 10px', ...thStyle }}>Compart.</th>
+                  <th style={{ padding: '0 0 10px 10px', ...thStyle }}>Seguidores</th>
+                </tr>
+              </thead>
+              <tbody>
+                {v.themeRows.map((t, i) => (
+                  <tr key={i} style={{ textAlign: 'right', borderTop: '1px solid var(--border-soft)' }}>
+                    <td style={{ textAlign: 'left', padding: '10px 10px 10px 0', fontSize: 13, fontWeight: 500, color: 'var(--text-strong)' }}>{t.theme}</td>
+                    <td data-keepcase="1" style={tdStyle}>{t.n}</td>
+                    <td data-keepcase="1" style={tdStyle}>{t.avgReach}</td>
+                    <td data-keepcase="1" style={{ padding: '10px 10px', fontSize: 13, fontWeight: 600, color: '#771520' }}>{t.rate}</td>
+                    <td data-keepcase="1" style={tdStyle}>{t.saveRate}</td>
+                    <td data-keepcase="1" style={tdStyle}>{t.shareRate}</td>
+                    <td data-keepcase="1" style={{ padding: '10px 0 10px 10px', fontSize: 13, color: 'var(--text-body)' }}>{t.follows}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

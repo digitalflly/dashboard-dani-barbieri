@@ -319,6 +319,40 @@
       </div>
       </sc-if>
 
+      <!-- desempenho por tema -->
+      <sc-if value="{{ themeShow }}" hint-placeholder-val="{{ false }}">
+      <div class="b-card" style="padding:22px 24px; margin-bottom:18px;">
+        <div style="font-family:var(--font-sans); font-weight:600; font-size:16px; color:var(--text-strong); margin-bottom:4px;">Desempenho por tema</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Publicações agrupadas pelo assunto tratado — mostra quais conteúdos sustentam o perfil, não posts isolados.</div>
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="text-align:right;">
+              <th style="text-align:left; padding:0 10px 10px 0; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Tema</th>
+              <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Posts</th>
+              <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Alcance médio</th>
+              <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Engajamento</th>
+              <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Salvamento</th>
+              <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Compart.</th>
+              <th style="padding:0 0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Seguidores</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ themeRows }}" as="t" hint-placeholder-count="6">
+              <tr style="text-align:right; border-top:1px solid var(--border-soft);">
+                <td style="text-align:left; padding:10px 10px 10px 0; font-size:13px; font-weight:500; color:var(--text-strong);">{{ t.theme }}</td>
+                <td data-keepcase="1" style="padding:10px 10px; font-size:13px; color:var(--text-body);">{{ t.n }}</td>
+                <td data-keepcase="1" style="padding:10px 10px; font-size:13px; color:var(--text-body);">{{ t.avgReach }}</td>
+                <td data-keepcase="1" style="padding:10px 10px; font-size:13px; font-weight:600; color:#771520;">{{ t.rate }}</td>
+                <td data-keepcase="1" style="padding:10px 10px; font-size:13px; color:var(--text-body);">{{ t.saveRate }}</td>
+                <td data-keepcase="1" style="padding:10px 10px; font-size:13px; color:var(--text-body);">{{ t.shareRate }}</td>
+                <td data-keepcase="1" style="padding:10px 0 10px 10px; font-size:13px; color:var(--text-body);">{{ t.follows }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      </sc-if>
+
       <!-- worked / not worked -->
       <sc-if value="{{ metricsAvailable }}" hint-placeholder-val="{{ true }}">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -1177,12 +1211,21 @@ class Component extends DCLogic {
       return { start:w.start, end:w.end, kind:'week', label:w.label, prev: prev?{start:prev.start,end:prev.end}:null };
     }
     if(this.state.month!=='all'){
-      const ym=this.state.month; const inMonth=M.daily.filter(r=>r.date.slice(0,7)===ym).map(r=>r.date);
-      const start=inMonth[0], end=inMonth[inMonth.length-1];
+      const ym=this.state.month;
+      // resolve pelo calendário (não pela série diária, que cobre só ~60 dias)
+      const monthRange=(v)=>{ if(!v) return null;
+        const [y,m]=v.split('-').map(Number);
+        const pad=n=>String(n).padStart(2,'0');
+        const last=new Date(Date.UTC(y, m, 0)).getUTCDate();
+        let s=v+'-01', e=v+'-'+pad(last);
+        if(M.maxDate && e>M.maxDate) e=M.maxDate;
+        return {start:s, end:e};
+      };
+      const cur=monthRange(ym);
       const mi=M.months.findIndex(x=>x.value===ym); const pm= mi>0? M.months[mi-1]:null;
-      let prev=null; if(pm){ const pin=M.daily.filter(r=>r.date.slice(0,7)===pm.value).map(r=>r.date); prev={start:pin[0], end:pin[pin.length-1]}; }
-      const lbl=M.months.find(x=>x.value===ym).label;
-      return { start, end, kind:'month', label:lbl, prev };
+      const prev= pm? monthRange(pm.value) : null;
+      const lblEntry=M.months.find(x=>x.value===ym);
+      return { start:cur.start, end:cur.end, kind:'month', label:(lblEntry?lblEntry.label:ym), prev };
     }
     return { start:M.minDate, end:M.maxDate, kind:'all', label:'todo o período', prev:null };
   }
@@ -1249,29 +1292,36 @@ class Component extends DCLogic {
       try{
         const CKEY='dbi_posts_cache_'+H;
         // cache existente (histórico já salvo)
-        let cached=[]; let seeded=false;
-        try{ const raw=localStorage.getItem(CKEY); if(raw){ const o=JSON.parse(raw); if(o&&Array.isArray(o.posts)){ cached=o.posts; seeded=o.posts.length>0; } } }catch(_){}
-        // 1ª vez (sem cache): semeia o histórico disponível; depois só 30 dias
-        const win = seeded ? 30 : 180;
-        const mRows=await getF('media_id,timestamp,media_type,media_product_type,media_caption,media_like_count,media_comments_count,media_reach,media_saved,media_shares,media_views,media_url,media_thumbnail_url,username', win);
-        const fresh=mRows.map((r,i)=>{ const likes=num(r.media_like_count),comments=num(r.media_comments_count),shares=num(r.media_shares),saves=num(r.media_saved); const reach=num(r.media_reach), views=num(r.media_views); const eng=num(r.media_engagement)||(likes+comments+shares+saves); const type=(r.media_product_type==='REELS')?'REELS':(r.media_type||'IMAGE'); return { id:r.media_id||null, ts:String(r.timestamp||'').slice(0,10), type, likes,comments,shares,saves, views, reach, eng, caption:String(r.media_caption||'Sem legenda').replace(/\s+/g,' ').trim().slice(0,140), coverIdx:i, cover:String(r.media_url||r.media_thumbnail_url||''), thumb:String(r.media_thumbnail_url||r.media_url||'') }; })
+        let cached=[]; let seeded=false; let cacheFlags={};
+        try{ const raw=localStorage.getItem(CKEY); if(raw){ const o=JSON.parse(raw); if(o&&Array.isArray(o.posts)){ cached=o.posts; seeded=o.posts.length>0; cacheFlags=o; } } }catch(_){}
+        // 1ª vez (sem cache): semeia o histórico disponível; depois só 30 dias.
+        // Se o cache foi gravado antes do campo `follows` existir, faz um re-seed único de 180 dias.
+        // O marcador é persistido no cache (não re-derivado dos valores): posts fora da janela de
+        // fetch nunca recebem o campo, então re-derivar deixaria o backfill ligado para sempre.
+        // v2 = re-seed de 365 dias (cobre todo 2026) + capas de todo 2026.
+        const needsFollowsBackfill = seeded && (cacheFlags.followsBackfill||0) < 2;
+        const win = (seeded && !needsFollowsBackfill) ? 30 : 365;
+        const mRows=await getF('media_id,timestamp,media_type,media_product_type,media_caption,media_like_count,media_comments_count,media_reach,media_saved,media_shares,media_views,media_follows,media_url,media_thumbnail_url,username', win);
+        const fresh=mRows.map((r,i)=>{ const likes=num(r.media_like_count),comments=num(r.media_comments_count),shares=num(r.media_shares),saves=num(r.media_saved); const reach=num(r.media_reach), views=num(r.media_views); const eng=num(r.media_engagement)||(likes+comments+shares+saves); const type=(r.media_product_type==='REELS')?'REELS':(r.media_type||'IMAGE'); return { id:r.media_id||null, ts:String(r.timestamp||'').slice(0,10), type, likes,comments,shares,saves, views, reach, eng, follows:num(r.media_follows), caption:String(r.media_caption||'Sem legenda').replace(/\s+/g,' ').trim().slice(0,140), coverIdx:i, cover:String(r.media_url||r.media_thumbnail_url||''), thumb:String(r.media_thumbnail_url||r.media_url||'') }; })
           .filter(p=>isDate(p.ts) && p.id);
         // corte de 30 dias: cache fornece tudo anterior, fetch fornece os últimos 30 dias
-        const cutoff = fd(new Date(to.getTime()-30*86400000));
+        const cutoff = needsFollowsBackfill ? '0000-00-00' : fd(new Date(to.getTime()-30*86400000));
         const byId={};
         cached.filter(p=>p && p.id && String(p.ts) < cutoff).forEach(p=>{ byId[p.id]=p; });
+        // no backfill, mantém o histórico antigo e só acrescenta `follows` vindo do fetch
+        if(needsFollowsBackfill){ cached.forEach(p=>{ if(p&&p.id) byId[p.id]=p; }); }
         // capas já embutidas (data URL) — carrega do cache para não rebaixar de novo
         const cdById={}; cached.forEach(p=>{ if(p && p.id && p.coverData) cdById[p.id]=p.coverData; });
-        fresh.forEach(p=>{ if(cdById[p.id]) p.coverData=cdById[p.id]; byId[p.id]=p; });
+        fresh.forEach(p=>{ if(cdById[p.id]) p.coverData=cdById[p.id]; const old=byId[p.id]; if(old&&old.coverData&&!p.coverData) p.coverData=old.coverData; byId[p.id]=p; });
         const media = Object.values(byId).filter(p=>isDate(p.ts) && p.id).sort((a,b)=> a.ts<b.ts?-1:1);
         // persiste tudo até hoje, para a próxima atualização puxar só 30 dias
-        this.saveCache(CKEY, media, fd(to));
+        this.saveCache(CKEY, media, fd(to), {followsBackfill:2});
         this.model=this.buildModel({ profile:this._live.profile, daily:this._live.daily, follows:this._live.follows, media });
         const dormant = (this._live.actSum||0) < 50 && media.length===0;
         const _newDefWeek=this.model.DEFAULT_WEEK.iso;
         // se o usuário não mexeu na semana, ajusta para a semana mais recente COM posts
         this.setState(s=> (s.week===_phase1Week && s.month==='all') ? {refreshing:false, mediaLoading:false, dormant, week:_newDefWeek} : {refreshing:false, mediaLoading:false, dormant});
-        // baixa e embute as capas (desde mai/2026) para guardá-las de forma durável
+        // baixa e embute as capas (todo 2026) para guardá-las de forma durável
         this.persistCovers(media, CKEY, fd(to));
       }catch(e2){ this.setState({ refreshing:false, mediaLoading:false, dataError:'Publicações: '+((e2&&e2.message)||'falha ao carregar') }); }
     }catch(e){ this.setState({ refreshing:false, mediaLoading:false, dataError:(e&&e.message)||'Falha ao buscar dados ao vivo.' }); }
@@ -1279,10 +1329,11 @@ class Component extends DCLogic {
 
   /* ============ CAPAS DURÁVEIS (data URL no cache) ============ */
   // grava o cache; se estourar a cota, regrava sem as capas embutidas
-  saveCache(CKEY, media, savedAt){
-    try{ localStorage.setItem(CKEY, JSON.stringify({posts:media, savedAt})); return true; }
+  saveCache(CKEY, media, savedAt, flags){
+    const extra = flags||{};
+    try{ localStorage.setItem(CKEY, JSON.stringify({posts:media, savedAt, ...extra})); return true; }
     catch(e){
-      try{ localStorage.setItem(CKEY, JSON.stringify({posts:media.map(p=>{ const q={...p}; delete q.coverData; return q; }), savedAt})); }catch(_){}
+      try{ localStorage.setItem(CKEY, JSON.stringify({posts:media.map(p=>{ const q={...p}; delete q.coverData; return q; }), savedAt, ...extra})); }catch(_){}
       return false;
     }
   }
@@ -1304,9 +1355,9 @@ class Component extends DCLogic {
       img.src=url;
     });
   }
-  // embute, em background, as capas dos posts desde mai/2026 ainda não guardadas
+  // embute, em background, as capas dos posts de 2026 ainda não guardadas
   async persistCovers(media, CKEY, savedAt){
-    const SINCE='2026-05-01';
+    const SINCE='2026-01-01';
     const targets=media.filter(p=> p && p.ts>=SINCE && !p.coverData && (p.thumb||p.cover));
     if(!targets.length) return;
     let i=0; const conc=6;
@@ -1314,7 +1365,7 @@ class Component extends DCLogic {
     await Promise.all(Array.from({length:conc}, work));
     // re-renderiza com as capas embutidas e regrava o cache
     if(this._live){ this.model=this.buildModel({ profile:this._live.profile, daily:this._live.daily, follows:this._live.follows, media }); this.forceUpdate(); }
-    this.saveCache(CKEY, media, savedAt);
+    this.saveCache(CKEY, media, savedAt, {followsBackfill:2});
   }
 
   /* ============ CHARTS ============ */
@@ -1787,7 +1838,7 @@ class Component extends DCLogic {
           {label:'% Eng. seguidor', value: PM?this.fmtPct(p.eng/followers*100):'—'},
           {label:'Tx. salvamento', value: PM?this.fmtPct(p.reach?p.saves/p.reach*100:null):'—'},
           {label:'Tx. compart.', value: PM?this.fmtPct(p.reach?p.shares/p.reach*100:null):'—'},
-          {label:'Cliques na bio', value: PM?(taps==null?'—':this.fmtNum(taps)):'—'},
+          {label:'Seguidores', value: PM?(p.follows==null?'—':this.fmtNum(p.follows)):'—'},
         ] };
     };
     const posted=contentMedia.filter(p=>!isTest(p)).map(cardOf);
@@ -1827,9 +1878,11 @@ class Component extends DCLogic {
       coverStyle:`width:56px; height:56px; flex:none; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; background:${this.COVER_BG[p.coverIdx%this.COVER_BG.length]};`
     }));
 
-    const { worked, notWorked } = this.learnings(valid, followers);
+    const { worked, notWorked, themeRows } = this.learnings(valid, followers);
+    const themeList = themeRows||[];
 
     return { ...base,
+      themeRows:themeList, themeShow: themeList.length>0,
       kpis, metric2:S.metric2, metric2Options, onMetric2:(e)=>this.setState({metric2:e.target.value}),
       posted, tests, postedCount:String(posted.length), testCount:String(tests.length),
       hasPosted:posted.length>0, hasTest:tests.length>0, contentEmpty: posted.length===0 && tests.length===0,
@@ -2164,6 +2217,52 @@ class Component extends DCLogic {
         : 'border-top:1px solid var(--border-soft); margin:26px 0 18px; padding-top:24px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;' };
   }
 
+  // classifica cada publicação em um TEMA editorial (regras derivadas das legendas reais do perfil)
+  themeOf(p){
+    const t=String(p.caption||'').toLowerCase();
+    const has=(...ws)=>ws.some(w=>t.includes(w));
+    // 1) vida pessoal / viagem — marcadores inequívocos, antes de qualquer regra de negócio
+    if(has('casamos','casamento','noiva','nossa viagem','viagem','alberobello','itália','peru','lima','trilha','chá revelação','my baby','baby dom','mami do dom','papai do dom','meses de nós','meu amado','ensaio profissional','ancestrais','#peru','energy','favorita do mundo','me fazendo rir','bate bola','marido','família','quantas fotos')) return 'Bastidores / pessoal';
+    // 2) eventos e experiências próprias (recaps e bastidores de evento)
+    if(has('high beauty day','vision business','masterclass','nosso evento','do evento','tour ceo','experiência que vivemos','primeiro lote','segundo bloco','palestra')) return 'Eventos e experiências';
+    // 3) parcerias e marcas
+    if(has('parceira','parceiro','nasceu com o propósito','regenera','misc ','a misc','laita','regenerativo')) return 'Parcerias e marcas';
+    // 4) convite/oferta — CTA
+    if(has('comente ','escreva "','escreva “','nos comentários','link da bio','link na bio','faça sua aplicação','aplicação no link','garanta o seu lugar','garantiu o seu lugar','está confirmada','inscri','vagas','imersão','falta apenas','falta 1 dia','estarei ao vivo','às 10h','vou te ensinar','esteja comigo','me chama','chama no direct')) return 'Oferta / convite';
+    // 5) prova social — apenas marcadores concretos de resultado (nunca só uma @menção)
+    if(has('saiu de r$','faturava','mentorada','mentoradas','entrou na high','meses de mentoria','posso provar','placa de 1 milhão','plaquinha','a história da','chegou pra mim com','seria “mais do')) return 'Prova social / resultados';
+    // 6) avaliação e vendas
+    if(has('avaliação','avaliações','orçamento','plano de tratamento','protocolo','fecha venda','fechar venda','vender mais caro','vender','venda','cliente fecha','some depois','objeção','promoção')) return 'Avaliação e vendas';
+    // 7) equipe
+    if(has('contratar','contratação','equipe','secretária','colaborador','time ','o problema é o time','funcionári','liderar','liderança')) return 'Equipe e contratação';
+    // 8) metas, planejamento e método
+    if(has('meta','metas','planejamento','planejar','método','improviso','improvisa','processo','estrutura','organiz','indicadores','gestão','receita','fórmulas prontas')) return 'Metas e planejamento';
+    // 9) finanças
+    if(has('faturamento','financeiro','precific','cobrar','cobra ','preço','lucro','caixa','custos','cardápio','pró-labore','r$','mil por mês','100 mil','6 dígitos','não sobra')) return 'Gestão e finanças';
+    // 10) sobrecarga e rotina
+    if(has('agenda cheia','agenda','sobrecarreg','conciliar','liberdade','se desdobra','exausta','cansaç','vida pessoal','sozinha','trabalhar mais','maratona','ocupad','correr atrás de clientes')) return 'Sobrecarga e rotina';
+    // 11) posicionamento, visão e mercado
+    if(has('posicionament','autoridade','imagem','postura','mercado','concorrência','clínica nova','se destacam','diferença','procura por estética','profissionais que','cadeira de ceo','ceo','visão','clareza','onde quer chegar','decidem')) return 'Posicionamento';
+    // 12) mentalidade
+    if(has('mentalidade','decisão','decisões','não desistir','acredit','amém','deus','recuar','conselho','mereço','merece','merecimento','carta','mulher, mãe','extraordinário','jornada','escolha seu difícil','sucesso','execução')) return 'Mentalidade';
+    // 13) educativo
+    if(has('dica','dicas','checklist','como ','passo','ensin','aprend','erro','sinais','o que ninguém')) return 'Educativo / dicas';
+    return 'Outros';
+  }
+  // agrega desempenho por tema
+  themeStats(valid){
+    const g={};
+    valid.forEach(p=>{ const k=this.themeOf(p); const o=g[k]||(g[k]={theme:k,n:0,reach:0,eng:0,saves:0,shares:0,comments:0,follows:0});
+      o.n++; o.reach+=p.reach||0; o.eng+=p.eng||0; o.saves+=p.saves||0; o.shares+=p.shares||0; o.comments+=p.comments||0; o.follows+=(p.follows||0); });
+    return Object.values(g).map(o=>({ ...o,
+      avgReach:o.n?o.reach/o.n:0,
+      rate:o.reach?o.eng/o.reach*100:0,
+      saveRate:o.reach?o.saves/o.reach*100:0,
+      shareRate:o.reach?o.shares/o.reach*100:0,
+      followsPer:o.n?o.follows/o.n:0
+    })).sort((a,b)=>b.rate-a.rate);
+  }
+
   learnings(valid, followers){
     if(valid.length<2) return { worked:[{title:'Dados insuficientes', detail:'Selecione um período com mais conteúdos publicados para gerar aprendizados.'}], notWorked:[{title:'Dados insuficientes', detail:'Sem posts suficientes para comparar.'}] };
     const avgReach = valid.reduce((a,p)=>a+p.reach,0)/valid.length;
@@ -2177,6 +2276,42 @@ class Component extends DCLogic {
     const maxEng=by(rate)[0], maxComment=by(p=>p.comments)[0];
     const highReachLowEng=by(p=>p.reach).find(p=> rate(p)<avgRate);
     const q=(s)=>'“'+s+'”';
+    // ── análise por TEMA (não por post) ──
+    const ALL=this.themeStats(valid);
+    // rankings só com temas nomeados e com massa mínima — 'Outros' e temas de 1-2 posts
+    // continuam na tabela como contexto, mas nunca viram recomendação
+    const named=ALL.filter(t=>t.theme!=='Outros');
+    const TH=named.filter(t=>t.n>=3).length>=2 ? named.filter(t=>t.n>=3) : named.filter(t=>t.n>=2);
+    const nT=(v)=>this.fmtNum(Math.round(v));
+    if(TH.length>=2){
+      const byRate=TH.slice().sort((a,b)=>b.rate-a.rate);
+      const byReach=TH.slice().sort((a,b)=>b.avgReach-a.avgReach);
+      const bySave=TH.slice().sort((a,b)=>b.saveRate-a.saveRate);
+      const byShare=TH.slice().sort((a,b)=>b.shareRate-a.shareRate);
+      const byFoll=TH.slice().sort((a,b)=>b.followsPer-a.followsPer);
+      const vol=TH.slice().sort((a,b)=>b.n-a.n)[0];
+      const bR=byRate[0], wR=byRate[byRate.length-1];
+      const bA=byReach[0], wA=byReach[byReach.length-1];
+      const bS=bySave[0], bSh=byShare[0], bF=byFoll[0];
+      const share=(t)=>this.fmtPct(t.n/valid.length*100);
+      const worked=[
+        {title:'Tema que mais engaja: '+bR.theme, detail:bR.n+' publicações converteram '+this.fmtPct(bR.rate)+' do alcance em interações — contra '+this.fmtPct(avgRate)+' da média geral. É o assunto que a audiência responde; vale aumentar a frequência.'},
+        {title:'Tema de maior alcance: '+bA.theme, detail:'Média de '+nT(bA.avgReach)+' contas por publicação em '+bA.n+' posts, '+this.fmtPct((bA.avgReach/avgReach-1)*100)+' acima da média do período. Serve como porta de entrada para gente nova.'},
+        {title:'Mais salvo: '+bS.theme, detail:this.fmtPct(bS.saveRate)+' do alcance salvou esse tipo de conteúdo. Sinal de material de referência — transforme em carrossel e reaproveite.'},
+        {title:'Mais compartilhado: '+bSh.theme, detail:this.fmtPct(bSh.shareRate)+' do alcance compartilhou. É o tema que a audiência usa para conversar com outras pessoas, o que amplia alcance sem anúncio.'},
+      ];
+      if(bF.followsPer>0) worked.push({title:'Tema que mais traz seguidor: '+bF.theme, detail:'Média de '+bF.followsPer.toFixed(1).replace('.',',')+' seguidores por publicação ('+bF.follows+' no total). É o conteúdo que converte visitante em seguidor.'});
+      const notWorked=[
+        {title:'Tema com menor engajamento: '+wR.theme, detail:wR.n+' publicações ficaram em '+this.fmtPct(wR.rate)+' de interação, abaixo da média de '+this.fmtPct(avgRate)+'. Ou o assunto não interessa a essa audiência, ou a abordagem precisa mudar.'},
+        {title:'Tema de menor alcance: '+wA.theme, detail:'Média de só '+nT(wA.avgReach)+' contas por publicação, '+this.fmtPct((1-wA.avgReach/avgReach)*100)+' abaixo da média. A entrega está limitada — revise gancho e formato antes de insistir.'},
+      ];
+      if(vol.theme!==bR.theme && vol.rate<avgRate){
+        notWorked.push({title:'Esforço mal distribuído: '+vol.theme, detail:'É o tema mais publicado ('+vol.n+' posts, '+share(vol)+' do período), mas engaja '+this.fmtPct(vol.rate)+' — abaixo da média. Está consumindo produção sem retorno proporcional; realoque parte desse volume para '+bR.theme+'.'});
+      }
+      const lowFoll=TH.filter(t=>t.follows===0);
+      if(lowFoll.length) notWorked.push({title:'Não converte seguidor', detail:lowFoll.map(t=>t.theme).join(', ')+' — nenhum seguidor novo no período, mesmo com alcance. Falta um motivo explícito para seguir no fim do conteúdo.'});
+      return { worked, notWorked, themeRows:ALL.map(t=>({ theme:t.theme, n:String(t.n), avgReach:nT(t.avgReach), rate:this.fmtPct(t.rate), saveRate:this.fmtPct(t.saveRate), shareRate:this.fmtPct(t.shareRate), follows:this.fmtNum(t.follows), above:t.rate>=avgRate })) };
+    }
     const worked=[
       {title:'Maior alcance do período', detail:q(maxReach.caption)+' alcançou '+this.fmtNum(maxReach.reach)+' contas — '+this.fmtPct((maxReach.reach/avgReach-1)*100)+' acima da média. Repita o formato e o tema.'},
       {title:'Mais compartilhado', detail:q(maxShare.caption)+' teve '+this.fmtNum(maxShare.shares)+' compartilhamentos. Conteúdo que as pessoas enviam para amigos amplia alcance — vale uma sequência.'},
