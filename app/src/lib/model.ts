@@ -124,18 +124,23 @@ export function windowOf(M: Model, state: PeriodState): Window {
   }
   if (state.month !== 'all') {
     const ym = state.month
-    const inMonth = M.daily.filter((r) => r.date.slice(0, 7) === ym).map((r) => r.date)
-    const start = inMonth[0]
-    const end = inMonth[inMonth.length - 1]
+    // resolve pelo calendário (não pela série diária, que cobre só ~60 dias)
+    const monthRange = (v: string): { start: string; end: string } | null => {
+      if (!v) return null
+      const [y, m] = v.split('-').map(Number)
+      const pad = (n: number): string => String(n).padStart(2, '0')
+      const last = new Date(Date.UTC(y, m, 0)).getUTCDate()
+      const start = v + '-01'
+      let end = v + '-' + pad(last)
+      if (M.maxDate && end > M.maxDate) end = M.maxDate
+      return { start, end }
+    }
+    const cur = monthRange(ym)!
     const mi = M.months.findIndex((x) => x.value === ym)
     const pm = mi > 0 ? M.months[mi - 1] : null
-    let prev: { start: string; end: string } | null = null
-    if (pm) {
-      const pin = M.daily.filter((r) => r.date.slice(0, 7) === pm.value).map((r) => r.date)
-      prev = { start: pin[0], end: pin[pin.length - 1] }
-    }
-    const lbl = M.months.find((x) => x.value === ym)!.label
-    return { start, end, kind: 'month', label: lbl, prev }
+    const prev = pm ? monthRange(pm.value) : null
+    const lblEntry = M.months.find((x) => x.value === ym)
+    return { start: cur.start, end: cur.end, kind: 'month', label: lblEntry ? lblEntry.label : ym, prev }
   }
   return { start: M.minDate, end: M.maxDate, kind: 'all', label: 'todo o período', prev: null }
 }

@@ -37,6 +37,8 @@ export interface MediaPost {
   views: number
   reach: number
   eng: number
+  // seguidores ganhos a partir da publicação (media_follows)
+  follows?: number
   caption: string
   coverIdx: number
   cover?: string

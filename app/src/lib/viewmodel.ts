@@ -8,7 +8,7 @@ import { ddmm } from './dates'
 import { fmtNum, fmtPct, delta } from './format'
 import { windowOf, agg, tlAt, weekdayDatasets } from './model'
 import { lineCfg, type LineOpts } from './charts'
-import { learnings, type Learning } from './learnings'
+import { learnings, type Learning, type ThemeRow } from './learnings'
 import { ACCENT, COVER_BG } from './constants'
 import type { Model, MonthDef, MediaPost, DailyRow } from './types'
 import type { ChartConfiguration } from 'chart.js'
@@ -200,8 +200,6 @@ export interface ContentVM {
 export function contentVM(M: Model, S: DashState): ContentVM {
   const { followers, PM, isTest, contentMedia } = ctx(M, S)
   const cardOf = (p: MediaPost): CardVM => {
-    const dayRow = M.daily.find((r) => r.date === p.ts) || null
-    const taps = dayRow ? dayRow.taps : null
     const baseBg = COVER_BG[p.coverIdx % COVER_BG.length]
     const src = p.coverData || p.cover
     const coverBase: CSSProperties = {
@@ -238,7 +236,7 @@ export function contentVM(M: Model, S: DashState): ContentVM {
         { label: '% Eng. seguidor', value: PM ? fmtPct((p.eng / followers) * 100) : '—' },
         { label: 'Tx. salvamento', value: PM ? fmtPct(p.reach ? (p.saves / p.reach) * 100 : null) : '—' },
         { label: 'Tx. compart.', value: PM ? fmtPct(p.reach ? (p.shares / p.reach) * 100 : null) : '—' },
-        { label: 'Cliques na bio', value: PM ? (taps == null ? '—' : fmtNum(taps)) : '—' },
+        { label: 'Seguidores', value: PM ? (p.follows == null ? '—' : fmtNum(p.follows)) : '—' },
       ],
     }
   }
@@ -280,6 +278,8 @@ export interface InsightsVM {
   avgTitle: string
   top3: Top3VM[]
   topMetricOptions: { value: string; label: string }[]
+  themeRows: ThemeRow[]
+  themeShow: boolean
   worked: Learning[]
   notWorked: Learning[]
   metricsAvailable: boolean
@@ -360,13 +360,16 @@ export function insightsVM(M: Model, S: DashState): InsightsVM {
       },
     }))
 
-  const { worked, notWorked } = learnings(valid, followers)
+  const { worked, notWorked, themeRows } = learnings(valid, followers)
+  const themeList = themeRows || []
   return {
     averages,
     avgEyebrow: PM ? 'Média por post no período' : 'Média diária no período',
     avgTitle: PM ? 'Desempenho médio' : 'Desempenho médio diário',
     top3,
     topMetricOptions,
+    themeRows: themeList,
+    themeShow: themeList.length > 0,
     worked,
     notWorked,
     metricsAvailable: PM,
