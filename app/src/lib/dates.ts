@@ -66,7 +66,21 @@ export function lastDayOf(ym: string): string {
   return ym + '-' + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0')
 }
 
-// últimos 30 dias (para a NEA 2ª Edição) — limitado ao período disponível
+// último mês com dados (padrão de todos os funis) — 1º ao último dia do mês de maxD
+export function lastMonthRange(minD: string | null, maxD: string | null): { from: string; to: string } {
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  const iso = (d: Date): string => d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate())
+  const end = maxD ? new Date(maxD + 'T00:00:00Z') : new Date()
+  const y = end.getUTCFullYear()
+  const m = end.getUTCMonth()
+  let from = iso(new Date(Date.UTC(y, m, 1)))
+  let to = iso(new Date(Date.UTC(y, m + 1, 0)))
+  if (minD && from < minD) from = minD
+  if (maxD && to > maxD) to = maxD
+  return { from, to }
+}
+
+// últimos 30 dias — limitado ao período disponível
 export function last30Range(minD: string | null, maxD: string | null): { from: string; to: string } {
   const pad = (n: number): string => String(n).padStart(2, '0')
   const iso = (d: Date): string => d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate())

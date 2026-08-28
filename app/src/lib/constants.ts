@@ -12,11 +12,18 @@ import type { FunnelSpec } from './types'
 export const ADS_ACCOUNT_ID = '450830237045296'
 
 export const ADS_CAMPAIGN_MATCH: Record<string, RegExp> = {
+  aplicacao: /aplica[çc][aã]o/i,
+  isca: /isca/i,
+  low: /low/i,
   premium: /sess[aã]o\s*premium/i,
   diagnostico: /diagn[oó]stico/i,
-  seguidores: /seguidores/i,
+  seguidores: /seguidores|do instagram/i,
   turbinamento: /do instagram/i,
   nea2: /nea\s*2\.?0/i,
+  // vendas Golden por imersão (campanhas de venda com AMB/NEA/IEB no nome)
+  gamb: /(?=.*\bamb\b)(?=.*venda)/i,
+  gnea: /(?=.*\bnea\b)(?=.*venda)/i,
+  gieb: /(?=.*\bieb\b)(?=.*venda)/i,
 }
 
 export const SHEET_ID = '1SEHe4kbnkOj_D5l4vCvnvEM2pPObgCrX25elBh_FH1o'
@@ -26,6 +33,17 @@ export const RED_RAMP = ['#771520', '#6B131D', '#5F111A', '#530F17', '#470C13', 
 
 // funis = abas da planilha
 export const FUNNELS: FunnelSpec[] = [
+  // funil de Aplicação Direta (só anúncios + planilha de leads nativa) — padrão
+  {
+    key: 'aplicacao',
+    name: 'Funil de Aplicação Direta',
+    adsOnly: true,
+    gid: '',
+    dateCol: 0,
+    statusCol: 0,
+    statusMap: {},
+    charts: [],
+  },
   {
     key: 'premium',
     name: 'Funil Sessão Premium',
@@ -77,7 +95,29 @@ export const FUNNELS: FunnelSpec[] = [
     statusMap: {},
     charts: [],
   },
-  // NEA 2ª Edição — 100% dados reais das campanhas "NEA 2.0" (funil de compras)
+  // funil Isca (só anúncios + planilha de leads, aba 1)
+  {
+    key: 'isca',
+    name: 'Funil Isca',
+    adsOnly: true,
+    gid: '',
+    dateCol: 0,
+    statusCol: 0,
+    statusMap: {},
+    charts: [],
+  },
+  // funil Low Ticket (só anúncios)
+  {
+    key: 'low',
+    name: 'Funil Low Ticket',
+    adsOnly: true,
+    gid: '',
+    dateCol: 0,
+    statusCol: 0,
+    statusMap: {},
+    charts: [],
+  },
+  // NEA 2ª Edição — dobrado dentro do Golden Ticket (NEA 2.0); oculto na lista de funis
   {
     key: 'nea2',
     name: 'NEA 2ª Edição',
@@ -85,6 +125,7 @@ export const FUNNELS: FunnelSpec[] = [
     noImersao: true,
     nea2: true,
     purchaseFunnel: true,
+    hidden: true,
     gid: '',
     dateCol: 0,
     statusCol: 0,

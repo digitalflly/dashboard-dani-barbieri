@@ -14,8 +14,8 @@ const labelCap: CSSProperties = {
 const PAGES: { key: PageKey; label: string }[] = [
   { key: 'conta', label: 'Dados da Conta' },
   { key: 'conteudos', label: 'Dados dos Conteúdos' },
-  { key: 'insights', label: 'Insights dos Conteúdos' },
   { key: 'candidaturas', label: 'Dados dos Funis' },
+  { key: 'resultados', label: 'Resultados Mensais' },
   { key: 'plano', label: 'Plano de Conteúdo' },
 ]
 const PAGE_KEYS = PAGES.map((p) => p.key)
@@ -147,39 +147,39 @@ export default function Header({ dash, candFilters }: { dash: Dashboard; candFil
         </nav>
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flex: 'none' }}>
+          {hv.showMonth && (
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={labelCap}>Mês</span>
+              <select
+                className="b-select"
+                value={S.month}
+                onChange={(e) => setState({ month: e.target.value, week: 'all' })}
+                style={{ height: 38, padding: '0 12px', minWidth: 150 }}
+              >
+                {monthOptions(M).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {hv.showFilters && (
-            <>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={labelCap}>Mês</span>
-                <select
-                  className="b-select"
-                  value={S.month}
-                  onChange={(e) => setState({ month: e.target.value, week: 'all' })}
-                  style={{ height: 38, padding: '0 12px', minWidth: 150 }}
-                >
-                  {monthOptions(M).map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={labelCap}>Semana</span>
-                <select
-                  className="b-select"
-                  value={S.week}
-                  onChange={(e) => setState({ week: e.target.value })}
-                  style={{ height: 38, padding: '0 12px', minWidth: 230 }}
-                >
-                  {weekOptions(M).map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={labelCap}>Semana</span>
+              <select
+                className="b-select"
+                value={S.week}
+                onChange={(e) => setState({ week: e.target.value })}
+                style={{ height: 38, padding: '0 12px', minWidth: 230 }}
+              >
+                {weekOptions(M).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
 
           {hv.showFunnelFilters && (

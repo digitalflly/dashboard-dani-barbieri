@@ -234,7 +234,7 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 }}>
+              <div style={inv.investStatsGrid}>
                 {inv.investStats.map((st, i) => (
                   <div
                     key={i}
@@ -246,6 +246,34 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                   </div>
                 ))}
               </div>
+
+              {v.aplicBandShow && (
+                <div className="b-card" style={{ padding: '20px 22px', marginBottom: 16 }}>
+                  <div style={eyebrow}>Faturamento mensal declarado</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, letterSpacing: '-0.01em', fontSize: 20, color: 'var(--text-strong)', lineHeight: 1.1, marginBottom: 14 }}>
+                    Leads por faixa
+                  </div>
+                  <div style={{ display: 'flex', width: '100%', height: 44, overflow: 'visible' }}>
+                    {v.aplicBands.map((b, i) => (
+                      <div
+                        key={i}
+                        title={`${b.label} — ${b.count} leads`}
+                        style={{ width: b.width, minWidth: 30, background: b.color, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'default' }}
+                      >
+                        <span data-keepcase="1" style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.92)' }}>{b.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 12 }}>
+                    {v.aplicBands.map((b, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 11, height: 11, borderRadius: 2, background: b.color, flex: 'none' }}></span>
+                        <span style={{ fontSize: 11.5, color: 'var(--text-body)' }}>{b.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {inv.investDailyShow && (
                 <div className="b-card" style={{ padding: '22px 24px', marginBottom: 16 }}>
@@ -280,10 +308,13 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                 </div>
               )}
 
-              {inv.investChart && (
-                <div className="b-card" style={{ padding: '22px 24px', marginBottom: 16 }}>
-                  <div style={{ ...eyebrow, marginBottom: 14 }}>Ingressos por dia</div>
-                  <div style={{ height: 260, position: 'relative' }}>
+              {inv.investChartShow && inv.investChart && (
+                <div className="b-card" style={{ padding: '20px 22px', marginBottom: 16 }}>
+                  <div style={eyebrow}>Por dia</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, letterSpacing: '-0.01em', fontSize: 20, color: 'var(--text-strong)', lineHeight: 1.1, marginBottom: 12 }}>
+                    {inv.investChartTitle}
+                  </div>
+                  <div style={{ height: 230, position: 'relative' }}>
                     <ChartCanvas id="inv-ingressos-day" config={inv.investChart} />
                   </div>
                 </div>
@@ -424,12 +455,14 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                             <th style={adsNameCol}>Anúncio</th>
                             <th style={{ ...thPlain, padding: '0 12px 10px' }}>Impressões</th>
                             <th style={{ ...thPlain, padding: '0 12px 10px' }}>Cliques no link</th>
+                            <th style={{ ...thPlain, padding: '0 12px 10px' }}>CTR %</th>
                             {inv.showLpCr && (
                               <>
                                 <th style={{ ...thPlain, padding: '0 12px 10px' }}>Visualização da página</th>
                                 <th style={{ ...thPlain, padding: '0 12px 10px' }}>Connect rate</th>
                               </>
                             )}
+                            <th style={{ ...thPlain, padding: '0 12px 10px' }}>Finalização de compra</th>
                             <th style={{ ...thPlain, textAlign: 'right', padding: '0 4px 10px 12px' }}>{inv.adsResultLabel}</th>
                           </tr>
                         </thead>
@@ -457,12 +490,14 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                               </td>
                               <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.impr}</td>
                               <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.clk}</td>
+                              <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.ctr}</td>
                               {inv.showLpCr && (
                                 <>
                                   <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.lpv}</td>
                                   <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.cr}</td>
                                 </>
                               )}
+                              <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.checkout}</td>
                               <td data-keepcase="1" style={{ ...tdNum, padding: '10px 4px 10px 12px', fontSize: 13, fontWeight: 600, color: '#771520' }}>{a.leads}</td>
                             </tr>
                           ))}

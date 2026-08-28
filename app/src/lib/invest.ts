@@ -13,8 +13,11 @@ import type { CSSProperties } from 'react'
 import type { ChartConfiguration } from 'chart.js'
 import { fmtNum, fmtPct } from './format'
 import { adsAgg, turbinaAgg, dailyAgg } from './facebook'
+import { lineCfg } from './charts'
+import { addDays, ddmm } from './dates'
 import { goldenAgg } from './golden'
 import { ADS_CAMPAIGN_MATCH, FUNNELS } from './constants'
+import { GOLDEN_TRAFEGO } from './goldenTrafegoData'
 import type { AdRow, AdDailyRow } from './types'
 
 export interface AdsState {
@@ -25,6 +28,15 @@ export interface AdsState {
   gtThumbs?: Record<string, Record<string, string>>
   // links do Golden Ticket por imersão (nome do anúncio -> instagram_permalink_url)
   gtLinks?: Record<string, Record<string, string>>
+  // leads nativos por dia (planilha) — funis Aplicação Direta / Isca
+  aplicLeadsBy?: Record<string, number>
+  aplicLeadsRows?: { date: string; faixa: string }[]
+  iscaLeadsBy?: Record<string, number>
+}
+
+// leads da planilha por dia, conforme o funil
+function leadByFor(st: AdsState, key: string): Record<string, number> | null {
+  return key === 'aplicacao' ? st.aplicLeadsBy || null : key === 'isca' ? st.iscaLeadsBy || null : null
 }
 
 export interface InvestStage {
@@ -44,8 +56,10 @@ export interface InvestAdRow {
   permalink: string
   impr: string
   clk: string
+  ctr: string
   lpv: string
   cr: string
+  checkout: string
   leads: string
 }
 export interface InvestAdsetRow {
@@ -83,11 +97,15 @@ export interface InvestVM {
   isSeg: boolean
   isGolden: boolean
   noPlan: boolean
+  investSpend: number
   investDaily: InvestDailyRow[]
   investDailyShow: boolean
   investChart: ChartConfiguration | null
+  investChartShow: boolean
+  investChartTitle: string
   investStages: InvestStage[]
   investStats: InvestStat[]
+  investStatsGrid: CSSProperties
   investAds: InvestAdRow[]
   investAdsets: InvestAdsetRow[]
   investEyebrow: string
@@ -107,11 +125,15 @@ const EMPTY_INVEST: InvestVM = {
   isSeg: false,
   isGolden: false,
   noPlan: false,
+  investSpend: 0,
   investDaily: [],
   investDailyShow: false,
   investChart: null,
+  investChartShow: false,
+  investChartTitle: '',
   investStages: [],
   investStats: [],
+  investStatsGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 },
   investAds: [],
   investAdsets: [],
   investEyebrow: '',
@@ -141,11 +163,21 @@ export function investFunnel(
   const isNea2 = key === 'nea2'
   const usePurchase = isGolden || isNea2 // funil de compras (checkout → compras)
   const imersaoKey = spec?.imersaoFixed || imersao
-  if (key !== 'premium' && key !== 'diagnostico' && key !== 'seguidores' && !isGolden && !isNea2) {
+  if (
+    key !== 'premium' &&
+    key !== 'diagnostico' &&
+    key !== 'seguidores' &&
+    key !== 'aplicacao' &&
+    key !== 'isca' &&
+    key !== 'low' &&
+    !isGolden &&
+    !isNea2
+  ) {
     return EMPTY_INVEST
   }
   const isSeg = key === 'seguidores'
-  const noPlan = isSeg || isGolden || isNea2
+  const isLeadSheet = key === 'aplicacao' || key === 'isca'
+  const noPlan = isSeg || isGolden || isNea2 || key === 'aplicacao' || key === 'isca' || key === 'low'
   const IMLABEL: Record<string, string> = { ieb: 'IEB', amb: 'AMB', nea: 'NEA' }
 
   // Turbinamento (só no funil Seguidores) — substitui o card "Dados de conversão"
@@ -178,27 +210,73 @@ export function investFunnel(
   }
 
   const T = Math.max(total, 1)
-  const agg = isGolden
-    ? goldenAgg(imersaoKey, st.gtThumbs?.[imersaoKey] || {}, st.gtLinks?.[imersaoKey] || {})
-    : adsAgg(st.adsRaw, ADS_CAMPAIGN_MATCH[key] || /^\b$/, from, to)
+  // Golden: por imersão usa as campanhas de venda (gamb/gnea/gieb) ou NEA 2.0; senão o snapshot goldenAgg
+  const goldenRe =
+    imersaoKey === 'nea2'
+      ? ADS_CAMPAIGN_MATCH.nea2
+      : imersaoKey === 'amb'
+        ? ADS_CAMPAIGN_MATCH.gamb
+        : imersaoKey === 'nea'
+          ? ADS_CAMPAIGN_MATCH.gnea
+          : imersaoKey === 'ieb'
+            ? ADS_CAMPAIGN_MATCH.gieb
+            : null
+  const agg =
+    isGolden && goldenRe
+      ? adsAgg(st.adsRaw, goldenRe, from, to)
+      : isGolden
+        ? goldenAgg(imersaoKey, st.gtThumbs?.[imersaoKey] || {}, st.gtLinks?.[imersaoKey] || {})
+        : adsAgg(st.adsRaw, ADS_CAMPAIGN_MATCH[key] || /^\b$/, from, to)
   const ads = agg.ads
-  const fbPrefix = key === 'diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isNea2 ? 'NEA 2.0' : isGolden ? 'Golden Ticket' : 'Sessão Premium'
+  const fbPrefix =
+    key === 'diagnostico'
+      ? 'Diagnóstico'
+      : key === 'aplicacao'
+        ? 'Aplicação'
+        : key === 'isca'
+          ? 'Isca'
+          : key === 'low'
+            ? 'Low Ticket'
+            : isSeg
+              ? 'Seguidores'
+              : isNea2
+                ? 'NEA 2.0'
+                : isGolden
+                  ? 'Golden Ticket'
+                  : 'Sessão Premium'
   const investEyebrow =
     key === 'diagnostico'
       ? 'funil diagnóstico'
-      : isSeg
-        ? 'funil seguidores'
-        : isNea2
-          ? 'nea 2ª edição'
-          : isGolden
-            ? 'golden ticket · imersão ' + (IMLABEL[imersaoKey] || '')
-            : 'funil sessão premium'
+      : key === 'aplicacao'
+        ? 'funil de aplicação'
+        : key === 'isca'
+          ? 'funil isca'
+          : key === 'low'
+            ? 'funil low ticket'
+            : isSeg
+              ? 'funil seguidores'
+              : isNea2
+                ? 'nea 2ª edição'
+                : isGolden
+                  ? 'golden ticket · imersão ' + (IMLABEL[imersaoKey] || '')
+                  : 'funil sessão premium'
   const hasReal = ads.length > 0
 
   let alcance: number, impressoes: number, cliques: number, lpViews: number, leadsGer: number, investido: number
   let checkout = 0
   let compras = 0
-  if (hasReal) {
+  // Golden: tráfego CONGELADO por produto (snapshot), não depende de busca ao vivo
+  const GT = isGolden ? GOLDEN_TRAFEGO[imersaoKey] : null
+  if (GT) {
+    alcance = GT.reach
+    impressoes = GT.impressions
+    cliques = GT.linkClicks
+    lpViews = GT.lpViews
+    leadsGer = GT.leads
+    investido = GT.spend
+    checkout = GT.checkout
+    compras = GT.purchases
+  } else if (hasReal) {
     const sum = (f: keyof AdRow): number => ads.reduce((a, x) => a + ((x[f] as number) || 0), 0)
     alcance = sum('reach')
     impressoes = sum('impressions')
@@ -242,13 +320,41 @@ export function investFunnel(
       { label: 'Alcance', value: alcance, conv: null, cost: null, freq: null },
       { label: 'Impressões', value: impressoes, conv: div(impressoes, alcance), freq: div(impressoes, alcance), cost: null },
       { label: 'Cliques no link', value: cliques, conv: div(cliques, impressoes), cost: money2(cpc), freq: null },
-      { label: 'Visualizações da página', value: lpViews, conv: div(lpViews, cliques), cost: null, freq: null },
-      { label: 'Leads do gerenciador', value: leadsGer, conv: div(leadsGer, lpViews), cost: money2(custoGer), freq: null },
     ]
+    if (key !== 'aplicacao')
+      raw.push({ label: 'Visualizações da página', value: lpViews, conv: div(lpViews, cliques), cost: null, freq: null })
+    raw.push({
+      label: 'Leads do gerenciador',
+      value: leadsGer,
+      conv: div(leadsGer, key === 'aplicacao' ? cliques : lpViews),
+      cost: money2(custoGer),
+      freq: null,
+    })
     if (!noPlan)
       raw.push({ label: 'Leads da planilha', value: leadsPlan, conv: div(leadsPlan, leadsGer), cost: money2(custoPlan), freq: null })
+    if (isLeadSheet) {
+      const by = leadByFor(st, key) || {}
+      const planLeads = Object.keys(by)
+        .filter((d) => (!from || d >= from) && (!to || d <= to))
+        .reduce((a, d) => a + by[d], 0)
+      raw.push({
+        label: 'Leads da planilha',
+        value: planLeads,
+        conv: div(planLeads, leadsGer),
+        cost: money2(planLeads ? investido / planLeads : 0),
+        freq: null,
+      })
+    }
   }
-  const widths = usePurchase ? [100, 92, 83, 74, 65, 56] : noPlan ? [100, 92, 82, 70, 58] : [100, 93, 84, 73, 62, 52]
+  const widths = usePurchase
+    ? [100, 92, 83, 74, 65, 56]
+    : key === 'aplicacao'
+      ? [100, 92, 82, 70, 58]
+      : isLeadSheet
+        ? [100, 93, 84, 73, 62, 52]
+        : noPlan
+          ? [100, 92, 82, 70, 58]
+          : [100, 93, 84, 73, 62, 52]
   const investStages: InvestStage[] = raw.map((s, i) => {
     const convStr =
       s.freq != null
@@ -261,15 +367,26 @@ export function investFunnel(
   })
 
   const investStats: InvestStat[] = [
-    { label: hasReal ? 'Investimento' : 'Investimento (estim.)', value: 'R$ ' + fmtNum(investido) },
+    { label: hasReal || GT ? 'Investimento' : 'Investimento (estim.)', value: 'R$ ' + fmtNum(investido) },
     { label: 'CPM', value: money2(cpm) },
     { label: 'Custo por clique', value: money2(cpc) },
-    { label: 'Connect rate', value: fmtPct(connectRate) },
-    {
-      label: usePurchase ? 'Custo / compra' : noPlan ? 'Custo / lead gerenciador' : 'Custo / lead planilha',
-      value: money2(usePurchase ? custoCompra : noPlan ? custoGer : custoPlan),
-    },
+    key === 'aplicacao'
+      ? { label: 'Leads do gerenciador', value: fmtNum(leadsGer) }
+      : { label: 'Connect rate', value: fmtPct(connectRate) },
   ]
+  if (!noPlan) investStats.push({ label: 'Leads do gerenciador', value: fmtNum(leadsGer) })
+  if (!noPlan) investStats.push({ label: 'Custo / lead gerenciador', value: money2(custoGer) })
+  investStats.push({
+    label: usePurchase ? 'Custo / compra' : noPlan ? 'Custo / lead gerenciador' : 'Custo / lead planilha',
+    value: money2(usePurchase ? custoCompra : noPlan ? custoGer : custoPlan),
+  })
+  if (isLeadSheet) {
+    const by = leadByFor(st, key) || {}
+    const planLeads = Object.keys(by)
+      .filter((d) => (!from || d >= from) && (!to || d <= to))
+      .reduce((a, d) => a + by[d], 0)
+    investStats.push({ label: 'Custo / lead planilha', value: money2(planLeads ? investido / planLeads : 0) })
+  }
 
   let investAds: InvestAdRow[]
   if (hasReal) {
@@ -288,8 +405,10 @@ export function investFunnel(
       permalink: a.permalink || '',
       impr: fmtNum(a.impressions),
       clk: fmtNum(a.linkClicks),
+      ctr: fmtPct(a.impressions ? (a.linkClicks / a.impressions) * 100 : 0),
       lpv: fmtNum(a.lpViews),
       cr: fmtPct(a.linkClicks ? (a.lpViews / a.linkClicks) * 100 : 0),
+      checkout: fmtNum(a.checkout || 0),
       leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
     }))
   } else {
@@ -321,8 +440,10 @@ export function investFunnel(
         permalink: '',
         impr: fmtNum(impr),
         clk: fmtNum(clk),
+        ctr: fmtPct(impr ? (clk / impr) * 100 : 0),
         lpv: fmtNum(lpv),
         cr: fmtPct(clk ? (lpv / clk) * 100 : 0),
+        checkout: fmtNum(0),
         leads: fmtNum(isSeg ? clk : leads),
       }
     })
@@ -413,7 +534,8 @@ export function investFunnel(
     const res = chartData[i]
     return res ? +(o.spend / res).toFixed(2) : null
   })
-  const investChart: ChartConfiguration | null = isNea2 && chartSrc.length
+  let investChartTitle = 'Ingressos por dia'
+  const nea2Chart: ChartConfiguration | null = isNea2 && chartSrc.length
     ? ({
         type: 'bar',
         data: {
@@ -448,16 +570,48 @@ export function investFunnel(
       } as unknown as ChartConfiguration)
     : null
 
+  // ── funis de leads nativos (Aplicação / Isca): volume de leads por dia ──
+  let leadChart: ChartConfiguration | null = null
+  if (isLeadSheet) {
+    const by = leadByFor(st, key) || {}
+    const keys = Object.keys(by).sort()
+    const lo = from || keys[0]
+    const hi = to || keys[keys.length - 1]
+    const labels: string[] = []
+    const data: number[] = []
+    if (lo && hi) {
+      let cur = lo
+      let guard = 0
+      while (cur <= hi && guard < 800) {
+        labels.push(ddmm(cur))
+        data.push(by[cur] || 0)
+        cur = addDays(cur, 1)
+        guard++
+      }
+    }
+    leadChart = labels.length
+      ? lineCfg(labels, [{ label: 'leads', data, color: '#771520', fill: true, fillColor: 'rgba(119,21,32,0.08)' }], { zero: true })
+      : null
+    investChartTitle = 'Volume de leads por dia'
+  }
+
+  const investChart = isLeadSheet ? leadChart : nea2Chart
+  const investChartShow = (isNea2 || isLeadSheet) && !!investChart
+
   return {
     investShow: true,
     isSeg,
     isGolden,
     noPlan,
+    investSpend: investido,
     investDaily,
     investDailyShow,
     investChart,
+    investChartShow,
+    investChartTitle,
     investStages,
     investStats,
+    investStatsGrid: { display: 'grid', gridTemplateColumns: `repeat(${investStats.length}, 1fr)`, gap: 12, marginBottom: 16 },
     investAds,
     investAdsets,
     investEyebrow,
@@ -466,7 +620,7 @@ export function investFunnel(
     turbinaShow,
     turbina,
     turbinaSummary,
-    showLpCr: !isSeg,
+    showLpCr: !isSeg && key !== 'aplicacao',
     adsResultLabel: usePurchase ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads do gerenciador',
     adsetResultLabel: usePurchase ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads',
   }
