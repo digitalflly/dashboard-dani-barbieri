@@ -10,7 +10,8 @@ import { fetchAccount, fetchMedia, type LiveAccount } from './windsor'
 import { fetchAds } from './facebook'
 import { fetchFunnel as fetchFunnelCsv, funnelSpec } from './sheets'
 import { persistCovers } from './cache'
-import { defaultFunnelRange, last30Range } from './dates'
+import { lastMonthRange } from './dates'
+import { fetchAplicLeads, fetchIscaLeads } from './leads'
 import {
   loadGtThumbs,
   saveGtThumbs,
@@ -24,7 +25,7 @@ import {
 import { FUNNELS } from './constants'
 import type { Model, FunnelData, AdDailyRow } from './types'
 
-export type PageKey = 'conta' | 'conteudos' | 'insights' | 'candidaturas' | 'plano'
+export type PageKey = 'conta' | 'conteudos' | 'insights' | 'candidaturas' | 'resultados' | 'plano'
 
 export interface DashState {
   page: PageKey
@@ -55,6 +56,10 @@ export interface DashState {
   adsLoading: boolean
   adsError: string
   postMetrics: boolean
+  // leads nativos por dia (planilhas) — funis Aplicação Direta / Isca
+  aplicLeadsBy?: Record<string, number>
+  aplicLeadsRows?: { date: string; faixa: string }[]
+  iscaLeadsBy?: Record<string, number>
 }
 
 export interface Dashboard {
@@ -82,7 +87,7 @@ export function useDashboard(): Dashboard {
     dataError: '',
     mediaLoading: false,
     dormant: false,
-    funnel: 'premium',
+    funnel: 'aplicacao',
     funnelData: {},
     funnelLoading: {},
     funnelError: {},
@@ -116,6 +121,32 @@ export function useDashboard(): Dashboard {
   const funnelLoadingRef = useRef<Record<string, boolean>>({})
   const funnelDataRef = useRef<Record<string, FunnelData>>({})
   const liveRef = useRef<LiveAccount | null>(null)
+  const aplicLeadsRef = useRef(false)
+  const iscaLeadsRef = useRef(false)
+  const funnelRef = useRef(state.funnel)
+  funnelRef.current = state.funnel
+
+  const loadAplicLeads = useCallback(async () => {
+    if (aplicLeadsRef.current) return
+    aplicLeadsRef.current = true
+    try {
+      const { by, rows } = await fetchAplicLeads()
+      setState({ aplicLeadsBy: by, aplicLeadsRows: rows })
+    } catch {
+      /* silencioso — a seção some sem os dados */
+    }
+  }, [setState])
+
+  const loadIscaLeads = useCallback(async () => {
+    if (iscaLeadsRef.current) return
+    iscaLeadsRef.current = true
+    try {
+      const { by } = await fetchIscaLeads()
+      setState({ iscaLeadsBy: by })
+    } catch {
+      /* silencioso */
+    }
+  }, [setState])
 
   const fetchLive = useCallback(async () => {
     if (refreshingRef.current) return
@@ -188,8 +219,9 @@ export function useDashboard(): Dashboard {
       setState((s) => {
         const patch: Partial<DashState> = { adsLoading: false, adsRaw: raw, adsMinD: minD, adsMaxD: maxD }
         const sp = funnelSpec(s.funnel)
-        if (sp?.adsOnly && !s.candFrom && !s.candTo && s.candMonth === 'all') {
-          const r = sp.nea2 ? last30Range(minD, maxD) : defaultFunnelRange(minD, maxD)
+        // funis só de anúncios (exceto Golden / Isca / Low, que abrem no período todo) usam o último mês
+        if (sp?.adsOnly && !sp.golden && s.funnel !== 'isca' && s.funnel !== 'low' && !s.candFrom && !s.candTo && s.candMonth === 'all') {
+          const r = lastMonthRange(minD, maxD)
           patch.candFrom = r.from
           patch.candTo = r.to
         }
@@ -223,7 +255,7 @@ export function useDashboard(): Dashboard {
           }
           // intervalo padrão na 1ª carga, se o usuário ainda não filtrou
           if (s.funnel === key && !s.candFrom && !s.candTo && s.candMonth === 'all') {
-            const r = defaultFunnelRange(data.minD, data.maxD)
+            const r = lastMonthRange(data.minD, data.maxD)
             patch.candFrom = r.from
             patch.candTo = r.to
           }
@@ -248,8 +280,9 @@ export function useDashboard(): Dashboard {
     started.current = true
     void fetchLive()
     void loadAds()
-    void fetchFunnel(FUNNELS[0].key)
-  }, [fetchLive, loadAds, fetchFunnel])
+    // funil padrão é 'aplicacao' (só anúncios + planilha de leads nativa)
+    void loadAplicLeads()
+  }, [fetchLive, loadAds, loadAplicLeads])
 
   // Golden Ticket — busca/embute capas + links dos anúncios da imersão ativa (cache localStorage)
   const gtBusyRef = useRef<string | null>(null)
@@ -278,28 +311,43 @@ export function useDashboard(): Dashboard {
     void fetchLive()
   }, [fetchLive])
 
-  const setPage = useCallback((p: PageKey) => setState({ page: p }), [setState])
-
   const setFunnel = useCallback(
     (key: string) => {
       setState({ funnel: key, candMonth: 'all', candFrom: '', candTo: '', candStatusFilter: 'all' })
       const spec = funnelSpec(key)
-      // funil só de anúncios (ex.: Seguidores, NEA 2ª Edição) — sem planilha, só o intervalo padrão
+      if (key === 'aplicacao') void loadAplicLeads()
+      if (key === 'isca') void loadIscaLeads()
+      // Golden / Isca / Low abrem no período todo (sem intervalo padrão)
+      if (spec && (spec.golden || key === 'isca' || key === 'low')) {
+        setState({ candFrom: '', candTo: '', candMonth: 'all' })
+        return
+      }
+      // demais funis só de anúncios — último mês com dados
       if (spec?.adsOnly) {
-        const r = spec.nea2
-          ? last30Range(adsMinDRef.current, adsMaxDRef.current)
-          : defaultFunnelRange(adsMinDRef.current, adsMaxDRef.current)
+        const r = lastMonthRange(adsMinDRef.current, adsMaxDRef.current)
         setState({ candFrom: r.from, candTo: r.to })
         return
       }
       const d = funnelDataRef.current[key]
       if (!d && !funnelLoadingRef.current[key]) void fetchFunnel(key)
       else if (d) {
-        const r = defaultFunnelRange(d.minD, d.maxD)
+        const r = lastMonthRange(d.minD, d.maxD)
         setState({ candFrom: r.from, candTo: r.to })
       }
     },
-    [setState, fetchFunnel]
+    [setState, fetchFunnel, loadAplicLeads, loadIscaLeads]
+  )
+
+  const setPage = useCallback(
+    (p: PageKey) => {
+      setState({ page: p })
+      // ao entrar em Dados dos Funis, garante um funil visível selecionado (o primeiro)
+      if (p === 'candidaturas') {
+        const first = FUNNELS.find((f) => !f.hidden)?.key
+        if (first && funnelRef.current !== first) setFunnel(first)
+      }
+    },
+    [setState, setFunnel]
   )
 
   return { model, state, setState, onRefresh, setPage, setFunnel }

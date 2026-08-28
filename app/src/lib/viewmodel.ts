@@ -32,6 +32,7 @@ export interface HeaderVM {
   dormant: boolean
   pageTitle: string
   showFilters: boolean
+  showMonth: boolean
   showFunnelFilters: boolean
   refreshLabel: string
 }
@@ -62,14 +63,19 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
           ? 'Insights dos Conteúdos'
           : S.page === 'candidaturas'
             ? 'Dados dos Funis'
-            : 'Plano de Conteúdo'
+            : S.page === 'resultados'
+              ? 'Resultados Mensais'
+              : 'Plano de Conteúdo'
   return {
     sourceLabel,
     sourceColor,
     dormant: S.dormant && !S.mediaLoading,
     pageTitle,
-    showFilters: S.page !== 'candidaturas' && S.page !== 'plano',
-    showFunnelFilters: S.page === 'candidaturas' && S.funnel !== 'golden',
+    // filtros (mês + semana) — só nas páginas de conteúdo/conta
+    showFilters: S.page !== 'candidaturas' && S.page !== 'plano' && S.page !== 'resultados',
+    // seletor de mês — também em Resultados Mensais
+    showMonth: S.page !== 'candidaturas' && S.page !== 'plano',
+    showFunnelFilters: S.page === 'candidaturas',
     refreshLabel: S.refreshing ? 'Atualizando…' : 'Atualizar',
   }
 }

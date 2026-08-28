@@ -23,7 +23,7 @@ const sleep = (ms: number): Promise<void> => new Promise((res) => setTimeout(res
 
 export async function fetchAds(): Promise<AdsResult> {
   const to = new Date()
-  const from = new Date(to.getTime() - 180 * 86400000)
+  const from = new Date(Date.UTC(2025, 4, 1)) // 2025-05-01 — cobre todo o histórico das contas
   const fields =
     'account_id,date,campaign,adset_name,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend'
   // o conector às vezes devolve resposta parcial (capada) sem a conta da Dani —
@@ -109,8 +109,8 @@ export function adsAgg(
     a.revenue = (a.revenue || 0) + x.revenue
     a.spend += x.spend
     if (!a.thumb && x.thumb) a.thumb = x.thumb
-    // link do anúncio: biblioteca de anúncios do Facebook (via ad_id), senão o permalink do IG
-    if (!a.permalink) a.permalink = x.adId ? 'https://www.facebook.com/ads/library/?id=' + x.adId : x.permalink || ''
+    // link do anúncio: permalink do IG, senão a biblioteca de anúncios do Facebook
+    if (!a.permalink) a.permalink = x.permalink || (x.adId ? 'https://www.facebook.com/ads/library/?id=' + x.adId : '')
 
     const s =
       byAdset[x.adset] ||

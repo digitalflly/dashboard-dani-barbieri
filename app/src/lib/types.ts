@@ -200,6 +200,8 @@ export interface FunnelSpec {
   nea2?: boolean
   // funil de compras (usa checkout → compras em vez de leads)
   purchaseFunnel?: boolean
+  // oculto na lista de abas de funis (ex.: nea2, dobrado dentro do Golden)
+  hidden?: boolean
 }
 export interface FunnelData {
   rows: string[][]
