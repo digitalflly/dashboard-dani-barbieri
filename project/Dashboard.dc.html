@@ -18,6 +18,11 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="image-slot.js"></script>
   <script src="golden-ticket-data.js"></script>
+  <script src="golden-trafego-data.js"></script>
+  <script src="golden-vendas-data.js"></script>
+  <script src="resultados-vendas-data.js"></script>
+  <script src="resultados-produto-data.js"></script>
+  <script src="resultados-trafego-data.js"></script>
   <script src="nea-vendas-data.js"></script>
   <style>
     *{ box-sizing:border-box; }
@@ -29,6 +34,10 @@
     .dash thead th{ cursor:pointer; user-select:none; }
     .dash thead th:hover{ color:var(--accent) !important; }
     .dash thead th .sortarrow{ display:inline-block; margin-left:3px; font-size:9px; opacity:.85; vertical-align:middle; }
+    .fx-seg{ position:relative; }
+    .fx-seg .fx-tip{ position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:#271217; color:#F6EFE8; padding:7px 10px; border-radius:7px; border:1px solid #4A3338; white-space:nowrap; font-size:12px; opacity:0; visibility:hidden; transition:opacity .14s ease; pointer-events:none; z-index:20; box-shadow:0 6px 18px rgba(39,18,23,.28); }
+    .fx-seg .fx-tip::after{ content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:#271217; }
+    .fx-seg:hover .fx-tip{ opacity:1; visibility:visible; }
     *{ scrollbar-color: var(--accent) var(--surface-page); }
     .dash, .dash *:not([data-keepcase]){ text-transform: lowercase !important; }
     .dash [data-keepcase]{ text-transform: none !important; }
@@ -96,7 +105,7 @@
         </div>
       </nav>
       <div style="display:flex; align-items:flex-end; gap:12px; flex:none;">
-        <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ showMonth }}" hint-placeholder-val="{{ true }}">
         <label style="display:flex; flex-direction:column; gap:4px;">
           <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Mês</span>
           <select class="b-select" value="{{ month }}" onChange="{{ onMonth }}" style="height:38px; padding:0 12px; min-width:150px;">
@@ -105,6 +114,8 @@
             </sc-for>
           </select>
         </label>
+        </sc-if>
+        <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ true }}">
         <label style="display:flex; flex-direction:column; gap:4px;">
           <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Semana</span>
           <select class="b-select" value="{{ week }}" onChange="{{ onWeek }}" style="height:38px; padding:0 12px; min-width:230px;">
@@ -517,7 +528,7 @@
         <div style="{{ investHeaderStyle }}">
           <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Investimento do funil</div>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:16px;">
+        <div style="{{ investStatsGrid }}">
           <sc-for list="{{ investStats }}" as="st" hint-placeholder-count="5">
             <div class="b-card" style="padding:14px 16px; min-height:88px; display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #771520;">
               <div style="font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); line-height:1.3;">{{ st.label }}</div>
@@ -560,10 +571,33 @@
           </div>
         </div>
         </sc-if>
+        <sc-if value="{{ aplicBandShow }}" hint-placeholder-val="{{ false }}">
+        <div class="b-card" style="padding:20px 22px; margin-bottom:16px;">
+          <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Faturamento mensal declarado</div>
+          <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:20px; color:var(--text-strong); line-height:1.1; margin-bottom:14px;">Leads por faixa</div>
+          <div style="display:flex; width:100%; height:44px; overflow:visible;">
+            <sc-for list="{{ aplicBands }}" as="b" hint-placeholder-count="4">
+              <div class="fx-seg" style="width:{{ b.width }}; min-width:30px; background:{{ b.color }}; display:flex; align-items:center; justify-content:center; cursor:default; transition:filter .14s ease;" style-hover="filter:brightness(1.12);">
+                <span data-keepcase="1" style="font-size:11px; font-weight:600; color:rgba(255,255,255,.92);">{{ b.count }}</span>
+                <span class="fx-tip" data-keepcase="1"><strong style="font-weight:600;">{{ b.label }}</strong> — {{ b.count }} leads</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:14px; margin-top:12px;">
+            <sc-for list="{{ aplicBands }}" as="b" hint-placeholder-count="4">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:11px; height:11px; border-radius:2px; background:{{ b.color }}; flex:none;"></span>
+                <span style="font-size:11.5px; color:var(--text-body);">{{ b.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
         <sc-if value="{{ investChartShow }}" hint-placeholder-val="{{ false }}">
-        <div class="b-card" style="padding:22px 24px; margin-bottom:16px;">
-          <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">Ingressos por dia</div>
-          <div style="height:260px;"><canvas id="inv-ingressos-day"></canvas></div>
+        <div class="b-card" style="padding:20px 22px; margin-bottom:16px;">
+          <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Por dia</div>
+          <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:20px; color:var(--text-strong); line-height:1.1; margin-bottom:12px;">{{ investChartTitle }}</div>
+          <div style="height:230px; position:relative;"><canvas id="inv-ingressos-day"></canvas></div>
         </div>
         </sc-if>
         <div style="{{ investGridStyle }}">
@@ -665,10 +699,12 @@
                   <th style="{{ adsNameColStyle }}">Anúncio</th>
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Impressões</th>
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Cliques no link</th>
+                  <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">CTR %</th>
                   <sc-if value="{{ showLpCr }}" hint-placeholder-val="{{ true }}">
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Visualização da página</th>
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Connect rate</th>
                   </sc-if>
+                  <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Finalização de compra</th>
                   <th style="text-align:right; padding:0 4px 10px 12px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">{{ adsResultLabel }}</th>
                 </tr>
               </thead>
@@ -688,10 +724,12 @@
                     </td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.impr }}</td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.clk }}</td>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.ctr }}</td>
                     <sc-if value="{{ showLpCr }}" hint-placeholder-val="{{ true }}">
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.lpv }}</td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.cr }}</td>
                     </sc-if>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.checkout }}</td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 12px; font-size:13px; font-weight:600; color:#771520; white-space:nowrap;">{{ a.leads }}</td>
                   </tr>
                 </sc-for>
@@ -709,6 +747,126 @@
       <sc-if value="{{ candLoadingView }}" hint-placeholder-val="{{ true }}">
         <div class="b-card b-card--bare" style="text-align:center; padding:60px; color:var(--text-muted);">{{ candStatusLabel }}</div>
       </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ============ PAGE: RESULTADOS MENSAIS ============ -->
+    <sc-if value="{{ isResultados }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Resultados Mensais">
+      <div style="margin:-4px 0 18px;">
+        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">Visão mensal</div>
+        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Resultados Mensais</div>
+      </div>
+      <sc-if value="{{ resChartShow }}" hint-placeholder-val="{{ false }}">
+      <div class="b-card" style="padding:22px 24px; margin-bottom:22px;">
+        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">Faturamento × Vendas HBP</div>
+        <div style="height:300px;"><canvas id="res-monthly"></canvas></div>
+      </div>
+      </sc-if>
+      <sc-for list="{{ resMonths }}" as="mo" hint-placeholder-count="3">
+        <div style="margin-bottom:34px;">
+          <div style="font-family:var(--font-sans); font-weight:600; font-size:18px; color:#771520; letter-spacing:-0.01em; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border-soft);">{{ mo.label }}</div>
+          <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:10px; margin-bottom:16px;">
+            <sc-for list="{{ mo.kpis }}" as="st" hint-placeholder-count="6">
+              <div class="b-card" style="padding:13px 15px; min-height:82px; display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #771520;">
+                <div style="font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); line-height:1.3;">{{ st.label }}</div>
+                <div><div data-keepcase="1" style="font-size:18px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em;">{{ st.value }}</div>
+                <sc-if value="{{ st.detail }}" hint-placeholder-val="{{ false }}"><div data-keepcase="1" style="font-size:11px; color:var(--text-muted); margin-top:2px;">{{ st.detail }}</div></sc-if></div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ mo.funilShow }}" hint-placeholder-val="{{ false }}">
+          <div class="b-card" style="padding:20px 22px; margin-bottom:14px;">
+            <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">Funis ativos no mês</div>
+            <div style="overflow-x:auto; margin:0 -4px;">
+              <table style="border-collapse:collapse; width:100%; min-width:820px;">
+                <thead>
+                  <tr style="text-align:right;">
+                    <th style="text-align:left; padding:0 10px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Funil ativo</th>
+                    <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Investido</th>
+                    <th style="text-align:left; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Top 3 criativos</th>
+                    <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">CTR</th>
+                    <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Resultados</th>
+                    <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Vendas HBP</th>
+                    <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Faturamento HBP</th>
+                    <th style="padding:0 4px 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">ROAS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ mo.funilRows }}" as="f" hint-placeholder-count="4">
+                    <tr style="text-align:right; border-top:1px solid var(--border-soft);">
+                      <td style="text-align:left; padding:11px 10px 11px 4px; font-size:13px; font-weight:600; color:var(--text-strong); white-space:nowrap;">{{ f.label }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:11px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ f.invest }}</td>
+                      <td style="text-align:left; padding:11px 10px; min-width:220px;">
+                        <div style="display:flex; flex-direction:column; gap:3px;">
+                          <sc-for list="{{ f.creatives }}" as="c" hint-placeholder-count="3">
+                            <sc-if value="{{ c.link }}" hint-placeholder-val="{{ false }}">
+                            <a href="{{ c.link }}" target="_blank" rel="noopener" style="font-size:11.5px; color:#771520; text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px; display:inline-block;" style-hover="text-decoration:underline;">{{ c.n }}</a>
+                            </sc-if>
+                            <sc-if value="{{ c.noLink }}" hint-placeholder-val="{{ true }}">
+                            <span style="font-size:11.5px; color:var(--text-body); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px; display:inline-block;">{{ c.n }}</span>
+                            </sc-if>
+                          </sc-for>
+                        </div>
+                      </td>
+                      <td data-keepcase="1" style="text-align:right; padding:11px 10px; font-size:12.5px; color:var(--text-strong); vertical-align:top;">
+                        <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-end;">
+                          <sc-for list="{{ f.creatives }}" as="c" hint-placeholder-count="3">
+                            <span style="line-height:1.35;">{{ c.ctr }}</span>
+                          </sc-for>
+                        </div>
+                      </td>
+                      <td data-keepcase="1" style="text-align:right; padding:11px 10px; font-size:12.5px; color:var(--text-strong); vertical-align:top;">
+                        <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-end;">
+                          <sc-for list="{{ f.creatives }}" as="c" hint-placeholder-count="3">
+                            <span style="line-height:1.35;">{{ c.res }}</span>
+                          </sc-for>
+                        </div>
+                      </td>
+                      <td data-keepcase="1" style="text-align:right; padding:11px 10px; font-size:12.5px; color:var(--text-strong); vertical-align:top;">{{ f.vendasHbp }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:11px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap; vertical-align:top;">{{ f.fatHbp }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:11px 4px 11px 10px; font-size:12.5px; font-weight:600; color:#771520; vertical-align:top;">{{ f.roas }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ mo.impShow }}" hint-placeholder-val="{{ false }}">
+          <div class="b-card" style="padding:20px 22px;">
+            <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:14px;">
+              <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Impulsionamentos</div>
+              <div data-keepcase="1" style="font-size:11px; color:var(--text-muted);">total {{ mo.impTotal }}</div>
+            </div>
+            <div style="overflow:auto; max-height:420px; margin:0 -4px;">
+              <table style="border-collapse:collapse; width:100%; min-width:640px;">
+                <thead>
+                  <tr style="text-align:right;">
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:left; padding:0 10px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Publicação</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Investido</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Alcance</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Impressões</th>
+                    <th style="position:sticky; top:0; background:var(--surface, #fff); z-index:1; text-align:right; padding:0 4px 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Visitas ao perfil</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ mo.impRows }}" as="r" hint-placeholder-count="3">
+                    <tr style="text-align:right; border-top:1px solid var(--border-soft);">
+                      <td style="text-align:left; padding:10px 10px 10px 4px; font-size:12.5px; color:var(--text-strong); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.name }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.invest }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.reach }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.impressions }}</td>
+                      <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 10px; font-size:12.5px; font-weight:600; color:#771520;">{{ r.visitas }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+      </sc-for>
     </div>
     </sc-if>
 
@@ -1038,7 +1196,7 @@ class Component extends DCLogic {
       dataError: '',
       mediaLoading: false,
       dormant: false,
-      funnel: 'premium',
+      funnel: 'aplicacao',
       funnelData: {},
       funnelLoading: {},
       funnelError: {},
@@ -1052,12 +1210,13 @@ class Component extends DCLogic {
       adsError: '',
     };
     this.ADS_ACCOUNT_ID = '450830237045296';
-    this.ADS_CAMPAIGN_MATCH = { premium:/sess[aã]o\s*premium/i, diagnostico:/diagn[oó]stico/i, seguidores:/seguidores/i, turbinamento:/do instagram/i, nea2:/nea\s*2\.?0/i };
+    this.ADS_CAMPAIGN_MATCH = { aplicacao:/aplica[çc][aã]o/i, isca:/isca/i, low:/low/i, premium:/sess[aã]o\s*premium/i, diagnostico:/diagn[oó]stico/i, seguidores:/seguidores|do instagram/i, turbinamento:/do instagram/i, nea2:/nea\s*2\.?0/i, gamb:/(?=.*\bamb\b)(?=.*venda)/i, gnea:/(?=.*\bnea\b)(?=.*venda)/i, gieb:/(?=.*\bieb\b)(?=.*venda)/i };
     this.SHEET_ID = '1SEHe4kbnkOj_D5l4vCvnvEM2pPObgCrX25elBh_FH1o';
     // degradê do vermelho da marca (intenso → claro)
     this.RED_RAMP = ['#771520','#6B131D','#5F111A','#530F17','#470C13','#3B0A10','#2F070C'];
     // funis = abas da planilha
     this.FUNNELS = [
+      { key:'aplicacao', name:'Funil de Aplicação Direta', adsOnly:true },
       { key:'premium', name:'Funil Sessão Premium', gid:'1964935362', dateCol:0, statusCol:13,
         statusMap:{ completed:'Completas', incomplete:'Incompletas', '':'Sem status' },
         charts:[
@@ -1075,7 +1234,9 @@ class Component extends DCLogic {
         ] },
       { key:'seguidores', name:'Funil Seguidores', adsOnly:true },
       { key:'golden', name:'Funil Golden Ticket', adsOnly:true, golden:true },
-      { key:'nea2', name:'NEA 2ª Edição', adsOnly:true, noImersao:true, nea2:true, purchaseFunnel:true },
+      { key:'isca', name:'Funil Isca', adsOnly:true },
+      { key:'low', name:'Funil Low Ticket', adsOnly:true },
+      { key:'nea2', name:'NEA 2ª Edição', adsOnly:true, noImersao:true, nea2:true, purchaseFunnel:true, hidden:true },
     ];
     this.PAGE_ACCENTS = { conta:'#771520', conteudos:'#9A7637', insights:'#C2A05B' };
     this.WEEK_COLORS = ['#771520','#C2A05B','#A5293A','#9A7637','#BCA489','#5A0F18','#9C846C','#8E1A28'];
@@ -1246,8 +1407,8 @@ class Component extends DCLogic {
   delta(cur,prev){ if(prev==null||prev===0) return {text:'—', color:'var(--ink-300)', sub:''}; const v=(cur-prev)/prev*100; const up=v>=0; return { text:(up?'▲ ':'▼ ')+this.fmtPct(Math.abs(v)), color: up?'var(--success)':'var(--danger)', sub:'' }; }
 
   /* ============ HANDLERS ============ */
-  setPage(p){ this.setState({page:p}); }
-  scrollTab(key){ requestAnimationFrame(()=>{ const strip=document.getElementById('tabstrip'); if(!strip) return; const ks=['conta','conteudos','insights','candidaturas','plano']; const btn=strip.children[ks.indexOf(key)]; if(btn) strip.scrollTo({left:Math.max(0, btn.offsetLeft-14), behavior:'smooth'}); }); }
+  setPage(p){ this.setState({page:p}); if(p==='candidaturas'){ const first=(this.FUNNELS[0]||{}).key; if(first && this.state.funnel!==first) this.setFunnel(first); } }
+  scrollTab(key){ requestAnimationFrame(()=>{ const strip=document.getElementById('tabstrip'); if(!strip) return; const ks=['conta','conteudos','candidaturas','resultados','plano']; const btn=strip.children[ks.indexOf(key)]; if(btn) strip.scrollTo({left:Math.max(0, btn.offsetLeft-14), behavior:'smooth'}); }); }
   onRefresh(){ this.fetchLive(); }
   nowStamp(){ const now=new Date(); const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return now.getDate()+' '+MN[now.getMonth()]+' '+now.getFullYear()+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'); }
   async fetchLive(){
@@ -1369,7 +1530,7 @@ class Component extends DCLogic {
   }
 
   /* ============ CHARTS ============ */
-  componentDidMount(){ this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); this.wireSort(); }
+  componentDidMount(){ this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); this.wireSort(); if(this.state.funnel==='aplicacao') this.fetchAplicLeads(); if(this.state.funnel==='isca') this.fetchIscaLeads(); }
 
   /* ============ ORDENAÇÃO DE TABELAS ============ */
   // ordena qualquer tabela clicando no cabeçalho (delegação no documento, funciona em todas as tabelas)
@@ -1411,13 +1572,55 @@ class Component extends DCLogic {
     }, true);
   }
 
+  // leads nativos (planilha de leads da Aplicação) — volume por dia
+  async fetchAplicLeads(){
+    if(this._aplicLeadsLoading || this._aplicLeadsBy) return;
+    this._aplicLeadsLoading = true;
+    try{
+      const url='https://docs.google.com/spreadsheets/d/10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc/export?format=csv&gid=1528543515&_cb='+Date.now();
+      const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('Planilha HTTP '+r.status);
+      const rows=this.parseCSV(await r.text()); if(!rows.length) throw new Error('vazia');
+      const head=rows[0].map(h=>String(h||'').toLowerCase().trim());
+      const ci=head.findIndex(h=>/created.?time/.test(h));
+      const col = ci>=0? ci : 1;
+      const fi=head.findIndex(h=>/faturamento/.test(h));
+      const by={}, rowsF=[];
+      rows.slice(1).forEach(rw=>{ const v=String(rw[col]||''); const m=v.match(/(\d{4})-(\d{2})-(\d{2})/); if(m){ const d=m[1]+'-'+m[2]+'-'+m[3]; by[d]=(by[d]||0)+1; rowsF.push({date:d, faixa: fi>=0? String(rw[fi]||'').trim() : ''}); } });
+      this._aplicLeadsBy = by;
+      this._aplicLeadsRows = rowsF;
+      this.forceUpdate();
+    }catch(e){ this._aplicLeadsErr=(e&&e.message)||'falha'; }
+    finally{ this._aplicLeadsLoading=false; }
+  }
+
+  // leads da planilha (aba 1) do funil Isca — volume por dia
+  async fetchIscaLeads(){
+    if(this._iscaLeadsLoading || this._iscaLeadsBy) return;
+    this._iscaLeadsLoading = true;
+    try{
+      const url='https://docs.google.com/spreadsheets/d/'+this.SHEET_ID+'/export?format=csv&gid=1031730554&_cb='+Date.now();
+      const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('Planilha HTTP '+r.status);
+      const rows=this.parseCSV(await r.text()); if(!rows.length) throw new Error('vazia');
+      const head=rows[0].map(h=>String(h||'').toLowerCase().trim());
+      let ci=head.findIndex(h=>/created.?time|data|date|carimbo|timestamp/.test(h)); if(ci<0) ci=0;
+      const by={};
+      rows.slice(1).forEach(rw=>{ const v=String(rw[ci]||''); let m=v.match(/(\d{4})-(\d{2})-(\d{2})/); let d=null;
+        if(m) d=m[1]+'-'+m[2]+'-'+m[3]; else { const b=v.match(/(\d{2})\/(\d{2})\/(\d{4})/); if(b) d=b[3]+'-'+b[2]+'-'+b[1]; }
+        if(d) by[d]=(by[d]||0)+1; });
+      this._iscaLeadsBy = by;
+      this.forceUpdate();
+    }catch(e){ this._iscaLeadsErr=(e&&e.message)||'falha'; }
+    finally{ this._iscaLeadsLoading=false; }
+  }
+  leadByFor(key){ return key==='aplicacao'? this._aplicLeadsBy : key==='isca'? this._iscaLeadsBy : null; }
+
   // Facebook Ads (Windsor) — contas com "barbieri" no nome, campanhas "SESSAO PREMIUM"
   async fetchAds(){
     if(this.state.adsLoading) return;
     this.setState({adsLoading:true, adsError:''});
     try{
       const key=this.WINDSOR_KEY;
-      const to=new Date(); const from=new Date(to.getTime()-180*86400000);
+      const to=new Date(); const from=new Date(Date.UTC(2025,4,1));
       const fd=(d)=>this.ymd(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));
       const fields='account_id,date,campaign,adset_name,ad_name,ad_id,instagram_permalink_url,thumbnail_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend';
       const acct=this.ADS_ACCOUNT_ID;
@@ -1440,8 +1643,7 @@ class Component extends DCLogic {
       this._adsMinD=mn; this._adsMaxD=mx;
       this.setState({adsLoading:false, adsReady:true});
       // se já estiver no funil seguidores e sem filtro, aplica o intervalo padrão
-      if(this.state.funnel==='seguidores' && !this.state.candFrom && !this.state.candTo && this.state.candMonth==='all'){ const dr=this.defaultFunnelRange(mn,mx); this.setState({candFrom:dr.from, candTo:dr.to}); }
-      if(this.state.funnel==='nea2' && !this.state.candFrom && !this.state.candTo && this.state.candMonth==='all'){ const dr=this.last30Range(mn,mx); this.setState({candFrom:dr.from, candTo:dr.to}); }
+      if(this.state.funnel && this.funnelSpec(this.state.funnel) && this.funnelSpec(this.state.funnel).adsOnly && !this.funnelSpec(this.state.funnel).golden && this.state.funnel!=='isca' && this.state.funnel!=='low' && !this.state.candFrom && !this.state.candTo && this.state.candMonth==='all'){ const dr=this.lastMonthRange(mn,mx); this.setState({candFrom:dr.from, candTo:dr.to}); }
     }catch(e){ this.setState({adsLoading:false, adsError:(e&&e.message)||'Falha ao ler Facebook Ads.'}); }
   }
   // agrega anúncios/conjuntos por campanha (regex) e intervalo de datas
@@ -1449,7 +1651,7 @@ class Component extends DCLogic {
     const rows=(this._adsRaw||[]).filter(x=> camRe.test(x.campaign) && (!from||x.date>=from) && (!to||x.date<=to));
     const byAd={}, byAdset={};
     rows.forEach(x=>{ const a=byAd[x.ad]||(byAd[x.ad]={name:x.ad,thumb:'',link:'',impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,checkout:0,purchases:0,revenue:0,spend:0});
-      a.impressions+=x.impressions; a.reach+=x.reach; a.linkClicks+=x.linkClicks; a.lpViews+=x.lpViews; a.leads+=x.leads; a.checkout+=(x.checkout||0); a.purchases+=(x.purchases||0); a.revenue+=(x.revenue||0); a.spend+=x.spend; if(!a.thumb&&x.thumb)a.thumb=x.thumb; if(!a.link){ a.link = x.adId? ('https://www.facebook.com/ads/library/?id='+x.adId) : (x.permalink||''); }
+      a.impressions+=x.impressions; a.reach+=x.reach; a.linkClicks+=x.linkClicks; a.lpViews+=x.lpViews; a.leads+=x.leads; a.checkout+=(x.checkout||0); a.purchases+=(x.purchases||0); a.revenue+=(x.revenue||0); a.spend+=x.spend; if(!a.thumb&&x.thumb)a.thumb=x.thumb; if(!a.link){ a.link = x.permalink || (x.adId? 'https://www.facebook.com/ads/library/?id='+x.adId : ''); }
       const s=byAdset[x.adset]||(byAdset[x.adset]={name:x.adset,impressions:0,reach:0,linkClicks:0,lpViews:0,leads:0,checkout:0,purchases:0,revenue:0,spend:0});
       s.impressions+=x.impressions; s.reach+=x.reach; s.linkClicks+=x.linkClicks; s.lpViews+=x.lpViews; s.leads+=x.leads; s.checkout+=(x.checkout||0); s.purchases+=(x.purchases||0); s.revenue+=(x.revenue||0); s.spend+=x.spend; });
     return { ads:Object.values(byAd).sort((a,b)=>b.impressions-a.impressions), adsets:Object.values(byAdset).sort((a,b)=>b.impressions-a.impressions) };
@@ -1519,11 +1721,14 @@ class Component extends DCLogic {
     this.setState({funnel:key, candMonth:'all', candFrom:'', candTo:'', candStatusFilter:'all'});
     const _sp=this.funnelSpec(key);
     if(_sp && _sp.golden) this.fetchGoldenThumbs((_sp.imersaoFixed)||this.state.imersao);
+    if(key==='aplicacao') this.fetchAplicLeads();
+    if(key==='isca') this.fetchIscaLeads();
     const spec=this.funnelSpec(key);
-    if(spec && spec.adsOnly){ const r = spec.nea2 ? this.last30Range(this._adsMinD, this._adsMaxD) : this.defaultFunnelRange(this._adsMinD, this._adsMaxD); this.setState({candFrom:r.from, candTo:r.to}); return; }
+    if(spec && spec.adsOnly && !spec.golden && key!=='isca' && key!=='low'){ const r = this.lastMonthRange(this._adsMinD, this._adsMaxD); this.setState({candFrom:r.from, candTo:r.to}); return; }
+    if(spec && (spec.golden || key==='isca' || key==='low')){ this.setState({candFrom:'', candTo:'', candMonth:'all'}); return; }
     const d=this.state.funnelData[key];
     if(!d && !this.state.funnelLoading[key]) this.fetchFunnel(key);
-    else if(d){ const r=this.defaultFunnelRange(d.minD,d.maxD); this.setState({candFrom:r.from, candTo:r.to}); }
+    else if(d){ const r=this.lastMonthRange(d.minD,d.maxD); this.setState({candFrom:r.from, candTo:r.to}); }
   }
   // intervalo padrão: mês atual + 2 meses anteriores (limitado ao período disponível)
   defaultFunnelRange(minD,maxD){
@@ -1535,7 +1740,17 @@ class Component extends DCLogic {
     if(maxD && to>maxD) to=maxD;
     return {from,to};
   }
-  // últimos 30 dias (para a NEA 2ª Edição) — limitado ao período disponível
+  // último mês com dados (padrão de todos os funis) — 1º ao último dia do mês de maxD
+  lastMonthRange(minD,maxD){
+    const pad=n=>String(n).padStart(2,'0'), iso=d=>d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());
+    const end = maxD ? new Date(maxD+'T00:00:00Z') : new Date();
+    const y=end.getUTCFullYear(), m=end.getUTCMonth();
+    let from=iso(new Date(Date.UTC(y,m,1))), to=iso(new Date(Date.UTC(y,m+1,0)));
+    if(minD && from<minD) from=minD;
+    if(maxD && to>maxD) to=maxD;
+    return {from,to};
+  }
+  // últimos 30 dias — limitado ao período disponível
   last30Range(minD,maxD){
     const pad=n=>String(n).padStart(2,'0'), iso=d=>d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());
     const end = maxD ? new Date(maxD+'T00:00:00Z') : new Date();
@@ -1562,7 +1777,7 @@ class Component extends DCLogic {
       const months=Object.keys(monthSet).sort().map(ym=>({ value:ym, label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4) }));
       const data={ rows:body, minD, maxD, months };
       this.setState(s=>({ funnelLoading:{...s.funnelLoading,[key]:false}, funnelData:{...s.funnelData,[key]:data} }));
-      if(this.state.funnel===key){ const r=this.defaultFunnelRange(minD,maxD); this.setState(s=> (!s.candFrom && !s.candTo && s.candMonth==='all') ? {candFrom:r.from, candTo:r.to} : null); }
+      if(this.state.funnel===key){ const r=this.lastMonthRange(minD,maxD); this.setState(s=> (!s.candFrom && !s.candTo && s.candMonth==='all') ? {candFrom:r.from, candTo:r.to} : null); }
     }catch(e){ this.setState(s=>({ funnelLoading:{...s.funnelLoading,[key]:false}, funnelError:{...s.funnelError,[key]:(e&&e.message)||'Falha ao ler a aba.'} })); }
   }
   buildFunnel(spec, body){
@@ -1676,6 +1891,7 @@ class Component extends DCLogic {
     Object.values(this.charts).forEach(c=>{ try{c.destroy();}catch(e){} }); this.charts={};
     const cfgs = this.state.page==='conta' ? this._chartCfgs : (this.state.page==='candidaturas' ? this._funnelCfgs : null);
     if(this.state.page==='candidaturas' && this._investChartCfg){ const el=document.getElementById('inv-ingressos-day'); if(el){ this.charts['inv-ingressos-day']=new window.Chart(el.getContext('2d'), this._investChartCfg); } }
+    if(this.state.page==='resultados' && this._resChartCfg){ const el=document.getElementById('res-monthly'); if(el){ this.charts['res-monthly']=new window.Chart(el.getContext('2d'), this._resChartCfg); } }
     if(!cfgs) return;
     Object.keys(cfgs).forEach(id=>{ const el=document.getElementById(id); if(!el) return; this.charts[id]=new window.Chart(el.getContext('2d'), cfgs[id]); });
   }
@@ -1746,6 +1962,89 @@ class Component extends DCLogic {
     return wk.map((w,i)=>{ const data=[]; for(let d=0; d<7; d++){ const date=this.addDays(w.start,d); const row=this.dailyAt(date); data.push(row? valueFn(row): null); } return { label:'sem '+w.week, data, color:this.WEEK_COLORS[i%this.WEEK_COLORS.length] }; });
   }
 
+  /* ============ RESULTADOS MENSAIS ============ */
+  resultadosVals(){
+    const S=this.state, RV=(window.__RESULTADOS_VENDAS__||{}).meses||{}, PROD=(window.__RESULTADOS_PRODUTO__||{});
+    const raw=(this._adsRaw||[]);
+    const money=(v)=>'R$ '+this.fmtNum(Math.round(v));
+    const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const BOOST=this.ADS_CAMPAIGN_MATCH.turbinamento;
+    const TYPES=[
+      {key:'aplicacao', label:'Aplicação Direta', re:this.ADS_CAMPAIGN_MATCH.aplicacao, hbp:'aplicação direta'},
+      {key:'isca', label:'Isca', re:this.ADS_CAMPAIGN_MATCH.isca},
+      {key:'low', label:'Low Ticket', re:this.ADS_CAMPAIGN_MATCH.low},
+      {key:'seguidores', label:'Seguidores', re:/seguidores/i},
+      {key:'premium', label:'Sessão Premium', re:this.ADS_CAMPAIGN_MATCH.premium, hbp:'sessão premium'},
+      {key:'diagnostico', label:'Diagnóstico', re:this.ADS_CAMPAIGN_MATCH.diagnostico, hbp:'diagnóstico'},
+      {key:'golden', label:'Golden Ticket', re:/(\bamb\b|\bnea\b|\bieb\b|nea\s*2\.?0)/i, hbp:'golden ticket'},
+    ];
+    // meses disponíveis (jan → último com gasto ou venda), respeitando o filtro
+    const ymSet=new Set(); raw.forEach(x=>{ if(x.date) ymSet.add(x.date.slice(0,7)); }); Object.keys(RV).forEach(k=>ymSet.add(k)); Object.keys(PROD).forEach(k=>ymSet.add(k));
+    let yms=[...ymSet].filter(y=>y>='2026-01').sort();
+    if(S.month && S.month!=='all') yms=yms.filter(y=>y===S.month);
+    const resMonths = yms.map(ym=>{
+      const monthRows=raw.filter(x=>x.date && x.date.slice(0,7)===ym);
+      const _tf=(window.__RESULTADOS_TRAFEGO__||{}); const _cur=new Date().toISOString().slice(0,7);
+      const _liveInv=monthRows.reduce((a,x)=>a+(x.spend||0),0), _liveLeads=monthRows.reduce((a,x)=>a+(x.leads||0),0);
+      const invest = (ym!==_cur && _tf[ym]) ? _tf[ym].invest : _liveInv;
+      const leads = (ym!==_cur && _tf[ym]) ? _tf[ym].leads : _liveLeads;
+      const sv=RV[ym]||{vendas:0,fat:0,byFunil:{}};
+      const prod=PROD[ym]||{c:0,rev:0};
+      const roas = invest? sv.fat/invest : null;
+      // vendas golden (imersões: ieb/amb/nea/nea2) no mês
+      const GVv=(window.__GOLDEN_VENDAS__||{}); let gVend=0, gFat=0;
+      ['ieb','amb','nea','nea2'].forEach(k=>{ const g=GVv[k]; if(!g||!g.porDia)return; g.porDia.forEach(r=>{ if(r.iso&&r.iso.slice(0,7)===ym){ gVend+=(r.ing||0); gFat+=(r.fat||0); } }); });
+      const kpis=[
+        {label:'Investido em tráfego', value:money(invest)},
+        {label:'Vendas Golden', value:this.fmtNum(gVend), detail: gFat>0? money(gFat):''},
+        {label:'Leads gerados', value:this.fmtNum(leads)},
+        {label:'Vendas HBP', value:this.fmtNum(sv.vendas)},
+        {label:'Faturamento HBP', value:money(sv.fat)},
+        {label:'ROAS', value: roas!=null? roas.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'x' : '—'},
+      ];
+      // funis ativos (exclui impulsionamento, tratado à parte)
+      const funilRows=[];
+      TYPES.forEach(t=>{
+        const rws=monthRows.filter(x=>t.re.test(x.campaign) && !BOOST.test(x.campaign));
+        const sp=rws.reduce((a,x)=>a+(x.spend||0),0);
+        if(sp<=0) return;
+        const res=rws.reduce((a,x)=>a+(x.leads||0)+(x.purchases||0),0);
+        const adAgg={}; rws.forEach(x=>{ const a=adAgg[x.ad]||(adAgg[x.ad]={name:x.ad,link:x.permalink||(x.adId?'https://www.facebook.com/ads/library/?id='+x.adId:''),res:0,imp:0,clk:0}); a.res+=(x.leads||0)+(x.purchases||0); a.imp+=(x.impressions||0); a.clk+=(x.linkClicks||0); if(!a.link&&x.permalink)a.link=x.permalink; });
+        const top=Object.values(adAgg).filter(a=>a.res>0).sort((a,b)=>b.res-a.res).slice(0,3).map((a,i)=>({n:(i+1)+'. '+a.name, link:a.link||'', noLink:!a.link, res:this.fmtNum(a.res), ctr: a.imp? this.fmtPct(a.clk/a.imp*100):'—'}));
+        const hb=t.hbp? (sv.byFunil[t.hbp]||{c:0,rev:0}) : {c:0,rev:0};
+        const froas = sp? hb.rev/sp : null;
+        funilRows.push({ label:t.label, invest:money(sp), creatives:top, res:this.fmtNum(res), vendasHbp:this.fmtNum(hb.c), fatHbp:money(hb.rev), roas: froas!=null&&hb.rev>0? froas.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'x':'—' });
+      });
+      // impulsionamento
+      const impR=monthRows.filter(x=>BOOST.test(x.campaign));
+      const impBy={}; impR.forEach(x=>{ const c=impBy[x.campaign]||(impBy[x.campaign]={name:x.campaign,spend:0,reach:0,impressions:0,linkClicks:0}); c.spend+=(x.spend||0); c.reach+=(x.reach||0); c.impressions+=(x.impressions||0); c.linkClicks+=(x.linkClicks||0); });
+      const impRows=Object.values(impBy).sort((a,b)=>b.linkClicks-a.linkClicks).slice(0,5).map(c=>({ name:c.name.replace(/^.*?do instagram:?\s*/i,'').slice(0,60)||c.name.slice(0,60), invest:money(c.spend), reach:this.fmtNum(c.reach), impressions:this.fmtNum(c.impressions), clicks:this.fmtNum(c.linkClicks), visitas:this.fmtNum(c.linkClicks) }));
+      const impTotal=impR.reduce((a,x)=>a+(x.spend||0),0);
+      return { ym, label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4), kpis, funilRows, funilShow:funilRows.length>0, impRows, impShow:impRows.length>0, impTotal:money(impTotal) };
+    }).filter(mo=>mo.funilShow || mo.impShow || mo.kpis[3].value!=='0');
+    // gráfico mensal (todos os meses): investimento + faturamento (barras) e vendas HBP (linha)
+    const allYms=[...ymSet].filter(y=>y>='2026-01').sort();
+    const MN2=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    if(allYms.length){
+      const invArr=[], fatArr=[], vArr=[], labs=[], gtArr=[];
+      allYms.forEach(ym=>{ const _tf=(window.__RESULTADOS_TRAFEGO__||{}); const _cur=new Date().toISOString().slice(0,7); const mr=raw.filter(x=>x.date&&x.date.slice(0,7)===ym); const inv=(ym!==_cur&&_tf[ym])? _tf[ym].invest : mr.reduce((a,x)=>a+(x.spend||0),0); const sv=RV[ym]||{vendas:0,fat:0,byFunil:{}}; const gt=!!(sv.byFunil&&sv.byFunil['golden ticket']); labs.push(MN2[+ym.slice(5,7)-1]+(gt?' ◆':'')); invArr.push(Math.round(inv)); fatArr.push(Math.round(sv.fat)); vArr.push(sv.vendas); gtArr.push(gt? sv.vendas : null); });
+      this._resChartCfg={
+        data:{ labels:labs, datasets:[
+          { type:'bar', label:'Faturamento HBP', data:fatArr, backgroundColor:'#771520', borderRadius:4, borderSkipped:false, maxBarThickness:34, categoryPercentage:0.9, barPercentage:0.9, yAxisID:'y', order:2 },
+          { type:'line', label:'Vendas HBP', data:vArr, borderColor:'#3B0A10', backgroundColor:'#3B0A10', borderWidth:2, pointRadius:3, pointBackgroundColor:'#3B0A10', tension:0.3, yAxisID:'y1', order:1 },
+          { type:'scatter', label:'Golden Ticket', data:gtArr, borderColor:'#C2A05B', backgroundColor:'#C2A05B', pointStyle:'rectRot', pointRadius:8, pointHoverRadius:9, yAxisID:'y1', order:0 }
+        ] },
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ display:true, position:'top', align:'end', labels:{ boxWidth:12, boxHeight:12, font:{family:'Arimo', size:11}, color:'#6E595D', usePointStyle:true } },
+            tooltip:{ backgroundColor:'#271217', titleColor:'#F6EFE8', bodyColor:'#EAD9C9', borderColor:'#4A3338', borderWidth:1, padding:10, cornerRadius:8, titleFont:{family:'Arimo',weight:'600'}, bodyFont:{family:'Arimo'}, callbacks:{ label:(c)=> c.dataset.label==='Golden Ticket' ? 'Golden Ticket ativo' : c.dataset.label==='Vendas HBP' ? (this.fmtNum(c.parsed.y)+' vendas') : (c.dataset.label+': R$ '+this.fmtNum(c.parsed.y)), footer:(items)=>{ const i=items&&items[0]?items[0].dataIndex:-1; return i>=0? 'Investido em tráfego: R$ '+this.fmtNum(invArr[i]||0) : ''; } }, footerFont:{family:'Arimo',weight:'400'}, footerColor:'#C2A05B' } },
+          scales:{ x:{ grid:{ display:false }, ticks:{ font:{family:'Arimo', size:11}, color:'#6E595D' } },
+            y:{ beginAtZero:true, position:'left', grid:{ color:'rgba(119,21,32,0.07)' }, ticks:{ font:{family:'Arimo', size:10}, color:'#6E595D', callback:(v)=>'R$ '+this.fmtNum(v) } },
+            y1:{ beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10}, color:'#3B0A10', precision:0, callback:(v)=>this.fmtNum(v) } } } }
+      };
+    } else this._resChartCfg=null;
+    return { resMonths, resMonthsShow: resMonths.length>0, resChartShow: !!this._resChartCfg };
+  }
+
   /* ============ RENDER ============ */
   renderVals(){
     const M=this.model, S=this.state, win=this.windowOf();
@@ -1755,7 +2054,7 @@ class Component extends DCLogic {
     // selectors
     const monthOptions=[{value:'all',label:'Todos os meses'}].concat(M.months);
     const weekOptions=[{value:'all',label:'Todas as semanas'}].concat(M.weeks.map(w=>({value:w.iso,label:w.label})));
-    const pages=[{key:'conta',label:'Dados da Conta'},{key:'conteudos',label:'Dados dos Conteúdos'},{key:'insights',label:'Insights dos Conteúdos'},{key:'candidaturas',label:'Dados dos Funis'},{key:'plano',label:'Plano de Conteúdo'}].map(p=>({
+    const pages=[{key:'conta',label:'Dados da Conta'},{key:'conteudos',label:'Dados dos Conteúdos'},{key:'candidaturas',label:'Dados dos Funis'},{key:'resultados',label:'Resultados Mensais'},{key:'plano',label:'Plano de Conteúdo'}].map(p=>({
       label:p.label,
       onClick:()=>{ this.setPage(p.key); this.scrollTab(p.key); },
       style:`font-family:var(--font-sans); font-size:13px; font-weight:${S.page===p.key?'600':'500'}; cursor:pointer; padding:8px 16px; border-radius:var(--radius-md) var(--radius-md) 0 0; border:1px solid ${S.page===p.key?'var(--border-soft)':'transparent'}; border-bottom:2px solid ${S.page===p.key?accent:'transparent'}; background:${S.page===p.key?'var(--surface-page)':'transparent'}; color:${S.page===p.key?'var(--text-strong)':'var(--text-muted)'}; white-space:nowrap; flex:none;`
@@ -1768,15 +2067,16 @@ class Component extends DCLogic {
       sourceColor: S.dataError? 'var(--danger)' : (S.mediaLoading? 'var(--warning)' : (S.live? 'var(--success)' : 'var(--ink-300)')),
       dormant: S.dormant && !S.mediaLoading,
       pages, month:S.month, week:S.week, monthOptions, weekOptions,
-      onPrevPage:()=>{ const ks=['conta','conteudos','insights','candidaturas','plano']; const i=ks.indexOf(S.page); const nk=ks[(i-1+ks.length)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
-      onNextPage:()=>{ const ks=['conta','conteudos','insights','candidaturas','plano']; const i=ks.indexOf(S.page); const nk=ks[(i+1)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
+      onPrevPage:()=>{ const ks=['conta','conteudos','candidaturas','resultados','plano']; const i=ks.indexOf(S.page); const nk=ks[(i-1+ks.length)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
+      onNextPage:()=>{ const ks=['conta','conteudos','candidaturas','resultados','plano']; const i=ks.indexOf(S.page); const nk=ks[(i+1)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
       onMonth:(e)=>this.setState({month:e.target.value, week:'all'}),
       onWeek:(e)=>this.setState({week:e.target.value}),
       accent, periodLabel: win.label,
-      isConta:S.page==='conta', isConteudos:S.page==='conteudos', isInsights:S.page==='insights', isCandidaturas:S.page==='candidaturas', isPlano:S.page==='plano',
-      showFilters: S.page!=='candidaturas' && S.page!=='plano',
-      showFunnelFilters: S.page==='candidaturas' && S.funnel!=='golden',
-      pageTitle: S.page==='conta'?'Dados da Conta': S.page==='conteudos'?'Dados dos Conteúdos': S.page==='insights'?'Insights dos Conteúdos': S.page==='candidaturas'?'Dados dos Funis':'Plano de Conteúdo',
+      isConta:S.page==='conta', isConteudos:S.page==='conteudos', isInsights:S.page==='insights', isCandidaturas:S.page==='candidaturas', isResultados:S.page==='resultados', isPlano:S.page==='plano',
+      showFilters: S.page!=='candidaturas' && S.page!=='plano' && S.page!=='resultados',
+      showMonth: S.page!=='candidaturas' && S.page!=='plano',
+      showFunnelFilters: S.page==='candidaturas',
+      pageTitle: S.page==='conta'?'Dados da Conta': S.page==='conteudos'?'Dados dos Conteúdos': S.page==='insights'?'Insights dos Conteúdos': S.page==='candidaturas'?'Dados dos Funis': S.page==='resultados'?'Resultados Mensais':'Plano de Conteúdo',
     };
 
     // CONTA
@@ -1881,7 +2181,7 @@ class Component extends DCLogic {
     const { worked, notWorked, themeRows } = this.learnings(valid, followers);
     const themeList = themeRows||[];
 
-    return { ...base,
+    return { ...base, ...this.resultadosVals(),
       themeRows:themeList, themeShow: themeList.length>0,
       kpis, metric2:S.metric2, metric2Options, onMetric2:(e)=>this.setState({metric2:e.target.value}),
       posted, tests, postedCount:String(posted.length), testCount:String(tests.length),
@@ -1900,7 +2200,7 @@ class Component extends DCLogic {
     const S=this.state, key=S.funnel, spec=this.funnelSpec(key);
     const F=S.funnelData[key], loading=!!S.funnelLoading[key], err=S.funnelError[key]||'';
     const fmtMil=(v)=> v==null? '—' : (v>=1000? 'R$ '+(v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mil' : 'R$ '+this.fmtNum(v));
-    const funnelTabs=this.FUNNELS.map(f=>({ label:f.name, active:f.key===key, inactive:f.key!==key,
+    const funnelTabs=this.FUNNELS.filter(f=>!f.hidden).map(f=>({ label:f.name, active:f.key===key, inactive:f.key!==key,
       onClick:()=>this.setFunnel(f.key) }));
     const monthOpts=[{value:'all',label:'Todos os meses'}].concat(F? F.months : []);
     const candFilters={
@@ -1926,44 +2226,88 @@ class Component extends DCLogic {
       const segFilters={...candFilters, monthOptions:[{value:'all',label:'Todos os meses'}].concat(segMonths), min:this._adsMinD||'', max:this._adsMaxD||''};
       // Golden Ticket — seletor de imersão (IEB/AMB/NEA) no lugar do status; dados estáticos por imersão
       if(spec.golden){
-        const IM=[{key:'ieb',label:'IEB'},{key:'amb',label:'AMB'},{key:'nea',label:'NEA'}];
+        const IM=[{key:'ieb',label:'IEB'},{key:'amb',label:'AMB'},{key:'nea',label:'NEA'},{key:'nea2',label:'NEA 2.0'}];
         const imBtns=IM.map(b=>({ label:b.label, active:S.imersao===b.key, inactive:S.imersao!==b.key,
           onClick:()=>{ this.setState({imersao:b.key}); this.fetchGoldenThumbs(b.key); } }));
-        const invG=this.investFunnel(key, 0, '', '');
-        const NV = (key==='nea2') ? (window.__NEA_VENDAS__||null) : null;
+        const invG=this.investFunnel(key, 0, winFrom, winTo);
         const dec=(v,n)=>Number(v).toLocaleString('pt-BR',{minimumFractionDigits:n,maximumFractionDigits:n});
         const rMoney=(v)=>'R$ '+dec(v,2);
-        const neaKpis = NV ? [
-          { label:'Investimento com imposto', value:rMoney(NV.investimentoComImposto) },
-          { label:'Ingressos', value:this.fmtNum(NV.ingressos) },
-          { label:'Faturamento bruto aprox.', value:rMoney(NV.faturamentoBruto) },
-          { label:'Orderbumps', value:this.fmtNum(NV.orderbumps) },
-          { label:'Taxa de conversão orderbump', value:dec(NV.taxaConvOrderbump,1)+'%' },
-          { label:'Ritmo médio', value:dec(NV.ritmoMedio,1)+' /dia' },
-          { label:'Ticket médio', value:rMoney(NV.ticketMedio) },
-          { label:'Custo / compra geral', value:rMoney(NV.custoCompraGeral) },
-          { label:'Ingressos [ads]', value:this.fmtNum(NV.ingressosAds) },
-          { label:'Ingressos [org]', value:this.fmtNum(NV.ingressosOrg) },
+        const GV=(window.__GOLDEN_VENDAS__||{})[S.imersao]||null;
+        const spend=invG.investSpend||0;
+        const adReG = S.imersao==='amb'? this.ADS_CAMPAIGN_MATCH.gamb : S.imersao==='nea'? this.ADS_CAMPAIGN_MATCH.gnea : S.imersao==='nea2'? this.ADS_CAMPAIGN_MATCH.nea2 : S.imersao==='ieb'? this.ADS_CAMPAIGN_MATCH.gieb : null;
+        const spendByIso={}; const _gt=(window.__GOLDEN_TRAFEGO__||{})[S.imersao]; if(_gt&&_gt.daily){ _gt.daily.forEach(([d,s])=>{ spendByIso[d]=(spendByIso[d]||0)+(s||0); }); }
+        // último dia com investimento em tráfego — limita tabela diária e gráfico
+        const adDays=Object.keys(spendByIso).filter(d=>spendByIso[d]>0).sort();
+        const lastAdIso = adDays.length? adDays[adDays.length-1] : null;
+        // vendas: por padrão mostra o período todo da imersão; só recorta quando o usuário aplica filtro
+        const noFilter = S.candMonth==='all' && !S.candFrom && !S.candTo;
+        let porDia=GV? (noFilter? (GV.porDia||[]) : (GV.porDia||[]).filter(r=>(!winFrom||r.iso>=winFrom)&&(!winTo||r.iso<=winTo))) : [];
+        const porDiaCap = lastAdIso? porDia.filter(r=>r.iso<=lastAdIso) : porDia;
+        const sum=(f)=>porDia.reduce((a,r)=>a+(r[f]||0),0);
+        const ing=sum('ing'), fat=sum('fat'), ob=sum('ob'), compras=sum('compras'), adsV=sum('ads'), orgV=sum('org');
+        const days=porDia.length||1;
+        // conversão de orderbump por dia com ob>0 sobre compras — usa total do período
+        const obBuyersPct = GV? GV.taxaConvOrderbump : 0;
+        const neaKpis = GV ? [
+          { label:'Investimento com imposto', value:rMoney(spend*1.1215) },
+          { label:'Ingressos', value:this.fmtNum(ing) },
+          { label:'Faturamento bruto aprox.', value:rMoney(fat) },
+          { label:'Orderbumps', value:this.fmtNum(ob) },
+          { label:'Taxa de conversão orderbump', value:dec(obBuyersPct,1)+'%' },
+          { label:'Ritmo médio', value:dec(compras/days,1)+' /dia' },
+          { label:'Ticket médio', value:rMoney(compras? fat/compras : 0) },
+          { label:'Custo / compra geral', value:rMoney(compras? spend/compras : 0) },
+          { label:'Ingressos [ads]', value:this.fmtNum(adsV) },
+          { label:'Ingressos [org]', value:this.fmtNum(orgV) },
         ] : [];
-        const neaDaily = NV ? (NV.porDia||[]).map(r=>({
-          d:r.d,
-          inv:rMoney(r.inv),
-          ing:this.fmtNum(r.ing),
-          fat:rMoney(r.fat),
-          ob:this.fmtNum(r.ob),
-          conv: r.conv? dec(r.conv,1)+'%' : '—',
-          compras:this.fmtNum(r.compras),
-          tk: r.tk==null? '—' : rMoney(r.tk),
-          cst: r.cst==null? '—' : rMoney(r.cst),
-          ads:this.fmtNum(r.ads),
-          org:this.fmtNum(r.org)
-        })) : [];
-        return { funnelTabs, candFilters:segFilters, candStatusBtns: spec.noImersao? [] : imBtns, statusGroupLabel:'Imersão',
+        const neaDaily = GV ? porDia.slice().sort((a,b)=>b.iso.localeCompare(a.iso)).map(r=>{
+          const spD=spendByIso[r.iso]||0;
+          return { d:r.d, inv: spD? rMoney(spD*1.1215) : '—', ing:this.fmtNum(r.ing), fat:rMoney(r.fat), ob:this.fmtNum(r.ob),
+          conv: r.compras? dec(r.ob/r.compras*100,1)+'%' : '—', compras:this.fmtNum(r.compras),
+          tk: r.compras? rMoney(r.fat/r.compras) : '—', cst: r.compras&&spD? rMoney(spD/r.compras) : '—',
+          ads:this.fmtNum(r.ads), org:this.fmtNum(r.org) };
+        }) : [];
+        // gráfico Ingressos por dia (barras) + custo/compra do dia (linha), igual NEA 2ª Edição
+        const chartSrc = GV ? porDiaCap.slice().sort((a,b)=>a.iso.localeCompare(b.iso)) : [];
+        if(chartSrc.length){
+          const labels=[], data=[], cpa=[]; let cur=chartSrc[0].iso, hi=chartSrc[chartSrc.length-1].iso, byIso={}; chartSrc.forEach(r=>byIso[r.iso]=r.ing);
+          let g=0; while(cur<=hi && g<800){ const p=cur.split('-'); labels.push(p[2]+'/'+p[1]); const ingD=byIso[cur]||0; data.push(ingD); const sp=spendByIso[cur]||0; cpa.push(ingD&&sp? +(sp/ingD).toFixed(2) : null); cur=this.addDays(cur,1); g++; }
+          this._investChartCfg = {
+            data:{ labels, datasets:[
+              { type:'bar', label:'ingressos', data, backgroundColor:'#771520', borderRadius:4, borderSkipped:false, maxBarThickness:38, yAxisID:'y', order:2 },
+              { type:'line', label:'custo/compra', data:cpa, borderColor:'#C2A05B', backgroundColor:'#C2A05B', borderWidth:2, pointRadius:3, pointBackgroundColor:'#C2A05B', tension:0.3, spanGaps:true, yAxisID:'y1', order:1 }
+            ] },
+            options:{ responsive:true, maintainAspectRatio:false,
+              plugins:{ legend:{ display:true, position:'top', align:'end', labels:{ boxWidth:12, boxHeight:12, font:{family:'Arimo', size:11}, color:'#6E595D', usePointStyle:true } },
+                tooltip:{ backgroundColor:'#271217', titleColor:'#F6EFE8', bodyColor:'#EAD9C9', borderColor:'#4A3338', borderWidth:1, padding:10, cornerRadius:8, titleFont:{family:'Arimo',weight:'600'}, bodyFont:{family:'Arimo'}, callbacks:{ label:(c)=> c.dataset.label==='custo/compra' ? ('Custo/compra: R$ '+(c.parsed.y==null?'—':c.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}))) : (this.fmtNum(c.parsed.y)+' ingressos') } } },
+              scales:{ x:{ grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10}, color:'#6E595D', autoSkip:false } },
+                y:{ beginAtZero:true, position:'left', grid:{ color:'rgba(119,21,32,0.07)' }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#6E595D', precision:0, callback:(v)=>this.fmtNum(v) } },
+                y1:{ beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#9A7637', callback:(v)=>'R$ '+this.fmtNum(v) } } } }
+          };
+        } else this._investChartCfg=null;
+        return { funnelTabs, candFilters:segFilters, ...invG, candStatusBtns: imBtns, statusGroupLabel:'Produto',
           candReady:true, candLoadingView:false, candStatusLabel:'', candKpis:[], candStatus:[], candCharts:[],
-          neaKpis, neaVendasShow: neaKpis.length>0, neaDaily, neaVendasNote: NV? ('planilha vendas-nea · '+NV.periodo+' · atualizado '+NV.atualizadoEm) : '',
-          leadsView:false, showStatusBtns: !spec.noImersao, ...invG };
+          neaKpis, neaVendasShow: neaKpis.length>0, neaDaily,
+          investChartShow: !!this._investChartCfg, investChartTitle:'Ingressos por dia',
+          leadsView:false, showStatusBtns:true };
       }
       const inv=this.investFunnel(key, 0, winFrom, winTo);
+      // faixas de faturamento (planilha de leads da Aplicação) — banda degradê
+      let aplicBands=[]; let aplicBandShow=false;
+      if(key==='aplicacao'){
+        const rowsF=(this._aplicLeadsRows||[]).filter(r=>(!winFrom||r.date>=winFrom)&&(!winTo||r.date<=winTo));
+        const norm=(v)=>{ v=String(v||'').toLowerCase().replace(/^ac[oó]ma/,'acima'); return v; };
+        const order=['abaixo_de_15_mil','15_a_50_mil','50_a_100_mil','100_a_200_mil','200_a_500_mil','acima_de_500_mil'];
+        const label=(k)=>({ 'abaixo_de_15_mil':'Abaixo de R$ 15 mil','15_a_50_mil':'R$ 15 a 50 mil','50_a_100_mil':'R$ 50 a 100 mil','100_a_200_mil':'R$ 100 a 200 mil','200_a_500_mil':'R$ 200 a 500 mil','acima_de_500_mil':'Acima de R$ 500 mil' }[k] || (k? k.replace(/_/g,' ') : '(não informado)'));
+        const tally={}; rowsF.forEach(r=>{ const k=norm(r.faixa)||''; tally[k]=(tally[k]||0)+1; });
+        const keys=Object.keys(tally).sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+        const totalF=keys.reduce((a,k)=>a+tally[k],0);
+        const ramp=['#4A0C13','#5F111A','#771520','#9A2230','#B7404E','#CE6B77','#E0A0A8'];
+        const sq=keys.map(k=>Math.sqrt(tally[k]));
+        const sqT=sq.reduce((a,v)=>a+v,0)||1;
+        aplicBands=keys.map((k,i)=>({ label:label(k), count:this.fmtNum(tally[k]), pct: totalF? (tally[k]/totalF*100) : 0, width:(sq[i]/sqT*100)+'%', color:ramp[Math.min(i,ramp.length-1)] }));
+        aplicBandShow = totalF>0;
+      }
       const NV = (key==='nea2') ? (window.__NEA_VENDAS__||null) : null;
       const dec=(v,n)=>Number(v).toLocaleString('pt-BR',{minimumFractionDigits:n,maximumFractionDigits:n});
       const rMoney=(v)=>'R$ '+dec(v,2);
@@ -1996,6 +2340,7 @@ class Component extends DCLogic {
       }) : [];
       return { funnelTabs, candFilters:segFilters, candStatusBtns:[], statusGroupLabel:'Status', candReady:true, candLoadingView:false,
         candStatusLabel:'', candKpis:[], candStatus:[], candCharts:[], leadsView:false, showStatusBtns:false,
+        aplicBands, aplicBandShow,
         neaKpis, neaVendasShow: neaKpis.length>0, neaDaily, ...inv };
     }
     if(!F){
@@ -2049,9 +2394,10 @@ class Component extends DCLogic {
     const isNea2 = key==='nea2';
     const usePurchase = isGolden || isNea2;
     const imersaoKey = (_spec && _spec.imersaoFixed) ? _spec.imersaoFixed : this.state.imersao;
-    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores' && !isGolden && !isNea2){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
+    if(key!=='premium' && key!=='diagnostico' && key!=='seguidores' && key!=='aplicacao' && key!=='isca' && key!=='low' && !isGolden && !isNea2){ return { investShow:false, investStages:[], investStats:[], investAds:[], investAdsets:[], investEyebrow:'', adsStatus:'' }; }
     const isSeg = key==='seguidores';
-    const noPlan = isSeg || isGolden || isNea2;
+    const isLeadSheet = key==='aplicacao' || key==='isca';
+    const noPlan = isSeg || isGolden || isNea2 || key==='aplicacao' || key==='isca' || key==='low';
     // Turbinamento (só no funil Seguidores) — substitui o card "Dados de conversão"
     let convShow=true, turbinaShow=false, turbina=[], turbinaSummary=[];
     if(isSeg){
@@ -2069,12 +2415,17 @@ class Component extends DCLogic {
     }
     const T=Math.max(total,1), money2=(v)=>'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     const IMLABEL={ieb:'IEB',amb:'AMB',nea:'NEA'};
-    const S=this.state, _agg = isGolden? this.goldenAgg(imersaoKey) : this.adsAgg(this.ADS_CAMPAIGN_MATCH[key]||/^\b$/, from, to), ads=_agg.ads;
-    const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : isSeg ? 'Seguidores' : isNea2 ? 'NEA 2.0' : isGolden ? 'Golden Ticket' : 'Sessão Premium';
-    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : isSeg ? 'funil seguidores' : isNea2 ? 'nea 2ª edição' : isGolden ? ((_spec && _spec.imersaoFixed) ? 'nea 2ª edição' : ('golden ticket · imersão '+(IMLABEL[imersaoKey]||''))) : 'funil sessão premium';
+    const S=this.state, _agg = (isGolden && imersaoKey==='nea2') ? this.adsAgg(this.ADS_CAMPAIGN_MATCH.nea2, from, to) : (isGolden && imersaoKey==='amb') ? this.adsAgg(this.ADS_CAMPAIGN_MATCH.gamb, from, to) : (isGolden && imersaoKey==='nea') ? this.adsAgg(this.ADS_CAMPAIGN_MATCH.gnea, from, to) : (isGolden && imersaoKey==='ieb') ? this.adsAgg(this.ADS_CAMPAIGN_MATCH.gieb, from, to) : (isGolden? this.goldenAgg(imersaoKey) : this.adsAgg(this.ADS_CAMPAIGN_MATCH[key]||/^\b$/, from, to)), ads=_agg.ads;
+    const fbPrefix = key==='diagnostico' ? 'Diagnóstico' : key==='aplicacao' ? 'Aplicação' : key==='isca' ? 'Isca' : key==='low' ? 'Low Ticket' : isSeg ? 'Seguidores' : isNea2 ? 'NEA 2.0' : isGolden ? 'Golden Ticket' : 'Sessão Premium';
+    const investEyebrow = key==='diagnostico' ? 'funil diagnóstico' : key==='aplicacao' ? 'funil de aplicação' : key==='isca' ? 'funil isca' : key==='low' ? 'funil low ticket' : isSeg ? 'funil seguidores' : isNea2 ? 'nea 2ª edição' : isGolden ? ((_spec && _spec.imersaoFixed) ? 'nea 2ª edição' : ('golden ticket · imersão '+(IMLABEL[imersaoKey]||''))) : 'funil sessão premium';
     const hasReal = ads && ads.length>0;
     let alcance,impressoes,cliques,lpViews,leadsGer,investido,checkout=0,compras=0,receita=0;
-    if(hasReal){
+    const GT = isGolden ? (window.__GOLDEN_TRAFEGO__||{})[imersaoKey] : null;
+    if(GT){
+      // tráfego CONGELADO por produto (Golden) — não depende de busca ao vivo
+      alcance=GT.reach; impressoes=GT.impressions; cliques=GT.linkClicks; lpViews=GT.lpViews;
+      leadsGer=GT.leads; investido=GT.spend; checkout=GT.checkout; compras=GT.purchases; receita=GT.revenue;
+    }else if(hasReal){
       const sum=(f)=>ads.reduce((a,x)=>a+(x[f]||0),0);
       alcance=sum('reach'); impressoes=sum('impressions'); cliques=sum('linkClicks');
       lpViews=sum('lpViews'); leadsGer=sum('leads'); investido=sum('spend');
@@ -2108,37 +2459,49 @@ class Component extends DCLogic {
         { label:'Alcance', value:alcance, conv:null, cost:null },
         { label:'Impressões', value:impressoes, conv:div(impressoes,alcance), freq:div(impressoes,alcance), cost:null },
         { label:'Cliques no link', value:cliques, conv:div(cliques,impressoes), cost:money2(cpc) },
-        { label:'Visualizações da página', value:lpViews, conv:div(lpViews,cliques), cost:null },
-        { label:'Leads do gerenciador', value:leadsGer, conv:div(leadsGer,lpViews), cost:money2(custoGer) },
       ];
+      if(key!=='aplicacao') raw.push({ label:'Visualizações da página', value:lpViews, conv:div(lpViews,cliques), cost:null });
+      raw.push({ label:'Leads do gerenciador', value:leadsGer, conv:div(leadsGer, key==='aplicacao'? cliques : lpViews), cost:money2(custoGer) });
       if(!noPlan) raw.push({ label:'Leads da planilha', value:leadsPlan, conv:div(leadsPlan,leadsGer), cost:money2(custoPlan) });
+      if(isLeadSheet){
+        const by=this.leadByFor(key)||{};
+        const planLeads=Object.keys(by).filter(d=>(!from||d>=from)&&(!to||d<=to)).reduce((a,d)=>a+by[d],0);
+        raw.push({ label:'Leads da planilha', value:planLeads, conv:div(planLeads,leadsGer), cost:money2(planLeads? investido/planLeads : 0) });
+      }
     }
-    const widths = usePurchase ? [100,92,83,74,65,56] : (noPlan ? [100,92,82,70,58] : [100,93,84,73,62,52]);
+    const widths = usePurchase ? [100,92,83,74,65,56] : (key==='aplicacao' ? [100,92,82,70,58] : (isLeadSheet ? [100,93,84,73,62,52] : (noPlan ? [100,92,82,70,58] : [100,93,84,73,62,52])));
     const investStages=raw.map((s,i)=>{
       const convStr = s.freq!=null ? (s.freq).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : (s.conv==null? '' : this.fmtPct(s.conv*100));
       const left = convStr ? (s.cost ? convStr+'  -  '+s.cost : convStr) : '';
       return { label:s.label, value:this.fmtNum(s.value), left, barStyle:`width:${widths[i]}%; background:#771520;` };
     });
     const investStats=[
-      { label: hasReal? 'Investimento' : 'Investimento (estim.)', value:'R$ '+this.fmtNum(investido) },
+      { label: (hasReal||GT)? 'Investimento' : 'Investimento (estim.)', value:'R$ '+this.fmtNum(investido) },
       { label:'CPM', value:money2(cpm) },
       { label:'Custo por clique', value:money2(cpc) },
-      { label:'Connect rate', value:this.fmtPct(connectRate) },
-      { label: usePurchase? 'Custo / compra' : (noPlan? 'Custo / lead gerenciador' : 'Custo / lead planilha'), value:money2(usePurchase? custoCompra : (noPlan? custoGer : custoPlan)) },
+      (key==='aplicacao' ? { label:'Leads do gerenciador', value:this.fmtNum(leadsGer) } : { label:'Connect rate', value:this.fmtPct(connectRate) }),
     ];
+    if(!noPlan) investStats.push({ label:'Leads do gerenciador', value:this.fmtNum(leadsGer) });
+    if(!noPlan) investStats.push({ label:'Custo / lead gerenciador', value:money2(custoGer) });
+    investStats.push({ label: usePurchase? 'Custo / compra' : (noPlan? 'Custo / lead gerenciador' : 'Custo / lead planilha'), value:money2(usePurchase? custoCompra : (noPlan? custoGer : custoPlan)) });
+    if(isLeadSheet){
+      const by=this.leadByFor(key)||{};
+      const planLeads=Object.keys(by).filter(d=>(!from||d>=from)&&(!to||d<=to)).reduce((a,d)=>a+by[d],0);
+      investStats.push({ label:'Custo / lead planilha', value:money2(planLeads? investido/planLeads : 0) });
+    }
     let investAds;
     if(hasReal){
       investAds=ads.slice(0,12).map((a,i)=>({ idx:i, name:a.name, link:a.link||'', noLink:!(a.link),
         thumbStyle: a.thumb? {width:'42px',height:'42px',flex:'none',borderRadius:'5px',backgroundColor:'#3D0A11',backgroundImage:`url("${a.thumb}")`,backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat'}
           : {width:'42px',height:'42px',flex:'none',borderRadius:'5px',background:'linear-gradient(135deg, #771520, #3D0A11)'},
-        impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews),
+        impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews), ctr:this.fmtPct(a.impressions? a.linkClicks/a.impressions*100 : 0), checkout:this.fmtNum(a.checkout||0),
         cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(usePurchase? a.purchases : (isSeg? a.linkClicks : a.leads)) }));
     }else{
       const adNames=[fbPrefix+' · Depoimento',fbPrefix+' · VSL Curta',fbPrefix+' · Carrossel',fbPrefix+' · Reels Bastidores',fbPrefix+' · Prova Social'];
       const w=[0.30,0.24,0.19,0.15,0.12], adCr=[0.82,0.76,0.80,0.74,0.78], thumbBg=['#771520','#8A1A24','#5A0F18','#9E2230','#6B131D'];
       investAds=adNames.map((nm,i)=>{ const impr=Math.round(impressoes*w[i]), clk=Math.round(cliques*w[i]), lpv=Math.round(clk*adCr[i]), leads=Math.round(leadsGer*w[i]);
         return { idx:i, name:nm, link:'', noLink:true, thumbStyle:`width:42px; height:42px; flex:none; border-radius:5px; background:linear-gradient(135deg, ${thumbBg[i]}, #3D0A11);`,
-          impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(isSeg? clk : leads) }; });
+          impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), ctr:this.fmtPct(impr? clk/impr*100:0), checkout:this.fmtNum(0), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(isSeg? clk : leads) }; });
     }
     const adsStatus = S.adsError? ('Facebook Ads: '+S.adsError).slice(0,80) : (S.adsLoading? 'carregando anúncios do Facebook…' : (hasReal? '' : 'dados estimados'));
     const adsets=_agg.adsets;
@@ -2195,9 +2558,19 @@ class Component extends DCLogic {
           y:{ beginAtZero:true, position:'left', grid:{ color:'rgba(119,21,32,0.07)' }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#6E595D', precision:0, callback:(v)=>this.fmtNum(v) } },
           y1:{ beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#9A7637', callback:(v)=>'R$ '+this.fmtNum(v) } } } }
     } : null;
-    const investChartShow = key==='nea2' && !!this._investChartCfg;
-    return { investShow:true, investStages, investStats, investAds, investAdsets, investEyebrow, adsStatus, investDaily, investDailyShow, investChartShow,
-      convShow, turbinaShow, turbina, turbinaSummary, showLpCr: !isSeg,
+    let investChartTitle='Ingressos por dia';
+    if(isLeadSheet){
+      const by=this.leadByFor(key)||{};
+      const keys=Object.keys(by).sort();
+      let lo = from || keys[0], hi = to || keys[keys.length-1];
+      const labels=[], data=[];
+      if(lo && hi){ let cur=lo, guard=0; while(cur<=hi && guard<800){ labels.push(this.ddmm(cur)); data.push(by[cur]||0); cur=this.addDays(cur,1); guard++; } }
+      this._investChartCfg = labels.length ? this.lineCfg(labels, [{label:'leads', data, color:'#771520', fill:true, fillColor:'rgba(119,21,32,0.08)'}], {zero:true}) : null;
+      investChartTitle='Volume de leads por dia';
+    }
+    const investChartShow = (key==='nea2' || isLeadSheet) && !!this._investChartCfg;
+    return { investShow:true, investSpend:investido, investStages, investStats, investStatsGrid:`display:grid; grid-template-columns:repeat(${investStats.length}, 1fr); gap:12px; margin-bottom:16px;`, investAds, investAdsets, investEyebrow, adsStatus, investDaily, investDailyShow, investChartShow, investChartTitle,
+      convShow, turbinaShow, turbina, turbinaSummary, showLpCr: !isSeg && key!=='aplicacao',
       investGridStyle: isSeg
         ? 'display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch; margin-bottom:16px;'
         : 'display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;',
