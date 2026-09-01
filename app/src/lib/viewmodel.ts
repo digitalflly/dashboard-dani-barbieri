@@ -4,9 +4,9 @@
 // event handlers are wired in the components.
 // ============================================================
 
-import { ddmm } from './dates'
+import { ddmm, addDays } from './dates'
 import { fmtNum, fmtPct, delta } from './format'
-import { windowOf, agg, tlAt, weekdayDatasets } from './model'
+import { windowOf, kpiWindowOf, agg, tlAt, dailyAt } from './model'
 import { lineCfg, type LineOpts } from './charts'
 import { learnings, type Learning, type ThemeRow } from './learnings'
 import { ACCENT, COVER_BG } from './constants'
@@ -35,6 +35,9 @@ export interface HeaderVM {
   showMonth: boolean
   showFunnelFilters: boolean
   refreshLabel: string
+  dayMin: string
+  dayMax: string
+  hasDayFilter: boolean
 }
 
 export function headerVM(M: Model, S: DashState): HeaderVM {
@@ -77,6 +80,9 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
     showMonth: S.page !== 'candidaturas' && S.page !== 'plano',
     showFunnelFilters: S.page === 'candidaturas',
     refreshLabel: S.refreshing ? 'Atualizando…' : 'Atualizar',
+    dayMin: M.minDate,
+    dayMax: M.maxDate,
+    hasDayFilter: !!(S.dayFrom || S.dayTo),
   }
 }
 
@@ -113,8 +119,15 @@ export interface ContaVM {
 }
 
 export function contaVM(M: Model, S: DashState): ContaVM {
-  const { win, followers, cur, prev, curF, prevF } = ctx(M, S)
+  const win = windowOf(M, S) // janela dos gráficos
+  const followers = M.followers
   const accent = ACCENT
+  // KPIs: janela de comparação por mês fechado, independente dos gráficos
+  const kwin = kpiWindowOf(M, S)
+  const cur = agg(M, kwin.start, kwin.end)
+  const prev = kwin.prev ? agg(M, kwin.prev.start, kwin.prev.end) : null
+  const curF = tlAt(M, kwin.end)
+  const prevF = kwin.prev ? tlAt(M, kwin.prev.end) : null
   const engG = cur.reach ? (cur.interactions / cur.reach) * 100 : 0
   const engF = followers ? (cur.interactions / followers) * 100 : 0
   const pEngG = prev && prev.reach ? (prev.interactions / prev.reach) * 100 : null
@@ -129,7 +142,7 @@ export function contaVM(M: Model, S: DashState): ContaVM {
     sub: sub || d.sub || '',
   })
   const kpis: KpiVM[] = [
-    mk('Seguidores', fmtNum(curF), delta(curF, prevF), win.prev ? (curF! - prevF! >= 0 ? '+' : '') + fmtNum(curF! - prevF!) : ''),
+    mk('Seguidores', fmtNum(curF), delta(curF, prevF), kwin.prev ? (curF! - prevF! >= 0 ? '+' : '') + fmtNum(curF! - prevF!) : ''),
     mk('Visualizações', fmtNum(cur.views), delta(cur.views, prev ? prev.views : null)),
     mk('Alcance', fmtNum(cur.reach), delta(cur.reach, prev ? prev.reach : null)),
     mk('Interações', fmtNum(cur.interactions), delta(cur.interactions, prev ? prev.interactions : null)),
@@ -146,35 +159,45 @@ export function contaVM(M: Model, S: DashState): ContaVM {
     interactionRate: (r) => (r.reach ? (r.interactions / r.reach) * 100 : null),
     saveRate: (r) => (r.reach ? (r.saves / r.reach) * 100 : null),
     shareRate: (r) => (r.reach ? (r.shares / r.reach) * 100 : null),
+    engReal: (r) => (r.reach ? (r.interactions / r.reach) * 100 : null),
   }
   const metric2Pct = S.metric2 !== 'views' && S.metric2 !== 'reach'
-  const wdLabels = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
   const lo = (o: LineOpts) => o
-  const chartCfgs: Record<string, ChartConfiguration> = {
-    'chart-followers': lineCfg(
-      flWin.map((t) => ddmm(t.date)),
-      [{ label: 'seguidores', data: flWin.map((t) => t.value), color: accent, fill: true, fillColor: 'rgba(119,21,32,0.08)' }],
-      lo({ zero: false })
-    ),
-    'chart-metric2': lineCfg(wdLabels, weekdayDatasets(M, win, metricFns[S.metric2]), lo({ pct: metric2Pct, zero: metric2Pct })),
-    'chart-engfollowers': lineCfg(
-      wdLabels,
-      weekdayDatasets(M, win, (r) => (followers ? (r.interactions / followers) * 100 : null)),
-      lo({ pct: true, zero: true })
-    ),
-    'chart-enggeneral': lineCfg(
-      wdLabels,
-      weekdayDatasets(M, win, (r) => (r.reach ? (r.interactions / r.reach) * 100 : null)),
-      lo({ pct: true, zero: true })
-    ),
-  }
   const metric2Options = [
     { value: 'views', label: 'Visualizações' },
     { value: 'reach', label: 'Alcance' },
     { value: 'interactionRate', label: 'Taxa de Interação' },
     { value: 'saveRate', label: 'Taxa de Salvamento' },
     { value: 'shareRate', label: 'Taxa de Compartilhamento' },
+    { value: 'engReal', label: '% engajamento real' },
   ]
+  // série diária no intervalo (gráfico "Métrica por dia")
+  const dLabels: string[] = []
+  const dRows: (DailyRow | null)[] = []
+  {
+    let d = win.start
+    let guard = 0
+    while (d <= win.end && guard < 800) {
+      dLabels.push(ddmm(d))
+      dRows.push(dailyAt(M, d))
+      d = addDays(d, 1)
+      guard++
+    }
+  }
+  const dailyData = (fn: (r: DailyRow) => number | null): (number | null)[] => dRows.map((r) => (r ? fn(r) : null))
+  const metricLabel = metric2Options.find((o) => o.value === S.metric2)?.label || 'métrica'
+  const chartCfgs: Record<string, ChartConfiguration> = {
+    'chart-followers': lineCfg(
+      flWin.map((t) => ddmm(t.date)),
+      [{ label: 'seguidores', data: flWin.map((t) => t.value), color: accent, fill: true, fillColor: 'rgba(119,21,32,0.08)' }],
+      lo({ zero: false })
+    ),
+    'chart-metric2': lineCfg(
+      dLabels,
+      [{ label: metricLabel, data: dailyData(metricFns[S.metric2]), color: accent, fill: true, fillColor: 'rgba(119,21,32,0.08)' }],
+      lo({ pct: metric2Pct, zero: metric2Pct })
+    ),
+  }
   return { kpis, chartCfgs, metric2Options }
 }
 
