@@ -117,13 +117,16 @@
         </sc-if>
         <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ true }}">
         <label style="display:flex; flex-direction:column; gap:4px;">
-          <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Semana</span>
-          <select class="b-select" value="{{ week }}" onChange="{{ onWeek }}" style="height:38px; padding:0 12px; min-width:230px;">
-            <sc-for list="{{ weekOptions }}" as="o" hint-placeholder-count="5">
-              <option value="{{ o.value }}">{{ o.label }}</option>
-            </sc-for>
-          </select>
+          <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Data inicial</span>
+          <input type="date" class="b-select" value="{{ dayFrom }}" min="{{ dayMin }}" max="{{ dayMax }}" onChange="{{ onDayFrom }}" style="height:38px; padding:0 12px;">
         </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Data final</span>
+          <input type="date" class="b-select" value="{{ dayTo }}" min="{{ dayMin }}" max="{{ dayMax }}" onChange="{{ onDayTo }}" style="height:38px; padding:0 12px;">
+        </label>
+        <sc-if value="{{ hasDayFilter }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onDayClear }}" style="height:38px; padding:0 14px; font-family:var(--font-sans); font-size:12px; cursor:pointer; border-radius:6px; border:1px solid var(--border-strong); background:transparent; color:var(--text-muted);">Limpar</button>
+        </sc-if>
         </sc-if>
         <sc-if value="{{ showFunnelFilters }}" hint-placeholder-val="{{ false }}">
         <label style="display:flex; flex-direction:column; gap:4px;">
@@ -186,8 +189,8 @@
         </sc-for>
       </div>
 
-      <!-- charts 1 & 2 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <!-- charts: stacked -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
         <div class="b-card" style="padding:20px 22px;">
           <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Crescimento</div>
           <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:20px; color:var(--text-strong); line-height:1.1; margin-bottom:12px;">Seguidores no período</div>
@@ -197,7 +200,7 @@
           <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
             <div>
               <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Por dia da semana</div>
-              <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:20px; color:var(--text-strong); line-height:1.1;">Métrica por semana</div>
+              <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:20px; color:var(--text-strong); line-height:1.1;">Métrica por dia</div>
             </div>
             <select class="b-select" value="{{ metric2 }}" onChange="{{ onMetric2 }}" style="height:34px; padding:0 10px; min-width:180px;">
               <sc-for list="{{ metric2Options }}" as="o" hint-placeholder-count="5">
@@ -206,20 +209,6 @@
             </select>
           </div>
           <div style="height:230px; position:relative;"><canvas id="chart-metric2"></canvas></div>
-        </div>
-      </div>
-
-      <!-- charts 3 & 4: engagement per week -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-        <div class="b-card" style="padding:20px 22px;">
-          <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Por dia da semana</div>
-          <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:20px; color:var(--text-strong); line-height:1.1; margin-bottom:12px;">% engajamento seguidores</div>
-          <div style="height:230px; position:relative;"><canvas id="chart-engfollowers"></canvas></div>
-        </div>
-        <div class="b-card" style="padding:20px 22px;">
-          <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Por dia da semana</div>
-          <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:20px; color:var(--text-strong); line-height:1.1; margin-bottom:12px;">% engajamento geral</div>
-          <div style="height:230px; position:relative;"><canvas id="chart-enggeneral"></canvas></div>
         </div>
       </div>
     </div>
@@ -1187,7 +1176,8 @@ class Component extends DCLogic {
     this.state = {
       page: 'conta',
       month: 'all',
-      week: this.model.DEFAULT_WEEK.iso,
+      week: 'all',
+      dayFrom: '', dayTo: '',
       metric2: 'views',
       topMetric: 'views',
       refreshing: false,
@@ -1366,6 +1356,12 @@ class Component extends DCLogic {
   /* ============ WINDOW + AGG ============ */
   windowOf(){
     const M=this.model;
+    if(this.state.dayFrom || this.state.dayTo){
+      const s=this.state.dayFrom||M.minDate, e=this.state.dayTo||M.maxDate;
+      const span=(this.parse(e)-this.parse(s))/86400000+1;
+      const ps=this.ymd(new Date(this.parse(s).getTime()-span*86400000)), pe=this.ymd(new Date(this.parse(s).getTime()-86400000));
+      return { start:s, end:e, kind:'range', label:this.ddmm(s)+' – '+this.ddmm(e), prev:{start:ps,end:pe} };
+    }
     if(this.state.week!=='all'){
       const w=M.weeks.find(x=>x.iso===this.state.week)||M.DEFAULT_WEEK;
       const idx=M.weeks.indexOf(w); const prev= idx>0? M.weeks[idx-1]:null;
@@ -1388,7 +1384,32 @@ class Component extends DCLogic {
       const lblEntry=M.months.find(x=>x.value===ym);
       return { start:cur.start, end:cur.end, kind:'month', label:(lblEntry?lblEntry.label:ym), prev };
     }
-    return { start:M.minDate, end:M.maxDate, kind:'all', label:'todo o período', prev:null };
+    // padrão: 1 mês fechado (anterior) + dias do mês corrente
+    const mx=M.maxDate; const [my,mm]=mx.split('-').map(Number);
+    const pad=n=>String(n).padStart(2,'0');
+    const py=mm===1?my-1:my, pmn=mm===1?12:mm-1;
+    let start=py+'-'+pad(pmn)+'-01'; if(start<M.minDate) start=M.minDate;
+    return { start, end:mx, kind:'default', label:'último mês + mês corrente', prev:null };
+  }
+  // janela de COMPARAÇÃO dos KPIs (independente dos gráficos):
+  // mês selecionado vs anterior; padrão e filtro de data = último mês fechado vs anterior
+  kpiWindowOf(){
+    const M=this.model, pad=n=>String(n).padStart(2,'0');
+    const monthRange=(y,m)=>{ const last=new Date(Date.UTC(y,m,0)).getUTCDate(); let s=y+'-'+pad(m)+'-01', e=y+'-'+pad(m)+'-'+pad(last); if(M.maxDate&&e>M.maxDate)e=M.maxDate; if(M.minDate&&s<M.minDate)s=M.minDate; return {start:s,end:e}; };
+    let y,m;
+    if(this.state.month && this.state.month!=='all'){ [y,m]=this.state.month.split('-').map(Number); }
+    else {
+      [y,m]=M.maxDate.split('-').map(Number);
+      // usar o último mês FECHADO: se maxDate não é o último dia do mês, recua um mês
+      const lastDay=new Date(Date.UTC(y,m,0)).getUTCDate();
+      const curDay=+M.maxDate.split('-')[2];
+      if(curDay<lastDay){ if(m===1){y--;m=12;} else m--; }
+    }
+    const cur=monthRange(y,m);
+    const py=m===1?y-1:y, pm=m===1?12:m-1;
+    const prevR=monthRange(py,pm);
+    const prev = prevR.end>=M.minDate ? prevR : null;
+    return { start:cur.start, end:cur.end, prev, label:M.months.find(x=>x.value===(y+'-'+pad(m)))?.label || (y+'-'+pad(m)) };
   }
   agg(start,end){
     const rows=this.model.daily.filter(r=>r.date>=start && r.date<=end);
@@ -1446,7 +1467,7 @@ class Component extends DCLogic {
       this._live = { profile, daily, follows, actSum };
       this.model=this.buildModel({ profile, daily, follows, media:[] });
       const _phase1Week=this.model.DEFAULT_WEEK.iso;
-      this.setState({ live:true, dataError:'', lastSync:this.nowStamp(), month:'all', week:_phase1Week, mediaLoading:true, dormant:false });
+      this.setState({ live:true, dataError:'', lastSync:this.nowStamp(), month:'all', week:'all', mediaLoading:true, dormant:false });
 
       // ── Phase 2: per-post insights — só os últimos 30 dias são buscados; o
       //    histórico anterior fica estático em cache (localStorage). ──
@@ -1481,7 +1502,7 @@ class Component extends DCLogic {
         const dormant = (this._live.actSum||0) < 50 && media.length===0;
         const _newDefWeek=this.model.DEFAULT_WEEK.iso;
         // se o usuário não mexeu na semana, ajusta para a semana mais recente COM posts
-        this.setState(s=> (s.week===_phase1Week && s.month==='all') ? {refreshing:false, mediaLoading:false, dormant, week:_newDefWeek} : {refreshing:false, mediaLoading:false, dormant});
+        this.setState(s=>({refreshing:false, mediaLoading:false, dormant}));
         // baixa e embute as capas (todo 2026) para guardá-las de forma durável
         this.persistCovers(media, CKEY, fd(to));
       }catch(e2){ this.setState({ refreshing:false, mediaLoading:false, dataError:'Publicações: '+((e2&&e2.message)||'falha ao carregar') }); }
@@ -2069,8 +2090,13 @@ class Component extends DCLogic {
       pages, month:S.month, week:S.week, monthOptions, weekOptions,
       onPrevPage:()=>{ const ks=['conta','conteudos','candidaturas','resultados','plano']; const i=ks.indexOf(S.page); const nk=ks[(i-1+ks.length)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
       onNextPage:()=>{ const ks=['conta','conteudos','candidaturas','resultados','plano']; const i=ks.indexOf(S.page); const nk=ks[(i+1)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
-      onMonth:(e)=>this.setState({month:e.target.value, week:'all'}),
+      onMonth:(e)=>this.setState({month:e.target.value, week:'all', dayFrom:'', dayTo:''}),
       onWeek:(e)=>this.setState({week:e.target.value}),
+      dayFrom:S.dayFrom||'', dayTo:S.dayTo||'', dayMin:this.model.minDate, dayMax:this.model.maxDate,
+      hasDayFilter: !!(S.dayFrom||S.dayTo),
+      onDayFrom:(e)=>this.setState({dayFrom:e.target.value, month:'all', week:'all'}),
+      onDayTo:(e)=>this.setState({dayTo:e.target.value, month:'all', week:'all'}),
+      onDayClear:()=>this.setState({dayFrom:'', dayTo:''}),
       accent, periodLabel: win.label,
       isConta:S.page==='conta', isConteudos:S.page==='conteudos', isInsights:S.page==='insights', isCandidaturas:S.page==='candidaturas', isResultados:S.page==='resultados', isPlano:S.page==='plano',
       showFilters: S.page!=='candidaturas' && S.page!=='plano' && S.page!=='resultados',
@@ -2079,18 +2105,19 @@ class Component extends DCLogic {
       pageTitle: S.page==='conta'?'Dados da Conta': S.page==='conteudos'?'Dados dos Conteúdos': S.page==='insights'?'Insights dos Conteúdos': S.page==='candidaturas'?'Dados dos Funis': S.page==='resultados'?'Resultados Mensais':'Plano de Conteúdo',
     };
 
-    // CONTA
-    const cur=this.agg(win.start,win.end);
-    const prev= win.prev? this.agg(win.prev.start,win.prev.end): null;
-    const curF=this.tlAt(win.end), prevF= win.prev? this.tlAt(win.prev.end): null;
+    // CONTA — KPIs usam janela de comparação por mês fechado (independente dos gráficos)
+    const kwin=this.kpiWindowOf();
+    const cur=this.agg(kwin.start,kwin.end);
+    const prev= kwin.prev? this.agg(kwin.prev.start,kwin.prev.end): null;
+    const curF=this.tlAt(kwin.end), prevF= kwin.prev? this.tlAt(kwin.prev.end): null;
     const engG= cur.reach? cur.interactions/cur.reach*100 : 0;
     const engF= followers? cur.interactions/followers*100 : 0;
     const pEngG= prev&&prev.reach? prev.interactions/prev.reach*100 : null;
     const pEngF= prev? prev.interactions/followers*100 : null;
     const dFoll=this.delta(curF, prevF);
-    if(win.prev){ const ab=curF-prevF; dFoll.sub=(ab>=0?'+':'')+this.fmtNum(ab); }
+    if(kwin.prev){ const ab=curF-prevF; dFoll.sub=(ab>=0?'+':'')+this.fmtNum(ab); }
     const kpis=[
-      { label:'Seguidores', value:this.fmtNum(curF), accent, ...this.delta(curF,prevF), sub: win.prev? ((curF-prevF>=0?'+':'')+this.fmtNum(curF-prevF)):'' },
+      { label:'Seguidores', value:this.fmtNum(curF), accent, ...this.delta(curF,prevF), sub: kwin.prev? ((curF-prevF>=0?'+':'')+this.fmtNum(curF-prevF)):'' },
       { label:'Visualizações', value:this.fmtNum(cur.views), accent, ...this.delta(cur.views, prev?prev.views:null) },
       { label:'Alcance', value:this.fmtNum(cur.reach), accent, ...this.delta(cur.reach, prev?prev.reach:null) },
       { label:'Interações', value:this.fmtNum(cur.interactions), accent, ...this.delta(cur.interactions, prev?prev.interactions:null) },
@@ -2102,16 +2129,17 @@ class Component extends DCLogic {
 
     // chart configs
     const flWin=M.timeline.filter(t=>t.date>=win.start && t.date<=win.end);
-    const metricFns={ views:r=>r.views, reach:r=>r.reach, interactionRate:r=>r.reach?r.interactions/r.reach*100:null, saveRate:r=>r.reach?r.saves/r.reach*100:null, shareRate:r=>r.reach?r.shares/r.reach*100:null };
+    const metricFns={ views:r=>r.views, reach:r=>r.reach, interactionRate:r=>r.reach?r.interactions/r.reach*100:null, saveRate:r=>r.reach?r.saves/r.reach*100:null, shareRate:r=>r.reach?r.shares/r.reach*100:null, engReal:r=>r.reach?r.interactions/r.reach*100:null };
     const metric2Pct = (S.metric2!=='views' && S.metric2!=='reach');
     const wdLabels=['seg','ter','qua','qui','sex','sáb','dom'];
+    // série diária no intervalo (para o gráfico "Métrica por dia")
+    const dLabels=[], dRows=[]; { let cur=win.start, guard=0; while(cur<=win.end && guard<800){ dLabels.push(this.ddmm(cur)); dRows.push(this.dailyAt(cur)); cur=this.addDays(cur,1); guard++; } }
+    const dailyData=(fn)=>dRows.map(r=> r? fn(r): null);
+    const metric2Options=[{value:'views',label:'Visualizações'},{value:'reach',label:'Alcance'},{value:'interactionRate',label:'Taxa de Interação'},{value:'saveRate',label:'Taxa de Salvamento'},{value:'shareRate',label:'Taxa de Compartilhamento'},{value:'engReal',label:'% engajamento real'}];
     this._chartCfgs={
       'chart-followers': this.lineCfg(flWin.map(t=>this.ddmm(t.date)), [{label:'seguidores', data:flWin.map(t=>t.value), color:accent, fill:true, fillColor:'rgba(119,21,32,0.08)'}], {zero:false}),
-      'chart-metric2': this.lineCfg(wdLabels, this.weekdayDatasets(win, metricFns[S.metric2]), {pct:metric2Pct, zero:metric2Pct}),
-      'chart-engfollowers': this.lineCfg(wdLabels, this.weekdayDatasets(win, r=> followers? r.interactions/followers*100 : null), {pct:true, zero:true}),
-      'chart-enggeneral': this.lineCfg(wdLabels, this.weekdayDatasets(win, r=> r.reach? r.interactions/r.reach*100 : null), {pct:true, zero:true}),
+      'chart-metric2': this.lineCfg(dLabels, [{label:(metric2Options.find(o=>o.value===S.metric2)||{}).label||'métrica', data:dailyData(metricFns[S.metric2]), color:accent, fill:true, fillColor:'rgba(119,21,32,0.08)'}], {pct:metric2Pct, zero:metric2Pct}),
     };
-    const metric2Options=[{value:'views',label:'Visualizações'},{value:'reach',label:'Alcance'},{value:'interactionRate',label:'Taxa de Interação'},{value:'saveRate',label:'Taxa de Salvamento'},{value:'shareRate',label:'Taxa de Compartilhamento'}];
 
     // CONTEUDOS
     const PM = this.postMetrics !== false; // per-post numeric metrics available?
