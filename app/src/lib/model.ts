@@ -107,9 +107,20 @@ export function buildModel(raw?: RawData): Model {
 export interface PeriodState {
   week: string
   month: string
+  dayFrom?: string
+  dayTo?: string
 }
 
 export function windowOf(M: Model, state: PeriodState): Window {
+  // intervalo de datas explícito — sobrepõe mês/semana
+  if (state.dayFrom || state.dayTo) {
+    const s = state.dayFrom || M.minDate
+    const e = state.dayTo || M.maxDate
+    const span = (parse(e).getTime() - parse(s).getTime()) / 86400000 + 1
+    const ps = ymd(new Date(parse(s).getTime() - span * 86400000))
+    const pe = ymd(new Date(parse(s).getTime() - 86400000))
+    return { start: s, end: e, kind: 'range', label: ddmm(s) + ' – ' + ddmm(e), prev: { start: ps, end: pe } }
+  }
   if (state.week !== 'all') {
     const w = M.weeks.find((x) => x.iso === state.week) || M.DEFAULT_WEEK
     const idx = M.weeks.indexOf(w)
@@ -142,7 +153,54 @@ export function windowOf(M: Model, state: PeriodState): Window {
     const lblEntry = M.months.find((x) => x.value === ym)
     return { start: cur.start, end: cur.end, kind: 'month', label: lblEntry ? lblEntry.label : ym, prev }
   }
-  return { start: M.minDate, end: M.maxDate, kind: 'all', label: 'todo o período', prev: null }
+  // padrão: 1 mês fechado (anterior) + dias do mês corrente
+  const mx = M.maxDate
+  const [my, mm] = mx.split('-').map(Number)
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  const py = mm === 1 ? my - 1 : my
+  const pmn = mm === 1 ? 12 : mm - 1
+  let start = py + '-' + pad(pmn) + '-01'
+  if (start < M.minDate) start = M.minDate
+  return { start, end: mx, kind: 'default', label: 'último mês + mês corrente', prev: null }
+}
+
+// janela de COMPARAÇÃO dos KPIs (independente dos gráficos):
+// mês selecionado vs anterior; padrão e filtro de data = último mês fechado vs anterior
+export function kpiWindowOf(M: Model, state: PeriodState): { start: string; end: string; prev: { start: string; end: string } | null; label: string } {
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  const monthRange = (y: number, m: number): { start: string; end: string } => {
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate()
+    let s = y + '-' + pad(m) + '-01'
+    let e = y + '-' + pad(m) + '-' + pad(last)
+    if (M.maxDate && e > M.maxDate) e = M.maxDate
+    if (M.minDate && s < M.minDate) s = M.minDate
+    return { start: s, end: e }
+  }
+  let y: number
+  let m: number
+  if (state.month && state.month !== 'all') {
+    ;[y, m] = state.month.split('-').map(Number)
+  } else {
+    ;[y, m] = M.maxDate.split('-').map(Number)
+    // usar o último mês FECHADO: se maxDate não é o último dia do mês, recua um mês
+    const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate()
+    const curDay = +M.maxDate.split('-')[2]
+    if (curDay < lastDay) {
+      if (m === 1) {
+        y--
+        m = 12
+      } else {
+        m--
+      }
+    }
+  }
+  const cur = monthRange(y, m)
+  const py = m === 1 ? y - 1 : y
+  const pm = m === 1 ? 12 : m - 1
+  const prevR = monthRange(py, pm)
+  const prev = prevR.end >= M.minDate ? prevR : null
+  const lbl = M.months.find((x) => x.value === y + '-' + pad(m))?.label || y + '-' + pad(m)
+  return { start: cur.start, end: cur.end, prev, label: lbl }
 }
 
 export function agg(M: Model, start: string, end: string): Agg {

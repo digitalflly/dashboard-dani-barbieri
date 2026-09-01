@@ -54,8 +54,8 @@ export default function ContaPage({ dash }: { dash: Dashboard }) {
         ))}
       </div>
 
-      {/* charts 1 & 2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      {/* charts empilhados */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div className="b-card" style={{ padding: '20px 22px' }}>
           <div style={eyebrow}>Crescimento</div>
           <div style={{ ...chartTitle, marginBottom: 12 }}>Seguidores no período</div>
@@ -66,8 +66,8 @@ export default function ContaPage({ dash }: { dash: Dashboard }) {
         <div className="b-card" style={{ padding: '20px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
             <div>
-              <div style={eyebrow}>Por dia da semana</div>
-              <div style={chartTitle}>Métrica por semana</div>
+              <div style={eyebrow}>Por dia</div>
+              <div style={chartTitle}>Métrica por dia</div>
             </div>
             <select
               className="b-select"
@@ -84,24 +84,6 @@ export default function ContaPage({ dash }: { dash: Dashboard }) {
           </div>
           <div style={chartBox}>
             <ChartCanvas id="chart-metric2" config={v.chartCfgs['chart-metric2']} />
-          </div>
-        </div>
-      </div>
-
-      {/* charts 3 & 4 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div className="b-card" style={{ padding: '20px 22px' }}>
-          <div style={eyebrow}>Por dia da semana</div>
-          <div style={{ ...chartTitle, marginBottom: 12 }}>% engajamento seguidores</div>
-          <div style={chartBox}>
-            <ChartCanvas id="chart-engfollowers" config={v.chartCfgs['chart-engfollowers']} />
-          </div>
-        </div>
-        <div className="b-card" style={{ padding: '20px 22px' }}>
-          <div style={eyebrow}>Por dia da semana</div>
-          <div style={{ ...chartTitle, marginBottom: 12 }}>% engajamento geral</div>
-          <div style={chartBox}>
-            <ChartCanvas id="chart-enggeneral" config={v.chartCfgs['chart-enggeneral']} />
           </div>
         </div>
       </div>

@@ -92,7 +92,7 @@ export interface Model {
 export interface Window {
   start: string
   end: string
-  kind: 'week' | 'month' | 'all'
+  kind: 'week' | 'month' | 'all' | 'range' | 'default'
   label: string
   prev: { start: string; end: string } | null
 }

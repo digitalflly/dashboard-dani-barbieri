@@ -1,6 +1,6 @@
 import { useRef, type CSSProperties } from 'react'
 import type { Dashboard, PageKey } from '../lib/useDashboard'
-import { headerVM, monthOptions, weekOptions } from '../lib/viewmodel'
+import { headerVM, monthOptions } from '../lib/viewmodel'
 import type { CandFilters } from '../lib/funisvm'
 import { ACCENT } from '../lib/constants'
 
@@ -153,7 +153,7 @@ export default function Header({ dash, candFilters }: { dash: Dashboard; candFil
               <select
                 className="b-select"
                 value={S.month}
-                onChange={(e) => setState({ month: e.target.value, week: 'all' })}
+                onChange={(e) => setState({ month: e.target.value, week: 'all', dayFrom: '', dayTo: '' })}
                 style={{ height: 38, padding: '0 12px', minWidth: 150 }}
               >
                 {monthOptions(M).map((o) => (
@@ -165,21 +165,40 @@ export default function Header({ dash, candFilters }: { dash: Dashboard; candFil
             </label>
           )}
           {hv.showFilters && (
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={labelCap}>Semana</span>
-              <select
-                className="b-select"
-                value={S.week}
-                onChange={(e) => setState({ week: e.target.value })}
-                style={{ height: 38, padding: '0 12px', minWidth: 230 }}
-              >
-                {weekOptions(M).map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={labelCap}>Data inicial</span>
+                <input
+                  type="date"
+                  className="b-select"
+                  value={S.dayFrom}
+                  min={hv.dayMin}
+                  max={hv.dayMax}
+                  onChange={(e) => setState({ dayFrom: e.target.value, month: 'all', week: 'all' })}
+                  style={{ height: 38, padding: '0 12px' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={labelCap}>Data final</span>
+                <input
+                  type="date"
+                  className="b-select"
+                  value={S.dayTo}
+                  min={hv.dayMin}
+                  max={hv.dayMax}
+                  onChange={(e) => setState({ dayTo: e.target.value, month: 'all', week: 'all' })}
+                  style={{ height: 38, padding: '0 12px' }}
+                />
+              </label>
+              {hv.hasDayFilter && (
+                <button
+                  onClick={() => setState({ dayFrom: '', dayTo: '' })}
+                  style={{ height: 38, padding: '0 14px', fontFamily: 'var(--font-sans)', fontSize: 12, cursor: 'pointer', borderRadius: 6, border: '1px solid var(--border-strong)', background: 'transparent', color: 'var(--text-muted)' }}
+                >
+                  Limpar
+                </button>
+              )}
+            </>
           )}
 
           {hv.showFunnelFilters && (

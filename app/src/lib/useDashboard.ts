@@ -31,6 +31,8 @@ export interface DashState {
   page: PageKey
   month: string
   week: string
+  dayFrom: string
+  dayTo: string
   metric2: string
   topMetric: string
   refreshing: boolean
@@ -78,7 +80,9 @@ export function useDashboard(): Dashboard {
   const [state, setStateRaw] = useState<DashState>(() => ({
     page: 'conta',
     month: 'all',
-    week: initialModel.DEFAULT_WEEK.iso,
+    week: 'all',
+    dayFrom: '',
+    dayTo: '',
     metric2: 'views',
     topMetric: 'views',
     refreshing: false,
@@ -163,7 +167,7 @@ export function useDashboard(): Dashboard {
         dataError: '',
         lastSync: nowStamp(),
         month: 'all',
-        week: m1.DEFAULT_WEEK.iso,
+        week: 'all',
         mediaLoading: true,
         dormant: false,
         postMetrics: true,
