@@ -12,6 +12,7 @@ import { RESULTADOS_VENDAS } from './resultadosVendasData'
 import { RESULTADOS_PRODUTO } from './resultadosProdutoData'
 import { RESULTADOS_TRAFEGO } from './resultadosTrafegoData'
 import { GOLDEN_VENDAS } from './goldenVendasData'
+import { GOLDEN_TRAFEGO } from './goldenTrafegoData'
 import type { AdDailyRow } from './types'
 import type { DashState } from './useDashboard'
 
@@ -197,11 +198,26 @@ export function resultadosVM(S: DashState): ResultadosVM {
     const vArr: number[] = []
     const labs: string[] = []
     const gtArr: (number | null)[] = []
+    // Golden = mês do ÚLTIMO dia de cada campanha (quando o golden ticket de fato aconteceu)
+    const goldRe = /(\bamb\b|\bnea\b|\bieb\b|nea\s*2\.?0)/i
+    const goldMonths = new Set<string>()
+    Object.keys(GOLDEN_TRAFEGO).forEach((k) => {
+      const days = (GOLDEN_TRAFEGO[k].daily || []).filter(([, s]) => s > 0).map(([d]) => d).sort()
+      if (days.length) goldMonths.add(days[days.length - 1].slice(0, 7))
+    })
+    const liveGold: Record<string, string> = {}
+    raw.forEach((x) => {
+      if (x.date && goldRe.test(x.campaign) && (x.spend || 0) > 0) {
+        const p = /nea\s*2\.?0/i.test(x.campaign) ? 'nea2' : /\bamb\b/i.test(x.campaign) ? 'amb' : /\bnea\b/i.test(x.campaign) ? 'nea' : 'ieb'
+        if (!liveGold[p] || x.date > liveGold[p]) liveGold[p] = x.date
+      }
+    })
+    Object.values(liveGold).forEach((d) => goldMonths.add(d.slice(0, 7)))
     allYms.forEach((ym) => {
       const mr = raw.filter((x) => x.date && x.date.slice(0, 7) === ym)
       const inv = ym !== curYm && TF[ym] ? TF[ym].invest : mr.reduce((a, x) => a + (x.spend || 0), 0)
       const sv = RV[ym] || { vendas: 0, fat: 0, byFunil: {} }
-      const gt = !!(sv.byFunil && sv.byFunil['golden ticket'])
+      const gt = goldMonths.has(ym)
       labs.push(MN2[+ym.slice(5, 7) - 1] + (gt ? ' ◆' : ''))
       invArr.push(Math.round(inv))
       fatArr.push(Math.round(sv.fat))
