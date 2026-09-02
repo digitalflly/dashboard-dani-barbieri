@@ -2048,7 +2048,13 @@ class Component extends DCLogic {
     const MN2=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
     if(allYms.length){
       const invArr=[], fatArr=[], vArr=[], labs=[], gtArr=[];
-      allYms.forEach(ym=>{ const _tf=(window.__RESULTADOS_TRAFEGO__||{}); const _cur=new Date().toISOString().slice(0,7); const mr=raw.filter(x=>x.date&&x.date.slice(0,7)===ym); const inv=(ym!==_cur&&_tf[ym])? _tf[ym].invest : mr.reduce((a,x)=>a+(x.spend||0),0); const sv=RV[ym]||{vendas:0,fat:0,byFunil:{}}; const gt=!!(sv.byFunil&&sv.byFunil['golden ticket']); labs.push(MN2[+ym.slice(5,7)-1]+(gt?' ◆':'')); invArr.push(Math.round(inv)); fatArr.push(Math.round(sv.fat)); vArr.push(sv.vendas); gtArr.push(gt? sv.vendas : null); });
+      const _goldRe=/(\bamb\b|\bnea\b|\bieb\b|nea\s*2\.?0)/i;
+      // Golden = mês do ÚLTIMO dia de cada campanha (quando o golden ticket de fato aconteceu)
+      const goldMonths=new Set();
+      const _gtSnap=(window.__GOLDEN_TRAFEGO__||{}); Object.keys(_gtSnap).forEach(k=>{ const days=(_gtSnap[k].daily||[]).filter(([d,s])=>s>0).map(([d])=>d).sort(); if(days.length) goldMonths.add(days[days.length-1].slice(0,7)); });
+      const liveGold={}; raw.forEach(x=>{ if(x.date && _goldRe.test(x.campaign) && (x.spend||0)>0){ const p=x.campaign.match(/nea\s*2\.?0/i)?'nea2':(x.campaign.match(/\bamb\b/i)?'amb':(x.campaign.match(/\bnea\b/i)?'nea':'ieb')); if(!liveGold[p]||x.date>liveGold[p]) liveGold[p]=x.date; } });
+      Object.values(liveGold).forEach(d=>goldMonths.add(d.slice(0,7)));
+      allYms.forEach(ym=>{ const _tf=(window.__RESULTADOS_TRAFEGO__||{}); const _cur=new Date().toISOString().slice(0,7); const mr=raw.filter(x=>x.date&&x.date.slice(0,7)===ym); const inv=(ym!==_cur&&_tf[ym])? _tf[ym].invest : mr.reduce((a,x)=>a+(x.spend||0),0); const sv=RV[ym]||{vendas:0,fat:0,byFunil:{}}; const gt=goldMonths.has(ym); labs.push(MN2[+ym.slice(5,7)-1]+(gt?' ◆':'')); invArr.push(Math.round(inv)); fatArr.push(Math.round(sv.fat)); vArr.push(sv.vendas); gtArr.push(gt? sv.vendas : null); });
       this._resChartCfg={
         data:{ labels:labs, datasets:[
           { type:'bar', label:'Faturamento HBP', data:fatArr, backgroundColor:'#771520', borderRadius:4, borderSkipped:false, maxBarThickness:34, categoryPercentage:0.9, barPercentage:0.9, yAxisID:'y', order:2 },
