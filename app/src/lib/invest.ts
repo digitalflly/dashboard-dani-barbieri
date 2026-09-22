@@ -60,6 +60,7 @@ export interface InvestAdRow {
   lpv: string
   cr: string
   checkout: string
+  custoLead: string
   leads: string
 }
 export interface InvestAdsetRow {
@@ -116,6 +117,8 @@ export interface InvestVM {
   turbina: TurbinaItem[]
   turbinaSummary: TurbinaSummary[]
   showLpCr: boolean
+  showCheckout: boolean
+  adsCostLabel: string
   adsResultLabel: string
   adsetResultLabel: string
 }
@@ -143,6 +146,8 @@ const EMPTY_INVEST: InvestVM = {
   turbina: [],
   turbinaSummary: [],
   showLpCr: true,
+  showCheckout: false,
+  adsCostLabel: 'Custo/lead',
   adsResultLabel: 'Leads do gerenciador',
   adsetResultLabel: 'Leads',
 }
@@ -409,6 +414,7 @@ export function investFunnel(
       lpv: fmtNum(a.lpViews),
       cr: fmtPct(a.linkClicks ? (a.lpViews / a.linkClicks) * 100 : 0),
       checkout: fmtNum(a.checkout || 0),
+      custoLead: money2((() => { const res = usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads; return res ? a.spend / res : 0 })()),
       leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
     }))
   } else {
@@ -444,6 +450,7 @@ export function investFunnel(
         lpv: fmtNum(lpv),
         cr: fmtPct(clk ? (lpv / clk) * 100 : 0),
         checkout: fmtNum(0),
+        custoLead: money2((isSeg ? clk : leads) ? investido * w[i] / (isSeg ? clk : leads) : 0),
         leads: fmtNum(isSeg ? clk : leads),
       }
     })
@@ -621,6 +628,8 @@ export function investFunnel(
     turbina,
     turbinaSummary,
     showLpCr: !isSeg && key !== 'aplicacao',
+    showCheckout: usePurchase,
+    adsCostLabel: usePurchase ? 'Custo/compra' : isSeg ? 'Custo/visita' : 'Custo/lead',
     adsResultLabel: usePurchase ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads do gerenciador',
     adsetResultLabel: usePurchase ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads',
   }

@@ -204,9 +204,14 @@ function goldenIngressosChart(
 // faixas de faturamento declaradas na planilha de leads (funil Aplicação Direta)
 function aplicBandsVM(S: DashState, winFrom: string, winTo: string): { aplicBands: AplicBand[]; aplicBandShow: boolean } {
   const rowsF = (S.aplicLeadsRows || []).filter((r) => (!winFrom || r.date >= winFrom) && (!winTo || r.date <= winTo))
-  const norm = (v: string): string => String(v || '').toLowerCase().replace(/^ac[oó]ma/, 'acima')
-  const order = ['abaixo_de_15_mil', '15_a_50_mil', '50_a_100_mil', '100_a_200_mil', '200_a_500_mil', 'acima_de_500_mil']
+  const order = ['abaixo_de_8_mil', '8_a_15_mil', 'abaixo_de_15_mil', '15_a_50_mil', '50_a_100_mil', '100_a_200_mil', '200_a_500_mil', 'acima_de_500_mil']
+  const norm = (v: string): string => {
+    const s = String(v || '').toLowerCase().trim().replace(/^ac[oó]ma/, 'acima')
+    return order.indexOf(s) >= 0 ? s : '(não informado)'
+  }
   const LABELS: Record<string, string> = {
+    abaixo_de_8_mil: 'Abaixo de R$ 8 mil',
+    '8_a_15_mil': 'R$ 8 a 15 mil',
     abaixo_de_15_mil: 'Abaixo de R$ 15 mil',
     '15_a_50_mil': 'R$ 15 a 50 mil',
     '50_a_100_mil': 'R$ 50 a 100 mil',
@@ -214,9 +219,9 @@ function aplicBandsVM(S: DashState, winFrom: string, winTo: string): { aplicBand
     '200_a_500_mil': 'R$ 200 a 500 mil',
     acima_de_500_mil: 'Acima de R$ 500 mil',
   }
-  const label = (k: string): string => LABELS[k] || (k ? k.replace(/_/g, ' ') : '(não informado)')
+  const label = (k: string): string => LABELS[k] || '(não informado)'
   const tally: Record<string, number> = {}
-  rowsF.forEach((r) => { const k = norm(r.faixa) || ''; tally[k] = (tally[k] || 0) + 1 })
+  rowsF.forEach((r) => { const k = norm(r.faixa); tally[k] = (tally[k] || 0) + 1 })
   const keys = Object.keys(tally).sort((a, b) => {
     const ia = order.indexOf(a)
     const ib = order.indexOf(b)

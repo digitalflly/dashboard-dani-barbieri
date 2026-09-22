@@ -20,7 +20,9 @@ const thCell: CSSProperties = {
 const thSticky: CSSProperties = { ...thCell, position: 'sticky', top: 0, background: 'var(--surface, #fff)', zIndex: 1 }
 
 export default function ResultadosPage({ dash }: { dash: Dashboard }) {
-  const rv = resultadosVM(dash.state)
+  const { state: S, setState } = dash
+  const rv = resultadosVM(S)
+  const toggle = (ym: string): void => setState((s) => ({ resOpen: { ...(s.resOpen || {}), [ym]: !(s.resOpen && s.resOpen[ym]) } }))
 
   return (
     <div>
@@ -40,8 +42,14 @@ export default function ResultadosPage({ dash }: { dash: Dashboard }) {
 
       {rv.resMonths.map((mo) => (
         <div key={mo.ym} style={{ marginBottom: 34 }}>
-          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 18, color: '#771520', letterSpacing: '-0.01em', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid var(--border-soft)' }}>
-            {mo.label}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid var(--border-soft)' }}>
+            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 18, color: '#771520', letterSpacing: '-0.01em' }}>{mo.label}</div>
+            <button
+              onClick={() => toggle(mo.ym)}
+              style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: '#771520', fontWeight: 600, background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}
+            >
+              {mo.detailLabel}
+            </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10, marginBottom: 16 }}>
@@ -56,7 +64,7 @@ export default function ResultadosPage({ dash }: { dash: Dashboard }) {
             ))}
           </div>
 
-          {mo.funilShow && (
+          {mo.funilOpen && (
             <div className="b-card" style={{ padding: '20px 22px', marginBottom: 14 }}>
               <div style={{ ...eyebrow, marginBottom: 14 }}>Funis ativos no mês</div>
               <div style={{ overflowX: 'auto', margin: '0 -4px' }}>
@@ -110,7 +118,7 @@ export default function ResultadosPage({ dash }: { dash: Dashboard }) {
             </div>
           )}
 
-          {mo.impShow && (
+          {mo.impOpen && (
             <div className="b-card" style={{ padding: '20px 22px' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>
                 <div style={eyebrow}>Impulsionamentos</div>

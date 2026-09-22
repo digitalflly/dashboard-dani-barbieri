@@ -49,6 +49,10 @@ export interface DashState {
   candFrom: string
   candTo: string
   candStatusFilter: string
+  // seções expansíveis
+  resOpen: Record<string, boolean>
+  ctExpanded: Record<string, boolean>
+  aqExpanded: Record<string, boolean>
   imersao: string
   gtThumbs: GtThumbs
   gtLinks: GtLinks
@@ -99,6 +103,9 @@ export function useDashboard(): Dashboard {
     candFrom: '',
     candTo: '',
     candStatusFilter: 'all',
+    resOpen: {},
+    ctExpanded: {},
+    aqExpanded: {},
     imersao: 'nea',
     gtThumbs: loadGtThumbs(),
     gtLinks: loadGtLinks(),
@@ -162,12 +169,22 @@ export function useDashboard(): Dashboard {
       liveRef.current = live
       const m1 = buildModel({ profile: live.profile, daily: live.daily, follows: live.follows, media: [] })
       setModel(m1)
+      // intervalo padrão da Conta: 1º dia do mês anterior até maxDate
+      const mx = m1.maxDate
+      const [py, pm] = mx.split('-').map(Number)
+      const pad = (n: number): string => String(n).padStart(2, '0')
+      const dy = pm === 1 ? py - 1 : py
+      const dm = pm === 1 ? 12 : pm - 1
+      let df = dy + '-' + pad(dm) + '-01'
+      if (df < m1.minDate) df = m1.minDate
       setState({
         live: true,
         dataError: '',
         lastSync: nowStamp(),
         month: 'all',
         week: 'all',
+        dayFrom: df,
+        dayTo: mx,
         mediaLoading: true,
         dormant: false,
         postMetrics: true,
