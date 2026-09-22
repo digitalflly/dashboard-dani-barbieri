@@ -50,8 +50,11 @@ export interface ResMonth {
   kpis: ResKpi[]
   funilRows: ResFunilRow[]
   funilShow: boolean
+  funilOpen: boolean
   impRows: ResImpRow[]
   impShow: boolean
+  impOpen: boolean
+  detailLabel: string
   impTotal: string
 }
 export interface ResultadosVM {
@@ -176,14 +179,18 @@ export function resultadosVM(S: DashState): ResultadosVM {
           visitas: fmtNum(c.linkClicks),
         }))
       const impTotal = impR.reduce((a, x) => a + (x.spend || 0), 0)
+      const open = !!(S.resOpen && S.resOpen[ym])
       return {
         ym,
         label: MN[+ym.slice(5, 7) - 1] + ' ' + ym.slice(0, 4),
         kpis,
         funilRows,
         funilShow: funilRows.length > 0,
+        funilOpen: open && funilRows.length > 0,
         impRows,
         impShow: impRows.length > 0,
+        impOpen: open && impRows.length > 0,
+        detailLabel: open ? '− detalhes' : '+ detalhes',
         impTotal: money(impTotal),
       }
     })

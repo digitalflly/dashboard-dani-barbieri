@@ -68,16 +68,16 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
             ? 'Dados dos Funis'
             : S.page === 'resultados'
               ? 'Resultados Mensais'
-              : 'Plano de Conteúdo'
+              : 'Acompanhamento'
   return {
     sourceLabel,
     sourceColor,
     dormant: S.dormant && !S.mediaLoading,
     pageTitle,
-    // filtros (mês + semana) — só nas páginas de conteúdo/conta
-    showFilters: S.page !== 'candidaturas' && S.page !== 'plano' && S.page !== 'resultados',
+    // filtros (mês + intervalo de datas) — conta / conteúdos / acompanhamento
+    showFilters: S.page !== 'candidaturas' && S.page !== 'resultados',
     // seletor de mês — também em Resultados Mensais
-    showMonth: S.page !== 'candidaturas' && S.page !== 'plano',
+    showMonth: S.page !== 'candidaturas',
     showFunnelFilters: S.page === 'candidaturas',
     refreshLabel: S.refreshing ? 'Atualizando…' : 'Atualizar',
     dayMin: M.minDate,
@@ -227,7 +227,7 @@ export interface ContentVM {
 }
 
 export function contentVM(M: Model, S: DashState): ContentVM {
-  const { followers, PM, isTest, contentMedia } = ctx(M, S)
+  const { PM, isTest, contentMedia } = ctx(M, S)
   const cardOf = (p: MediaPost): CardVM => {
     const baseBg = COVER_BG[p.coverIdx % COVER_BG.length]
     const src = p.coverData || p.cover
@@ -262,7 +262,6 @@ export function contentVM(M: Model, S: DashState): ContentVM {
         { label: 'Alcance', value: PM ? fmtNum(p.reach) : '—' },
         { label: 'Interações', value: PM ? fmtNum(p.eng) : '—' },
         { label: '% Eng. geral', value: PM ? fmtPct(p.reach ? (p.eng / p.reach) * 100 : null) : '—' },
-        { label: '% Eng. seguidor', value: PM ? fmtPct((p.eng / followers) * 100) : '—' },
         { label: 'Tx. salvamento', value: PM ? fmtPct(p.reach ? (p.saves / p.reach) * 100 : null) : '—' },
         { label: 'Tx. compart.', value: PM ? fmtPct(p.reach ? (p.shares / p.reach) * 100 : null) : '—' },
         { label: 'Seguidores', value: PM ? (p.follows == null ? '—' : fmtNum(p.follows)) : '—' },

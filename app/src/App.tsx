@@ -9,7 +9,7 @@ import ConteudosPage from './components/ConteudosPage'
 import InsightsPage from './components/InsightsPage'
 import FunisPage from './components/FunisPage'
 import ResultadosPage from './components/ResultadosPage'
-import PlanoPage from './components/PlanoPage'
+import AcompanhamentoPage from './components/AcompanhamentoPage'
 
 export default function App() {
   const dash = useDashboard()
@@ -63,7 +63,7 @@ export default function App() {
         {S.page === 'insights' && <InsightsPage dash={dash} />}
         {S.page === 'candidaturas' && <FunisPage dash={dash} funis={funis} />}
         {S.page === 'resultados' && <ResultadosPage dash={dash} />}
-        {S.page === 'plano' && <PlanoPage />}
+        {S.page === 'plano' && <AcompanhamentoPage dash={dash} />}
       </main>
     </div>
   )

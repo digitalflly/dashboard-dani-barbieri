@@ -33,6 +33,8 @@
     ::-webkit-scrollbar-thumb{ background:var(--accent); border-radius:999px; border:3px solid var(--surface-page); }
     .dash thead th{ cursor:pointer; user-select:none; }
     .dash thead th:hover{ color:var(--accent) !important; }
+    .tt{ position:relative; }
+    .tt:hover::after{ content:attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%); white-space:normal; width:200px; background:#271217; color:#F6EFE8; font-size:11px; font-weight:500; text-transform:none; letter-spacing:0; line-height:1.4; padding:8px 10px; border-radius:8px; box-shadow:0 6px 18px rgba(39,18,23,.35); z-index:20; pointer-events:none; }
     .dash thead th .sortarrow{ display:inline-block; margin-left:3px; font-size:9px; opacity:.85; vertical-align:middle; }
     .fx-seg{ position:relative; }
     .fx-seg .fx-tip{ position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:#271217; color:#F6EFE8; padding:7px 10px; border-radius:7px; border:1px solid #4A3338; white-space:nowrap; font-size:12px; opacity:0; visibility:hidden; transition:opacity .14s ease; pointer-events:none; z-index:20; box-shadow:0 6px 18px rgba(39,18,23,.28); }
@@ -94,7 +96,7 @@
 
     <div style="max-width:1280px; margin:0 auto; padding:0 32px 14px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:nowrap;">
       <nav style="display:flex; gap:8px; align-items:flex-end; flex:1 1 auto; min-width:0;">
-        <div id="tabstrip" style="display:flex; gap:4px; overflow-x:auto; min-width:0; scrollbar-width:none;">
+        <div id="tabstrip" style="display:flex; gap:2px; overflow-x:auto; min-width:0; scrollbar-width:none;">
           <sc-for list="{{ pages }}" as="p" hint-placeholder-count="3">
             <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
           </sc-for>
@@ -693,7 +695,10 @@
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Visualização da página</th>
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Connect rate</th>
                   </sc-if>
+                  <sc-if value="{{ showCheckout }}" hint-placeholder-val="{{ false }}">
                   <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">Finalização de compra</th>
+                  </sc-if>
+                  <th style="padding:0 12px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">{{ adsCostLabel }}</th>
                   <th style="text-align:right; padding:0 4px 10px 12px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;">{{ adsResultLabel }}</th>
                 </tr>
               </thead>
@@ -718,7 +723,10 @@
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.lpv }}</td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.cr }}</td>
                     </sc-if>
+                    <sc-if value="{{ showCheckout }}" hint-placeholder-val="{{ false }}">
                     <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.checkout }}</td>
+                    </sc-if>
+                    <td data-keepcase="1" style="text-align:right; padding:10px 12px; font-size:13px; color:var(--text-strong); white-space:nowrap;">{{ a.custoLead }}</td>
                     <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 12px; font-size:13px; font-weight:600; color:#771520; white-space:nowrap;">{{ a.leads }}</td>
                   </tr>
                 </sc-for>
@@ -754,7 +762,10 @@
       </sc-if>
       <sc-for list="{{ resMonths }}" as="mo" hint-placeholder-count="3">
         <div style="margin-bottom:34px;">
-          <div style="font-family:var(--font-sans); font-weight:600; font-size:18px; color:#771520; letter-spacing:-0.01em; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border-soft);">{{ mo.label }}</div>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border-soft);">
+            <div style="font-family:var(--font-sans); font-weight:600; font-size:18px; color:#771520; letter-spacing:-0.01em;">{{ mo.label }}</div>
+            <button onClick="{{ mo.onToggle }}" style="font-family:var(--font-sans); font-size:12px; color:#771520; font-weight:600; background:transparent; border:1px solid var(--border-strong); border-radius:6px; padding:4px 10px; cursor:pointer;">{{ mo.detailLabel }}</button>
+          </div>
           <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:10px; margin-bottom:16px;">
             <sc-for list="{{ mo.kpis }}" as="st" hint-placeholder-count="6">
               <div class="b-card" style="padding:13px 15px; min-height:82px; display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #771520;">
@@ -764,7 +775,7 @@
               </div>
             </sc-for>
           </div>
-          <sc-if value="{{ mo.funilShow }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ mo.funilOpen }}" hint-placeholder-val="{{ false }}">
           <div class="b-card" style="padding:20px 22px; margin-bottom:14px;">
             <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">Funis ativos no mês</div>
             <div style="overflow-x:auto; margin:0 -4px;">
@@ -822,7 +833,7 @@
             </div>
           </div>
           </sc-if>
-          <sc-if value="{{ mo.impShow }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ mo.impOpen }}" hint-placeholder-val="{{ false }}">
           <div class="b-card" style="padding:20px 22px;">
             <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:14px;">
               <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Impulsionamentos</div>
@@ -861,306 +872,81 @@
 
     <!-- ============ PAGE: PLANO DE CONTEUDO ============ -->
     <sc-if value="{{ isPlano }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="Plano de Conteúdo">
-
-      <!-- 01 panorama -->
+    <div data-screen-label="Acompanhamento">
       <div style="margin:0 0 16px;">
-        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">01 · Panorama</div>
-        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Análise geral do perfil</div>
+        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Conteúdo</div>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:20px;">
-        <div class="b-card" style="padding:16px 18px; border-top:3px solid #771520;">
-          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);">Base atual</div>
-          <div style="font-size:26px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em; margin-top:8px;">38.221</div>
-          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">seguidores</div>
-        </div>
-        <div class="b-card" style="padding:16px 18px; border-top:3px solid #771520;">
-          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);">Crescimento · 30 dias</div>
-          <div style="font-size:26px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em; margin-top:8px;">+534</div>
-          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">~18/dia · ~1,4% no mês</div>
-        </div>
-        <div class="b-card" style="padding:16px 18px; border-top:3px solid #771520;">
-          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);">Volume · semestre</div>
-          <div style="font-size:26px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em; margin-top:8px;">133</div>
-          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">45 Reels · 81 carrosséis · 7 imagens</div>
-        </div>
-        <div class="b-card" style="padding:16px 18px; border-top:3px solid #771520;">
-          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted);">Alcance médio</div>
-          <div style="font-size:26px; font-weight:600; color:var(--text-strong); letter-spacing:-0.02em; margin-top:8px;">em queda</div>
-          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">jan ~2.360 → jun ~1.470</div>
-        </div>
-      </div>
-
-      <!-- desempenho por formato -->
-      <div class="b-card" style="padding:22px 24px; margin-bottom:30px;">
-        <div style="font-family:var(--font-sans); font-weight:600; font-size:16px; color:var(--text-strong); margin-bottom:4px;">Desempenho por formato</div>
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Taxa de engajamento = interações ÷ alcance × 100 — mede a qualidade do conteúdo, não o tamanho da base.</div>
-        <table style="width:100%; border-collapse:collapse;">
-          <thead><tr>
-            <th style="text-align:left; padding:0 8px 10px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Formato</th>
-            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Posts</th>
-            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Alcance médio</th>
-            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Saves/post</th>
-            <th style="text-align:right; padding:0 0 10px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Engajamento</th>
-          </tr></thead>
-          <tbody>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13.5px; font-weight:600; color:#771520;">Reels</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">45</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">2.719</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">10,4</td>
-              <td style="text-align:right; padding:11px 0 11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">6,4%</td>
-            </tr>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13.5px; font-weight:600; color:var(--text-strong);">Carrossel</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">81</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1.666</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">7,5</td>
-              <td style="text-align:right; padding:11px 0 11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,7%</td>
-            </tr>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13.5px; font-weight:600; color:var(--text-strong);">Imagem única</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">7</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1.996</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">15,1</td>
-              <td style="text-align:right; padding:11px 0 11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,1%</td>
-            </tr>
-          </tbody>
-        </table>
-        <div style="font-size:13px; color:var(--text-body); line-height:1.55; margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);"><strong style="color:var(--text-strong);">Leitura:</strong> Reels lideram alcance e engajamento com folga, mas são minoria da produção. Imagem única tem o maior save por post e está subutilizada.</div>
-      </div>
-
-      <!-- 02 carrosseis -->
-      <div style="margin:0 0 16px;">
-        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">02 · Carrosséis</div>
-        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">O problema não é o carrossel — é o excesso de venda dura</div>
-      </div>
-      <div class="b-card" style="padding:22px 24px; margin-bottom:16px;">
-        <table style="width:100%; border-collapse:collapse;">
-          <thead><tr>
-            <th style="text-align:left; padding:0 8px 10px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Tipo de carrossel</th>
-            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">n</th>
-            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Alcance</th>
-            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Saves</th>
-            <th style="text-align:right; padding:0 8px 10px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Shares</th>
-            <th style="text-align:left; padding:0 0 10px 12px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Leitura</th>
-          </tr></thead>
-          <tbody>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Pessoal</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">14</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">3.848</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">5,9</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6,2</td>
-              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Melhor alcance da conta; autêntico</td>
-            </tr>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">Prova (case)</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1.460</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">7,0</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">13,2</td>
-              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Melhor share — capta público novo</td>
-            </tr>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">Educativo</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1.261</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">18,3</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">3,3</td>
-              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Melhor save — constrói autoridade</td>
-            </tr>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">Confirmação VBE</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">10</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">1.488</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">2,1</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">3,9</td>
-              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-muted);">Repetitivo, sem valor de conteúdo</td>
-            </tr>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">Bastidor de evento</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">5</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">1.382</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">2,0</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">2,8</td>
-              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-muted);">Recap; alcance ok</td>
-            </tr>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">Institucional</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">3</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">1.366</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">4,3</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">2,0</td>
-              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-muted);">Neutro</td>
-            </tr>
-            <tr>
-              <td style="padding:11px 8px 11px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Venda dura</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">34</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">1.109</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">9,4</td>
-              <td style="text-align:right; padding:11px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,2</td>
-              <td style="padding:11px 0 11px 12px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">42% dos carrosséis; puxou a média</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div style="display:grid; grid-template-columns:1.1fr 1fr; gap:16px; margin-bottom:30px;">
-        <div class="b-card" style="padding:20px 22px; background:var(--warning-bg); border-color:transparent;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:#771520; font-weight:600; margin-bottom:8px;">Ponto crítico</div>
-          <div style="font-size:13.5px; color:var(--wine-900); line-height:1.6;">A venda dura desabou em junho para <strong>705 de alcance</strong> (contra 1.255 em jan–mai), com a blitz NEA + HBP rodando junto. Os piores posts do ano (210, 229, 336) são todos desse bloco — foi isso que distorceu a média e criou a impressão de que "carrossel não funciona".</div>
-        </div>
-        <div class="b-card" style="padding:20px 22px;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:10px;">Validados para escalar em teste</div>
-          <div style="font-size:13px; color:var(--text-body); line-height:1.55; margin-bottom:10px;"><strong style="color:#771520;">Prova (case):</strong> maior share da conta (13,2/post) — captação direta para o funil. Só 6 no semestre.</div>
-          <div style="font-size:13px; color:var(--text-body); line-height:1.55;"><strong style="color:#771520;">Educativo salvável:</strong> maior save da conta (18,3/post) — o algoritmo recompensa com distribuição futura. Sumiu depois de fevereiro.</div>
-        </div>
-      </div>
-
-      <!-- 03 reels -->
-      <div style="margin:0 0 16px;">
-        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">03 · Reels</div>
-        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">A retenção é uma escada — com degrau brutal aos 15 segundos</div>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:14px;">Retenção × alcance</div>
-          <table style="width:100%; border-collapse:collapse;">
-            <thead><tr>
-              <th style="text-align:left; padding:0 8px 9px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Retenção</th>
-              <th style="text-align:right; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Reels</th>
-              <th style="text-align:right; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Alcance</th>
-              <th style="text-align:right; padding:0 0 9px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Coment./post</th>
-            </tr></thead>
+      <div class="b-card" style="padding:20px 22px; margin-bottom:30px;">
+        <div style="overflow-x:auto; margin:0 -4px;">
+          <table style="border-collapse:collapse; width:100%; min-width:640px;">
+            <thead>
+              <tr style="text-align:right;">
+                <th style="text-align:left; padding:0 10px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Período</th>
+                <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Reels · alcance méd.</th>
+                <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Reels · plays méd.</th>
+                <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Carrossel · salv. méd.</th>
+                <th style="text-align:right; padding:0 4px 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Carrossel · compart. méd.</th>
+              </tr>
+            </thead>
             <tbody>
-              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">&lt; 6s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">7</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">1.233</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">0,1</td></tr>
-              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6–9s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">18</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">2.220</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,1</td></tr>
-              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">9–15s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">9</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">2.225</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4,0</td></tr>
-              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">15–20s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">7</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">4.520</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">48,3</td></tr>
-              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">20s+</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">4</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">5.523</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">31,8</td></tr>
-            </tbody>
-          </table>
-          <div style="font-size:12.5px; color:var(--text-body); line-height:1.55; margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">Abaixo de 15s o alcance empaca em ~2.200. Passou de 15s, ele <strong style="color:#771520;">dobra</strong>. Reter menos de 7s = alcance 1.600; reter 15s+ = alcance 4.885 (3× mais, mesmo esforço).</div>
-        </div>
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:14px;">Assinatura dos vencedores</div>
-          <table style="width:100%; border-collapse:collapse;">
-            <thead><tr>
-              <th style="text-align:left; padding:0 8px 9px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Faixa</th>
-              <th style="text-align:right; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Retenção</th>
-              <th style="text-align:right; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Shares</th>
-              <th style="text-align:right; padding:0 0 9px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Coment.</th>
-            </tr></thead>
-            <tbody>
-              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">Top (≥ 4k)</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">18,5s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">36,7</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">69,3</td></tr>
-              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">Médio (2–4k)</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">10,3s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">6,2</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">5,3</td></tr>
-              <tr><td style="padding:9px 8px 9px 0; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">Baixo (&lt; 2k)</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">9,1s</td><td style="text-align:right; padding:9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">4,5</td><td style="text-align:right; padding:9px 0 9px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-body);">0,8</td></tr>
-            </tbody>
-          </table>
-          <div style="font-size:12.5px; color:var(--text-body); line-height:1.55; margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">Os campeões <strong style="color:#771520;">retêm 15s+ E provocam conversa</strong> (69 comentários contra 5 no grupo médio). O Reel que funciona é o de opinião/posição que segura o tempo e dá motivo para responder. Reel que só informa fica no teto.</div>
-        </div>
-      </div>
-      <div class="b-card" style="padding:18px 22px; margin-bottom:30px; border-left:3px solid #771520;">
-        <div style="font-size:13.5px; color:var(--text-body); line-height:1.6;"><strong style="color:var(--text-strong);">Confirmação da queda recente:</strong> maio e junho caíram para 9,1s e 7,4s de retenção, e o alcance dos Reels travou em ~2.500. Quando a retenção cai, o alcance cai junto — não foi o algoritmo, foi o conteúdo segurando menos.</div>
-      </div>
-
-      <!-- 04 erros e acertos -->
-      <div style="margin:0 0 16px;">
-        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">04 · Balanço</div>
-        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Erros e acertos</div>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:30px;">
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:#1F8A5B; font-weight:600; margin-bottom:14px;">O que foi bom</div>
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Reels de opinião com retenção alta + gatilho de comentário</strong> — os virais de mar/abr (15.167, 8.402, 7.996). É o motor de captação.</div>
-            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Carrossel pessoal</strong> — verdade e vida; o maior alcance de qualquer conteúdo (3.848).</div>
-            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Carrossel de prova</strong> — melhor share da conta e conexão direta com o funil, mas subaproveitado.</div>
-            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Educativo salvável de fevereiro</strong> — 18 a 30 saves por post, construindo autoridade.</div>
-          </div>
-        </div>
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:#771520; font-weight:600; margin-bottom:14px;">O que foi ruim</div>
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Excesso de venda dura em carrossel</strong> — 34 posts (42%). Em junho saturou e derrubou a distribuição da conta inteira.</div>
-            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">10 carrosséis de confirmação quase idênticos</strong> — save de 2,1; volume sem valor que dilui o sinal de qualidade.</div>
-            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Abandono do educativo salvável depois de fevereiro</strong> — o formato de maior save sumiu na fase de lançamento.</div>
-            <div style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Retenção de Reels despencou em mai/jun</strong> e <strong style="color:var(--text-strong);">volume sem seleção</strong> — abril teve 45 posts e o alcance caiu.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 05 plano -->
-      <div style="margin:0 0 16px;">
-        <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted); margin-bottom:5px;">05 · Plano do próximo mês</div>
-        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Inverter o mix, não aumentar o volume</div>
-        <div style="font-size:14px; color:var(--text-body); line-height:1.55; margin-top:8px; max-width:820px;">Meta: sair de ~1,4%/mês para <strong style="color:#771520;">3–4%/mês</strong> (~1.100 a 1.500 seguidores/mês).</div>
-      </div>
-      <div style="display:grid; grid-template-columns:1.15fr 1fr; gap:16px; margin-bottom:16px;">
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:14px;">Mix semanal · 5 a 6 posts</div>
-          <table style="width:100%; border-collapse:collapse;">
-            <thead><tr>
-              <th style="text-align:left; padding:0 8px 9px 0; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Formato</th>
-              <th style="text-align:center; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">/semana</th>
-              <th style="text-align:left; padding:0 8px 9px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Função</th>
-              <th style="text-align:left; padding:0 0 9px 8px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Sinal</th>
-            </tr></thead>
-            <tbody>
-              <tr><td style="padding:10px 8px 10px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">Reels de opinião</td><td style="text-align:center; padding:10px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">3</td><td style="padding:10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Atração</td><td style="padding:10px 0 10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Alcance + comentário</td></tr>
-              <tr><td style="padding:10px 8px 10px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Carrossel de prova</td><td style="text-align:center; padding:10px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:#771520;">1 → 2</td><td style="padding:10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Captação</td><td style="padding:10px 0 10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Shares</td></tr>
-              <tr><td style="padding:10px 8px 10px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Educativo salvável</td><td style="text-align:center; padding:10px 8px; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">1</td><td style="padding:10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Autoridade</td><td style="padding:10px 0 10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Saves</td></tr>
-              <tr><td style="padding:10px 8px 10px 0; border-top:1px solid var(--border-soft); font-size:13px; font-weight:600; color:var(--text-strong);">Pessoal</td><td style="text-align:center; padding:10px 8px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--text-strong);">1</td><td style="padding:10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Conexão</td><td style="padding:10px 0 10px 8px; border-top:1px solid var(--border-soft); font-size:12.5px; color:var(--text-body);">Alcance + afinidade</td></tr>
+              <sc-for list="{{ contentRows }}" as="r" hint-placeholder-count="4">
+                <tr style="text-align:right; border-top:1px solid var(--border-soft);">
+                  <td style="text-align:left; padding:10px 10px 10px 4px; font-size:13px; color:var(--text-strong); white-space:nowrap;">
+                    <sc-if value="{{ r.hasChildren }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ r.onToggle }}" style="cursor:pointer; background:transparent; border:none; padding:0; font-family:var(--font-sans); font-size:13px; color:var(--text-strong); display:inline-flex; align-items:center; gap:7px; margin-left:{{ r.indent }};"><span style="color:#771520; font-size:10px; width:10px;">{{ r.caret }}</span>{{ r.label }}</button>
+                    </sc-if>
+                    <sc-if value="{{ r.leaf }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-block; margin-left:{{ r.indent }}; padding-left:17px; color:var(--text-body);">{{ r.label }}</span>
+                    </sc-if>
+                  </td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; font-weight:600; color:#771520;">{{ r.reelsReach }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.reelsPlays }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.carrSave }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.carrShare }}</td>
+                </tr>
+              </sc-for>
             </tbody>
           </table>
         </div>
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:12px;">Teste de 4 semanas</div>
-          <div style="font-size:13px; color:var(--text-body); line-height:1.55; margin-bottom:16px;">Subir a prova para 2×/semana, reintroduzir 1 educativo salvável fixo por semana e <strong style="color:#771520;">cortar a venda dura de carrossel pela metade</strong>.</div>
-          <div style="font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:10px;">Métricas de sucesso</div>
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-bottom:8px; border-bottom:1px solid var(--border-soft);"><span style="font-size:13px; color:var(--text-body);">Share do carrossel de prova</span><span style="font-size:14px; font-weight:600; color:#771520;">≥ 12</span></div>
-            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding-bottom:8px; border-bottom:1px solid var(--border-soft);"><span style="font-size:13px; color:var(--text-body);">Save do educativo</span><span style="font-size:14px; font-weight:600; color:#771520;">≥ 15</span></div>
-            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:13px; color:var(--text-body);">Retenção média dos Reels</span><span style="font-size:14px; font-weight:600; color:#771520;">≥ 15s</span></div>
-          </div>
-        </div>
       </div>
 
-      <!-- 3 alavancas -->
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:16px;">
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-family:var(--font-display); font-size:34px; color:#771520; line-height:1; margin-bottom:12px;">1</div>
-          <div style="font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--text-strong); margin-bottom:8px;">Gancho + retenção nos Reels</div>
-          <div style="font-size:13px; color:var(--text-body); line-height:1.55;">3 primeiros segundos com tese forte, uma virada no meio, fechamento que pede comentário. Subir de 9s para 18s de retenção sozinho triplica o alcance dos Reels.</div>
-        </div>
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-family:var(--font-display); font-size:34px; color:#771520; line-height:1; margin-bottom:12px;">2</div>
-          <div style="font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--text-strong); margin-bottom:8px;">Cortar o volume morto</div>
-          <div style="font-size:13px; color:var(--text-body); line-height:1.55;">Confirmações repetidas e venda dura em excesso. Limpa o sinal de qualidade e recupera a distribuição geral da conta.</div>
-        </div>
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-family:var(--font-display); font-size:34px; color:#771520; line-height:1; margin-bottom:12px;">3</div>
-          <div style="font-family:var(--font-sans); font-weight:600; font-size:15px; color:var(--text-strong); margin-bottom:8px;">Consistência de Reels</div>
-          <div style="font-size:13px; color:var(--text-body); line-height:1.55;">Nunca abaixo de 3 por semana. Todo mês que a conta afrouxou em Reels, o alcance caiu.</div>
+      <div style="margin:0 0 16px;">
+        <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Aquisição</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:5px;">Clique no mês para abrir as semanas, e na semana para abrir os dias.</div>
+      </div>
+      <div class="b-card" style="padding:20px 22px;">
+        <div style="overflow-x:auto; margin:0 -4px;">
+          <table style="border-collapse:collapse; width:100%; min-width:640px;">
+            <thead>
+              <tr style="text-align:right;">
+                <th style="text-align:left; padding:0 10px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Período</th>
+                <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Leads gerados</th>
+                <th class="tt" data-tip="Qualificado = faturamento declarado ≥ R$ 15 mil/mês." style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help;">Leads qualificados</th>
+                <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Custo/lead qualif.</th>
+                <th style="text-align:right; padding:0 4px 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">% ≥ R$ 15 mil</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ aquisicaoRows }}" as="r" hint-placeholder-count="4">
+                <tr style="text-align:right; border-top:1px solid var(--border-soft);">
+                  <td style="text-align:left; padding:10px 10px 10px 4px; font-size:13px; color:var(--text-strong); white-space:nowrap;">
+                    <sc-if value="{{ r.hasChildren }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ r.onToggle }}" style="cursor:pointer; background:transparent; border:none; padding:0; font-family:var(--font-sans); font-size:13px; color:var(--text-strong); display:inline-flex; align-items:center; gap:7px; margin-left:{{ r.indent }};"><span style="color:#771520; font-size:10px; width:10px;">{{ r.caret }}</span>{{ r.label }}</button>
+                    </sc-if>
+                    <sc-if value="{{ r.leaf }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-block; margin-left:{{ r.indent }}; padding-left:17px; color:var(--text-body);">{{ r.label }}</span>
+                    </sc-if>
+                  </td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.leads }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; font-weight:600; color:#771520;">{{ r.qual }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.custo }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.pct }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
         </div>
       </div>
-
-      <!-- regra de ouro + checklist -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:40px;">
-        <div class="b-card" style="padding:22px 24px; background:#771520; border-color:transparent;">
-          <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(250,248,247,0.65); font-weight:600; margin-bottom:12px;">Regra de ouro</div>
-          <div style="font-size:14px; color:#FAF8F7; line-height:1.6;">Durante lançamento, a venda vai para o Reels e para os stories — <strong>não empilha carrossel de venda no feed</strong>. O feed segue entregando prova e conteúdo salvável, que é o que sustenta a distribuição de tudo, inclusive dos próprios posts de venda.</div>
-        </div>
-        <div class="b-card" style="padding:22px 24px;">
-          <div style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom:14px;">Checklist por Reel · antes de publicar</div>
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <div style="display:flex; gap:12px; align-items:flex-start;"><span style="flex:none; width:24px; height:24px; border-radius:999px; background:var(--warning-bg); color:#771520; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;">1</span><span style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Gancho nos 3 primeiros segundos</strong> — tese/afirmação forte, não introdução.</span></div>
-            <div style="display:flex; gap:12px; align-items:flex-start;"><span style="flex:none; width:24px; height:24px; border-radius:999px; background:var(--warning-bg); color:#771520; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;">2</span><span style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Estrutura que segura até 15s+</strong> — uma virada no meio, não entregar tudo no começo.</span></div>
-            <div style="display:flex; gap:12px; align-items:flex-start;"><span style="flex:none; width:24px; height:24px; border-radius:999px; background:var(--warning-bg); color:#771520; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;">3</span><span style="font-size:13px; color:var(--text-body); line-height:1.5;"><strong style="color:var(--text-strong);">Fechamento que pede resposta</strong> — pergunta ou afirmação que puxa comentário.</span></div>
-          </div>
-        </div>
-      </div>
-
     </div>
     </sc-if>
 
@@ -1191,6 +977,9 @@ class Component extends DCLogic {
       funnelLoading: {},
       funnelError: {},
       candMonth: 'all',
+      resOpen: {},
+      aqExpanded: {},
+      acompTab: 'conteudo',
       candFrom: '',
       candTo: '',
       candStatusFilter: 'all',
@@ -1429,7 +1218,7 @@ class Component extends DCLogic {
 
   /* ============ HANDLERS ============ */
   setPage(p){ this.setState({page:p}); if(p==='candidaturas'){ const first=(this.FUNNELS[0]||{}).key; if(first && this.state.funnel!==first) this.setFunnel(first); } }
-  scrollTab(key){ requestAnimationFrame(()=>{ const strip=document.getElementById('tabstrip'); if(!strip) return; const ks=['conta','conteudos','candidaturas','resultados','plano']; const btn=strip.children[ks.indexOf(key)]; if(btn) strip.scrollTo({left:Math.max(0, btn.offsetLeft-14), behavior:'smooth'}); }); }
+  scrollTab(key){ requestAnimationFrame(()=>{ const strip=document.getElementById('tabstrip'); if(!strip) return; const ks=['conta','conteudos','candidaturas','plano','resultados']; const btn=strip.children[ks.indexOf(key)]; if(btn) strip.scrollTo({left:Math.max(0, btn.offsetLeft-14), behavior:'smooth'}); }); }
   onRefresh(){ this.fetchLive(); }
   nowStamp(){ const now=new Date(); const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return now.getDate()+' '+MN[now.getMonth()]+' '+now.getFullYear()+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'); }
   async fetchLive(){
@@ -1467,7 +1256,11 @@ class Component extends DCLogic {
       this._live = { profile, daily, follows, actSum };
       this.model=this.buildModel({ profile, daily, follows, media:[] });
       const _phase1Week=this.model.DEFAULT_WEEK.iso;
-      this.setState({ live:true, dataError:'', lastSync:this.nowStamp(), month:'all', week:'all', mediaLoading:true, dormant:false });
+      const _mx=this.model.maxDate, _p=_mx.split('-').map(Number);
+      const _pad=n=>String(n).padStart(2,'0');
+      const _py=_p[1]===1?_p[0]-1:_p[0], _pmn=_p[1]===1?12:_p[1]-1;
+      let _df=_py+'-'+_pad(_pmn)+'-01'; if(_df<this.model.minDate)_df=this.model.minDate;
+      this.setState({ live:true, dataError:'', lastSync:this.nowStamp(), month:'all', week:'all', dayFrom:_df, dayTo:_mx, mediaLoading:true, dormant:false });
 
       // ── Phase 2: per-post insights — só os últimos 30 dias são buscados; o
       //    histórico anterior fica estático em cache (localStorage). ──
@@ -1481,10 +1274,10 @@ class Component extends DCLogic {
         // O marcador é persistido no cache (não re-derivado dos valores): posts fora da janela de
         // fetch nunca recebem o campo, então re-derivar deixaria o backfill ligado para sempre.
         // v2 = re-seed de 365 dias (cobre todo 2026) + capas de todo 2026.
-        const needsFollowsBackfill = seeded && (cacheFlags.followsBackfill||0) < 2;
+        const needsFollowsBackfill = seeded && (cacheFlags.followsBackfill||0) < 3;
         const win = (seeded && !needsFollowsBackfill) ? 30 : 365;
-        const mRows=await getF('media_id,timestamp,media_type,media_product_type,media_caption,media_like_count,media_comments_count,media_reach,media_saved,media_shares,media_views,media_follows,media_url,media_thumbnail_url,username', win);
-        const fresh=mRows.map((r,i)=>{ const likes=num(r.media_like_count),comments=num(r.media_comments_count),shares=num(r.media_shares),saves=num(r.media_saved); const reach=num(r.media_reach), views=num(r.media_views); const eng=num(r.media_engagement)||(likes+comments+shares+saves); const type=(r.media_product_type==='REELS')?'REELS':(r.media_type||'IMAGE'); return { id:r.media_id||null, ts:String(r.timestamp||'').slice(0,10), type, likes,comments,shares,saves, views, reach, eng, follows:num(r.media_follows), caption:String(r.media_caption||'Sem legenda').replace(/\s+/g,' ').trim().slice(0,140), coverIdx:i, cover:String(r.media_url||r.media_thumbnail_url||''), thumb:String(r.media_thumbnail_url||r.media_url||'') }; })
+        const mRows=await getF('media_id,timestamp,media_type,media_product_type,media_caption,media_like_count,media_comments_count,media_reach,media_saved,media_shares,media_views,media_follows,media_permalink,media_url,media_thumbnail_url,username', win);
+        const fresh=mRows.map((r,i)=>{ const likes=num(r.media_like_count),comments=num(r.media_comments_count),shares=num(r.media_shares),saves=num(r.media_saved); const reach=num(r.media_reach), views=num(r.media_views); const eng=num(r.media_engagement)||(likes+comments+shares+saves); const type=(r.media_product_type==='REELS')?'REELS':(r.media_type||'IMAGE'); return { id:r.media_id||null, ts:String(r.timestamp||'').slice(0,10), type, likes,comments,shares,saves, views, reach, eng, follows:num(r.media_follows), permalink:String(r.media_permalink||''), caption:String(r.media_caption||'Sem legenda').replace(/\s+/g,' ').trim().slice(0,140), coverIdx:i, cover:String(r.media_url||r.media_thumbnail_url||''), thumb:String(r.media_thumbnail_url||r.media_url||'') }; })
           .filter(p=>isDate(p.ts) && p.id);
         // corte de 30 dias: cache fornece tudo anterior, fetch fornece os últimos 30 dias
         const cutoff = needsFollowsBackfill ? '0000-00-00' : fd(new Date(to.getTime()-30*86400000));
@@ -1497,7 +1290,7 @@ class Component extends DCLogic {
         fresh.forEach(p=>{ if(cdById[p.id]) p.coverData=cdById[p.id]; const old=byId[p.id]; if(old&&old.coverData&&!p.coverData) p.coverData=old.coverData; byId[p.id]=p; });
         const media = Object.values(byId).filter(p=>isDate(p.ts) && p.id).sort((a,b)=> a.ts<b.ts?-1:1);
         // persiste tudo até hoje, para a próxima atualização puxar só 30 dias
-        this.saveCache(CKEY, media, fd(to), {followsBackfill:2});
+        this.saveCache(CKEY, media, fd(to), {followsBackfill:3});
         this.model=this.buildModel({ profile:this._live.profile, daily:this._live.daily, follows:this._live.follows, media });
         const dormant = (this._live.actSum||0) < 50 && media.length===0;
         const _newDefWeek=this.model.DEFAULT_WEEK.iso;
@@ -1597,16 +1390,36 @@ class Component extends DCLogic {
   async fetchAplicLeads(){
     if(this._aplicLeadsLoading || this._aplicLeadsBy) return;
     this._aplicLeadsLoading = true;
-    try{
-      const url='https://docs.google.com/spreadsheets/d/10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc/export?format=csv&gid=1528543515&_cb='+Date.now();
+    const CUT='2026-07-28'; // a partir daqui, usa as planilhas novas (form nativo)
+    const OLD_GID='1528543515';
+    const NEW_GIDS=['2053208403','295805099','1933064365'];
+    // faixas de faturamento reconhecidas (antigo + novo form) — usadas p/ achar a coluna certa por conteúdo
+    const FAIXA_RE=/^(abaixo_de_8_mil|8_a_15_mil|abaixo_de_15_mil|15_a_50_mil|50_a_100_mil|100_a_200_mil|200_a_500_mil|acima_de_500_mil)$/i;
+    const findFaixa=(rw)=>{ for(const c of rw){ const v=String(c||'').toLowerCase().trim(); if(FAIXA_RE.test(v)) return v; } return ''; };
+    const load=async(gid)=>{
+      const url='https://docs.google.com/spreadsheets/d/10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc/export?format=csv&gid='+gid+'&_cb='+Date.now();
       const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('Planilha HTTP '+r.status);
-      const rows=this.parseCSV(await r.text()); if(!rows.length) throw new Error('vazia');
-      const head=rows[0].map(h=>String(h||'').toLowerCase().trim());
-      const ci=head.findIndex(h=>/created.?time/.test(h));
-      const col = ci>=0? ci : 1;
-      const fi=head.findIndex(h=>/faturamento/.test(h));
-      const by={}, rowsF=[];
-      rows.slice(1).forEach(rw=>{ const v=String(rw[col]||''); const m=v.match(/(\d{4})-(\d{2})-(\d{2})/); if(m){ const d=m[1]+'-'+m[2]+'-'+m[3]; by[d]=(by[d]||0)+1; rowsF.push({date:d, faixa: fi>=0? String(rw[fi]||'').trim() : ''}); } });
+      const rows=this.parseCSV(await r.text()); if(!rows.length) return [];
+      const h0=rows[0].map(h=>String(h||'').toLowerCase().trim());
+      const hasHeader=h0.some(h=>/created.?time/.test(h));
+      let ci,idc, body;
+      if(hasHeader){ ci=h0.findIndex(h=>/created.?time/.test(h)); if(ci<0)ci=1; idc=h0.findIndex(h=>/^id$/.test(h)); body=rows.slice(1); }
+      else { ci=1; idc=0; body=rows; } // layout do form nativo (sem cabeçalho)
+      const out=[];
+      body.forEach(rw=>{ const joined=rw.join(' ').toLowerCase();
+        if(/test lead|<test|test@meta\.com/.test(joined)) return; // ignora leads de teste
+        const v=String(rw[ci]||''); const m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if(m) out.push({id:String(rw[idc>=0?idc:0]||''), date:m[1]+'-'+m[2]+'-'+m[3], faixa:findFaixa(rw)}); });
+      return out;
+    };
+    try{
+      const results=await Promise.all([load(OLD_GID),...NEW_GIDS.map(load)]);
+      const oldRows=results[0], newRows=[].concat(...results.slice(1));
+      // dedupe novos por id, mantém >= CUT; antigos ficam < CUT
+      const seen=new Set(); const newDedup=[];
+      newRows.forEach(r=>{ if(r.date<CUT) return; const k=r.id||(r.date+'|'+r.faixa); if(seen.has(k)) return; seen.add(k); newDedup.push(r); });
+      const rowsF=[...oldRows.filter(r=>r.date<CUT), ...newDedup];
+      const by={}; rowsF.forEach(r=>{ by[r.date]=(by[r.date]||0)+1; });
       this._aplicLeadsBy = by;
       this._aplicLeadsRows = rowsF;
       this.forceUpdate();
@@ -1913,6 +1726,7 @@ class Component extends DCLogic {
     const cfgs = this.state.page==='conta' ? this._chartCfgs : (this.state.page==='candidaturas' ? this._funnelCfgs : null);
     if(this.state.page==='candidaturas' && this._investChartCfg){ const el=document.getElementById('inv-ingressos-day'); if(el){ this.charts['inv-ingressos-day']=new window.Chart(el.getContext('2d'), this._investChartCfg); } }
     if(this.state.page==='resultados' && this._resChartCfg){ const el=document.getElementById('res-monthly'); if(el){ this.charts['res-monthly']=new window.Chart(el.getContext('2d'), this._resChartCfg); } }
+    if(this.state.page==='plano'){ this.buildAcompCfgs(); const r=document.getElementById('acomp-reels'); if(r&&this._acompReels){ this.charts['acomp-reels']=new window.Chart(r.getContext('2d'), this._acompReels); } const c=document.getElementById('acomp-cs'); if(c&&this._acompCs){ this.charts['acomp-cs']=new window.Chart(c.getContext('2d'), this._acompCs); } }
     if(!cfgs) return;
     Object.keys(cfgs).forEach(id=>{ const el=document.getElementById(id); if(!el) return; this.charts[id]=new window.Chart(el.getContext('2d'), cfgs[id]); });
   }
@@ -1985,6 +1799,8 @@ class Component extends DCLogic {
 
   /* ============ RESULTADOS MENSAIS ============ */
   resultadosVals(){
+    const _key=(this._adsRaw?this._adsRaw.length:0)+'|'+this.state.month+'|'+(this.state.candFrom||'')+'|'+(this.state.candTo||'')+'|'+JSON.stringify(this.state.resOpen||{})+'|'+((window.__RESULTADOS_VENDAS__&&window.__RESULTADOS_VENDAS__.atualizadoEm)||'');
+    if(this._resCache && this._resCacheKey===_key) return this._resCache;
     const S=this.state, RV=(window.__RESULTADOS_VENDAS__||{}).meses||{}, PROD=(window.__RESULTADOS_PRODUTO__||{});
     const raw=(this._adsRaw||[]);
     const money=(v)=>'R$ '+this.fmtNum(Math.round(v));
@@ -2041,7 +1857,8 @@ class Component extends DCLogic {
       const impBy={}; impR.forEach(x=>{ const c=impBy[x.campaign]||(impBy[x.campaign]={name:x.campaign,spend:0,reach:0,impressions:0,linkClicks:0}); c.spend+=(x.spend||0); c.reach+=(x.reach||0); c.impressions+=(x.impressions||0); c.linkClicks+=(x.linkClicks||0); });
       const impRows=Object.values(impBy).sort((a,b)=>b.linkClicks-a.linkClicks).slice(0,5).map(c=>({ name:c.name.replace(/^.*?do instagram:?\s*/i,'').slice(0,60)||c.name.slice(0,60), invest:money(c.spend), reach:this.fmtNum(c.reach), impressions:this.fmtNum(c.impressions), clicks:this.fmtNum(c.linkClicks), visitas:this.fmtNum(c.linkClicks) }));
       const impTotal=impR.reduce((a,x)=>a+(x.spend||0),0);
-      return { ym, label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4), kpis, funilRows, funilShow:funilRows.length>0, impRows, impShow:impRows.length>0, impTotal:money(impTotal) };
+      const _open=!!(this.state.resOpen&&this.state.resOpen[ym]);
+      return { ym, label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4), kpis, funilRows, funilShow:funilRows.length>0, funilOpen:_open&&funilRows.length>0, impOpen:_open&&impRows.length>0, detailLabel:_open?'− detalhes':'+ detalhes', onToggle:()=>this.setState(s=>({resOpen:{...(s.resOpen||{}), [ym]:!(s.resOpen&&s.resOpen[ym])}})), impRows, impShow:impRows.length>0, impTotal:money(impTotal) };
     }).filter(mo=>mo.funilShow || mo.impShow || mo.kpis[3].value!=='0');
     // gráfico mensal (todos os meses): investimento + faturamento (barras) e vendas HBP (linha)
     const allYms=[...ymSet].filter(y=>y>='2026-01').sort();
@@ -2069,7 +1886,100 @@ class Component extends DCLogic {
             y1:{ beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10}, color:'#3B0A10', precision:0, callback:(v)=>this.fmtNum(v) } } } }
       };
     } else this._resChartCfg=null;
-    return { resMonths, resMonthsShow: resMonths.length>0, resChartShow: !!this._resChartCfg };
+    this._resCache={ resMonths, resMonthsShow: resMonths.length>0, resChartShow: !!this._resChartCfg };
+    this._resCacheKey=_key;
+    return this._resCache;
+  }
+
+  comboCfg(labels, barLabel, barData, lineLabel, lineData, lineFmt, links){
+    const self=this;
+    return { data:{ labels, datasets:[
+      { type:'bar', label:barLabel, data:barData, backgroundColor:'#771520', borderRadius:4, borderSkipped:false, maxBarThickness:34, yAxisID:'y', order:2 },
+      { type:'line', label:lineLabel, data:lineData, borderColor:'#C2A05B', backgroundColor:'#C2A05B', borderWidth:2, pointRadius:3, pointBackgroundColor:'#C2A05B', tension:0.3, spanGaps:true, yAxisID:'y1', order:1 }
+    ]},
+      options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+        onClick:(e,els,chart)=>{ let idx=null; if(els&&els.length) idx=els[0].index; else { const pts=chart.getElementsAtEventForMode(e,'index',{intersect:false},false); if(pts&&pts.length) idx=pts[0].index; } if(idx!=null && links && links[idx]) window.open(links[idx],'_blank','noopener'); },
+        onHover:(e,els,chart)=>{ const pts=(els&&els.length)?els:chart.getElementsAtEventForMode(e,'index',{intersect:false},false); e.native.target.style.cursor=(pts&&pts.length&&links&&links[pts[0].index])?'pointer':'default'; },
+        plugins:{ legend:{ display:true, position:'top', align:'end', labels:{ boxWidth:12, boxHeight:12, font:{family:'Arimo', size:11}, color:'#6E595D', usePointStyle:true } },
+          tooltip:{ mode:'index', intersect:false, backgroundColor:'#271217', titleColor:'#F6EFE8', bodyColor:'#EAD9C9', borderColor:'#4A3338', borderWidth:1, padding:10, cornerRadius:8, titleFont:{family:'Arimo',weight:'600'}, bodyFont:{family:'Arimo'}, callbacks:{ label:(c)=> c.dataset.label===lineLabel ? (lineLabel+': '+(lineFmt==='pct'? self.fmtPct(c.parsed.y) : self.fmtNum(c.parsed.y))) : (barLabel+': '+self.fmtNum(c.parsed.y)) } } },
+        scales:{ x:{ grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10.5}, color:'#6E595D' } },
+          y:{ beginAtZero:true, position:'left', grid:{ color:'rgba(119,21,32,0.07)' }, ticks:{ font:{family:'Arimo', size:10}, color:'#6E595D', callback:(v)=>self.fmtNum(v) } },
+          y1:{ beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10}, color:'#9A7637', callback:(v)=> lineFmt==='pct'? self.fmtNum(v)+'%' : self.fmtNum(v) } } } }
+    };
+  }
+  buildAcompCfgs(){
+    const win=this.windowOf();
+    const media=(this.model.media||[]).filter(p=>p.ts>=win.start && p.ts<=win.end);
+    const dd=(iso)=>this.ddmm(iso);
+    const daysWith=(pred)=>[...new Set(media.filter(pred).map(p=>p.ts))].sort();
+    const avgOn=(day,pred,fn)=>{ const a=media.filter(p=>p.ts===day&&pred(p)); return a.length? a.reduce((s,p)=>s+fn(p),0)/a.length : 0; };
+    // Reels — diário: alcance (bar) + retenção proxy views/alcance % (line)
+    const isReel=p=>p.type==='REELS';
+    const rd=daysWith(isReel);
+    const linkOn=(day,pred)=>{ const a=media.filter(p=>p.ts===day&&pred(p)&&p.permalink); return a.length? a[0].permalink : ''; };
+    this._acompReels=this.comboCfg(rd.map(dd),'alcance',rd.map(d=>Math.round(avgOn(d,isReel,p=>p.reach||0))),'plays',rd.map(d=>Math.round(avgOn(d,isReel,p=>p.views||0))),'num',rd.map(d=>linkOn(d,isReel)));
+    // Carrossel — diário (todos os carrosséis): salvamento (bar) + compartilhamento (line)
+    const isCarr=p=>p.type==='CAROUSEL_ALBUM';
+    const cd=[...new Set(media.filter(isCarr).map(p=>p.ts))].sort();
+    this._acompCs=this.comboCfg(cd.map(dd),'salvamento',cd.map(d=>+avgOn(d,isCarr,p=>p.saves||0).toFixed(1)),'compartilhamento',cd.map(d=>+avgOn(d,isCarr,p=>p.shares||0).toFixed(1)),'num',cd.map(d=>linkOn(d,isCarr)));
+  }
+
+  contentRows(){
+    const win=this.windowOf();
+    const media=(this.model.media||[]).filter(p=>p.ts>=win.start && p.ts<=win.end);
+    const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const mk=()=>({rReach:0,rViews:0,rN:0,cSave:0,cShare:0,cN:0});
+    const T={};
+    const touch=(ym,wk,day)=>{ const M=T[ym]||(T[ym]={n:mk(),w:{}}); const W=M.w[wk]||(M.w[wk]={n:mk(),d:{}}); const D=W.d[day]||(W.d[day]=mk()); return [M.n,W.n,D]; };
+    media.forEach(p=>{ const ym=p.ts.slice(0,7), wk=this.monday(p.ts); const isR=p.type==='REELS', isC=p.type==='CAROUSEL_ALBUM'; if(!isR&&!isC)return;
+      touch(ym,wk,p.ts).forEach(n=>{ if(isR){ n.rReach+=(p.reach||0); n.rViews+=(p.views||0); n.rN++; } else { n.cSave+=(p.saves||0); n.cShare+=(p.shares||0); n.cN++; } }); });
+    const exp=this.state.ctExpanded||{};
+    const avg=(s,c,dec)=> c? (dec? (s/c).toFixed(1).replace('.',',') : this.fmtNum(Math.round(s/c))) : '—';
+    const fmtRow=(key,level,label,n)=>({ key, level, label, indent:(level*18)+'px',
+      reelsReach:avg(n.rReach,n.rN,false), reelsPlays:avg(n.rViews,n.rN,false),
+      carrSave:avg(n.cSave,n.cN,true), carrShare:avg(n.cShare,n.cN,true),
+      hasChildren:level<2, leaf:level>=2, caret: level<2? (exp[key]?'−':'+') : '',
+      onToggle: level<2? (()=>this.setState(s=>({ctExpanded:{...(s.ctExpanded||{}), [key]:!(s.ctExpanded&&s.ctExpanded[key])}}))) : null });
+    const out=[];
+    Object.keys(T).sort().reverse().forEach(ym=>{ const M=T[ym];
+      out.push(fmtRow(ym,0,MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4),M.n));
+      if(exp[ym]){ Object.keys(M.w).sort().reverse().forEach(wk=>{ const W=M.w[wk];
+        out.push(fmtRow(ym+'|'+wk,1,'Semana '+this.ddmm(wk)+'–'+this.ddmm(this.addDays(wk,6)),W.n));
+        if(exp[ym+'|'+wk]){ Object.keys(W.d).sort().reverse().forEach(day=>{ out.push(fmtRow(ym+'|'+wk+'|'+day,2,this.ddmm(day),W.d[day])); }); }
+      }); }
+    });
+    return out;
+  }
+
+  aquisicaoRows(){
+    const win=this.windowOf();
+    const rows=(this._aplicLeadsRows||[]).filter(r=>(!win.start||r.date>=win.start)&&(!win.end||r.date<=win.end));
+    const spendBy={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) spendBy[x.date]=(spendBy[x.date]||0)+(x.spend||0); });
+    const QUAL=['15_a_50_mil','50_a_100_mil','100_a_200_mil','200_a_500_mil','acima_de_500_mil'];
+    const DECL=['abaixo_de_8_mil','8_a_15_mil','abaixo_de_15_mil'].concat(QUAL);
+    const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const mk=()=>({leads:0,qual:0,decl:0,spend:0});
+    const T={};
+    const touch=(ym,wk,day)=>{ const M=T[ym]||(T[ym]={n:mk(),w:{}}); const W=M.w[wk]||(M.w[wk]={n:mk(),d:{}}); const D=W.d[day]||(W.d[day]=mk()); return [M.n,W.n,D]; };
+    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const q=QUAL.indexOf(r.faixa)>=0?1:0, dc=DECL.indexOf(r.faixa)>=0?1:0;
+      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; }); });
+    Object.keys(spendBy).forEach(day=>{ const ym=day.slice(0,7), wk=this.monday(day); const nodes=touch(ym,wk,day); nodes.forEach(n=>{ n.spend+=spendBy[day]; }); });
+    const exp=this.state.aqExpanded||{};
+    const fmtRow=(key,level,label,n)=>({ key, level, label, indent:(level*18)+'px',
+      leads:this.fmtNum(n.leads), qual:this.fmtNum(n.qual),
+      custo: n.qual? ('R$ '+this.fmtNum(Math.round(n.spend/n.qual))) : '—',
+      pct: n.decl? this.fmtPct(n.qual/n.decl*100) : '—',
+      hasChildren:level<2, leaf:level>=2, expanded:!!exp[key], caret: level<2? (exp[key]?'−':'+') : '',
+      onToggle: level<2? (()=>this.setState(s=>({aqExpanded:{...(s.aqExpanded||{}), [key]:!(s.aqExpanded&&s.aqExpanded[key])}}))) : null });
+    const out=[];
+    Object.keys(T).sort().reverse().forEach(ym=>{ const M=T[ym]; const mLabel=MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4);
+      out.push(fmtRow(ym,0,mLabel,M.n));
+      if(exp[ym]){ Object.keys(M.w).sort().reverse().forEach(wk=>{ const W=M.w[wk]; const endW=this.addDays(wk,6);
+        out.push(fmtRow(ym+'|'+wk,1,'Semana '+this.ddmm(wk)+'–'+this.ddmm(endW),W.n));
+        if(exp[ym+'|'+wk]){ Object.keys(W.d).sort().reverse().forEach(day=>{ out.push(fmtRow(ym+'|'+wk+'|'+day,2,this.ddmm(day),W.d[day])); }); }
+      }); }
+    });
+    return out;
   }
 
   /* ============ RENDER ============ */
@@ -2081,10 +1991,10 @@ class Component extends DCLogic {
     // selectors
     const monthOptions=[{value:'all',label:'Todos os meses'}].concat(M.months);
     const weekOptions=[{value:'all',label:'Todas as semanas'}].concat(M.weeks.map(w=>({value:w.iso,label:w.label})));
-    const pages=[{key:'conta',label:'Dados da Conta'},{key:'conteudos',label:'Dados dos Conteúdos'},{key:'candidaturas',label:'Dados dos Funis'},{key:'resultados',label:'Resultados Mensais'},{key:'plano',label:'Plano de Conteúdo'}].map(p=>({
+    const pages=[{key:'conta',label:'Dados da Conta'},{key:'conteudos',label:'Dados dos Conteúdos'},{key:'candidaturas',label:'Dados dos Funis'},{key:'plano',label:'Acompanhamento'},{key:'resultados',label:'Resultados Mensais'}].map(p=>({
       label:p.label,
       onClick:()=>{ this.setPage(p.key); this.scrollTab(p.key); },
-      style:`font-family:var(--font-sans); font-size:13px; font-weight:${S.page===p.key?'600':'500'}; cursor:pointer; padding:8px 16px; border-radius:var(--radius-md) var(--radius-md) 0 0; border:1px solid ${S.page===p.key?'var(--border-soft)':'transparent'}; border-bottom:2px solid ${S.page===p.key?accent:'transparent'}; background:${S.page===p.key?'var(--surface-page)':'transparent'}; color:${S.page===p.key?'var(--text-strong)':'var(--text-muted)'}; white-space:nowrap; flex:none;`
+      style:`font-family:var(--font-sans); font-size:12.5px; font-weight:${S.page===p.key?'600':'500'}; cursor:pointer; padding:8px 11px; border-radius:var(--radius-md) var(--radius-md) 0 0; border:1px solid ${S.page===p.key?'var(--border-soft)':'transparent'}; border-bottom:2px solid ${S.page===p.key?accent:'transparent'}; background:${S.page===p.key?'var(--surface-page)':'transparent'}; color:${S.page===p.key?'var(--text-strong)':'var(--text-muted)'}; white-space:nowrap; flex:none;`
     }));
 
     const base={
@@ -2094,8 +2004,8 @@ class Component extends DCLogic {
       sourceColor: S.dataError? 'var(--danger)' : (S.mediaLoading? 'var(--warning)' : (S.live? 'var(--success)' : 'var(--ink-300)')),
       dormant: S.dormant && !S.mediaLoading,
       pages, month:S.month, week:S.week, monthOptions, weekOptions,
-      onPrevPage:()=>{ const ks=['conta','conteudos','candidaturas','resultados','plano']; const i=ks.indexOf(S.page); const nk=ks[(i-1+ks.length)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
-      onNextPage:()=>{ const ks=['conta','conteudos','candidaturas','resultados','plano']; const i=ks.indexOf(S.page); const nk=ks[(i+1)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
+      onPrevPage:()=>{ const ks=['conta','conteudos','candidaturas','plano','resultados']; const i=ks.indexOf(S.page); const nk=ks[(i-1+ks.length)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
+      onNextPage:()=>{ const ks=['conta','conteudos','candidaturas','plano','resultados']; const i=ks.indexOf(S.page); const nk=ks[(i+1)%ks.length]; this.setPage(nk); this.scrollTab(nk); },
       onMonth:(e)=>this.setState({month:e.target.value, week:'all', dayFrom:'', dayTo:''}),
       onWeek:(e)=>this.setState({week:e.target.value}),
       dayFrom:S.dayFrom||'', dayTo:S.dayTo||'', dayMin:this.model.minDate, dayMax:this.model.maxDate,
@@ -2105,10 +2015,12 @@ class Component extends DCLogic {
       onDayClear:()=>this.setState({dayFrom:'', dayTo:''}),
       accent, periodLabel: win.label,
       isConta:S.page==='conta', isConteudos:S.page==='conteudos', isInsights:S.page==='insights', isCandidaturas:S.page==='candidaturas', isResultados:S.page==='resultados', isPlano:S.page==='plano',
-      showFilters: S.page!=='candidaturas' && S.page!=='plano' && S.page!=='resultados',
-      showMonth: S.page!=='candidaturas' && S.page!=='plano',
+      aquisicaoRows: S.page==='plano'? this.aquisicaoRows() : [],
+      contentRows: S.page==='plano'? this.contentRows() : [],
+      showFilters: S.page!=='candidaturas' && S.page!=='resultados',
+      showMonth: S.page!=='candidaturas',
       showFunnelFilters: S.page==='candidaturas',
-      pageTitle: S.page==='conta'?'Dados da Conta': S.page==='conteudos'?'Dados dos Conteúdos': S.page==='insights'?'Insights dos Conteúdos': S.page==='candidaturas'?'Dados dos Funis': S.page==='resultados'?'Resultados Mensais':'Plano de Conteúdo',
+      pageTitle: S.page==='conta'?'Dados da Conta': S.page==='conteudos'?'Dados dos Conteúdos': S.page==='insights'?'Insights dos Conteúdos': S.page==='candidaturas'?'Dados dos Funis': S.page==='resultados'?'Resultados Mensais':'Acompanhamento',
     };
 
     // CONTA — KPIs usam janela de comparação por mês fechado (independente dos gráficos)
@@ -2169,7 +2081,6 @@ class Component extends DCLogic {
           {label:'Alcance', value: PM?this.fmtNum(p.reach):'—'},
           {label:'Interações', value: PM?this.fmtNum(p.eng):'—'},
           {label:'% Eng. geral', value: PM?this.fmtPct(p.reach?p.eng/p.reach*100:null):'—'},
-          {label:'% Eng. seguidor', value: PM?this.fmtPct(p.eng/followers*100):'—'},
           {label:'Tx. salvamento', value: PM?this.fmtPct(p.reach?p.saves/p.reach*100:null):'—'},
           {label:'Tx. compart.', value: PM?this.fmtPct(p.reach?p.shares/p.reach*100:null):'—'},
           {label:'Seguidores', value: PM?(p.follows==null?'—':this.fmtNum(p.follows)):'—'},
@@ -2330,10 +2241,10 @@ class Component extends DCLogic {
       let aplicBands=[]; let aplicBandShow=false;
       if(key==='aplicacao'){
         const rowsF=(this._aplicLeadsRows||[]).filter(r=>(!winFrom||r.date>=winFrom)&&(!winTo||r.date<=winTo));
-        const norm=(v)=>{ v=String(v||'').toLowerCase().replace(/^ac[oó]ma/,'acima'); return v; };
-        const order=['abaixo_de_15_mil','15_a_50_mil','50_a_100_mil','100_a_200_mil','200_a_500_mil','acima_de_500_mil'];
-        const label=(k)=>({ 'abaixo_de_15_mil':'Abaixo de R$ 15 mil','15_a_50_mil':'R$ 15 a 50 mil','50_a_100_mil':'R$ 50 a 100 mil','100_a_200_mil':'R$ 100 a 200 mil','200_a_500_mil':'R$ 200 a 500 mil','acima_de_500_mil':'Acima de R$ 500 mil' }[k] || (k? k.replace(/_/g,' ') : '(não informado)'));
-        const tally={}; rowsF.forEach(r=>{ const k=norm(r.faixa)||''; tally[k]=(tally[k]||0)+1; });
+        const order=['abaixo_de_8_mil','8_a_15_mil','abaixo_de_15_mil','15_a_50_mil','50_a_100_mil','100_a_200_mil','200_a_500_mil','acima_de_500_mil'];
+        const norm=(v)=>{ v=String(v||'').toLowerCase().trim().replace(/^ac[oó]ma/,'acima'); return order.indexOf(v)>=0? v : '(não informado)'; };
+        const label=(k)=>({ 'abaixo_de_8_mil':'Abaixo de R$ 8 mil','8_a_15_mil':'R$ 8 a 15 mil','abaixo_de_15_mil':'Abaixo de R$ 15 mil','15_a_50_mil':'R$ 15 a 50 mil','50_a_100_mil':'R$ 50 a 100 mil','100_a_200_mil':'R$ 100 a 200 mil','200_a_500_mil':'R$ 200 a 500 mil','acima_de_500_mil':'Acima de R$ 500 mil' }[k] || '(não informado)');
+        const tally={}; rowsF.forEach(r=>{ const k=norm(r.faixa); tally[k]=(tally[k]||0)+1; });
         const keys=Object.keys(tally).sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
         const totalF=keys.reduce((a,k)=>a+tally[k],0);
         const ramp=['#4A0C13','#5F111A','#771520','#9A2230','#B7404E','#CE6B77','#E0A0A8'];
@@ -2529,13 +2440,14 @@ class Component extends DCLogic {
         thumbStyle: a.thumb? {width:'42px',height:'42px',flex:'none',borderRadius:'5px',backgroundColor:'#3D0A11',backgroundImage:`url("${a.thumb}")`,backgroundSize:'cover',backgroundPosition:'center',backgroundRepeat:'no-repeat'}
           : {width:'42px',height:'42px',flex:'none',borderRadius:'5px',background:'linear-gradient(135deg, #771520, #3D0A11)'},
         impr:this.fmtNum(a.impressions), clk:this.fmtNum(a.linkClicks), lpv:this.fmtNum(a.lpViews), ctr:this.fmtPct(a.impressions? a.linkClicks/a.impressions*100 : 0), checkout:this.fmtNum(a.checkout||0),
+        custoLead: money2((()=>{ const res=usePurchase? a.purchases : (isSeg? a.linkClicks : a.leads); return res? a.spend/res : 0; })()),
         cr:this.fmtPct(a.linkClicks? a.lpViews/a.linkClicks*100 : 0), leads:this.fmtNum(usePurchase? a.purchases : (isSeg? a.linkClicks : a.leads)) }));
     }else{
       const adNames=[fbPrefix+' · Depoimento',fbPrefix+' · VSL Curta',fbPrefix+' · Carrossel',fbPrefix+' · Reels Bastidores',fbPrefix+' · Prova Social'];
       const w=[0.30,0.24,0.19,0.15,0.12], adCr=[0.82,0.76,0.80,0.74,0.78], thumbBg=['#771520','#8A1A24','#5A0F18','#9E2230','#6B131D'];
       investAds=adNames.map((nm,i)=>{ const impr=Math.round(impressoes*w[i]), clk=Math.round(cliques*w[i]), lpv=Math.round(clk*adCr[i]), leads=Math.round(leadsGer*w[i]);
         return { idx:i, name:nm, link:'', noLink:true, thumbStyle:`width:42px; height:42px; flex:none; border-radius:5px; background:linear-gradient(135deg, ${thumbBg[i]}, #3D0A11);`,
-          impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), ctr:this.fmtPct(impr? clk/impr*100:0), checkout:this.fmtNum(0), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(isSeg? clk : leads) }; });
+          impr:this.fmtNum(impr), clk:this.fmtNum(clk), lpv:this.fmtNum(lpv), ctr:this.fmtPct(impr? clk/impr*100:0), checkout:this.fmtNum(0), custoLead:money2((isSeg?clk:leads)? investido*w[i]/(isSeg?clk:leads):0), cr:this.fmtPct(clk? lpv/clk*100:0), leads:this.fmtNum(isSeg? clk : leads) }; });
     }
     const adsStatus = S.adsError? ('Facebook Ads: '+S.adsError).slice(0,80) : (S.adsLoading? 'carregando anúncios do Facebook…' : (hasReal? '' : 'dados estimados'));
     const adsets=_agg.adsets;
@@ -2618,6 +2530,8 @@ class Component extends DCLogic {
       adsNameColStyle: 'text-align:left; padding:0 12px 10px 4px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); font-weight:600; white-space:nowrap;' + (isSeg? ' width:38%;' : ''),
       adsetWrapStyle: isSeg ? 'overflow:auto; margin:0 -4px; height:430px;' : 'overflow:auto; margin:0 -4px; flex:1 1 0; min-height:0;',
       adsResultLabel: isGolden? 'Compras' : (isSeg? 'Visitas ao perfil' : 'Leads do gerenciador'),
+      showCheckout: usePurchase,
+      adsCostLabel: usePurchase? 'Custo/compra' : (isSeg? 'Custo/visita' : 'Custo/lead'),
       adsetResultLabel: isGolden? 'Compras' : (isSeg? 'Visitas ao perfil' : 'Leads'),
       investHeaderStyle: noPlan
         ? 'margin:18px 0 18px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;'

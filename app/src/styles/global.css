@@ -12,6 +12,29 @@ body { margin: 0; }
 .dash thead th { cursor: pointer; user-select: none; }
 .dash thead th:hover { color: var(--accent) !important; }
 .dash thead th .sortarrow { display: inline-block; margin-left: 3px; font-size: 9px; opacity: 0.85; vertical-align: middle; }
+/* header tooltip (data-tip) */
+.tt { position: relative; }
+.tt:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  white-space: normal;
+  width: 200px;
+  background: #271217;
+  color: #f6efe8;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(39, 18, 23, 0.35);
+  z-index: 20;
+  pointer-events: none;
+}
 ::-webkit-scrollbar-thumb {
   background: var(--accent);
   border-radius: 999px;
