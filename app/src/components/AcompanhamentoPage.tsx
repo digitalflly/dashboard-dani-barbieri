@@ -124,7 +124,7 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
               <tr style={{ textAlign: 'right' }}>
                 <th style={{ ...th, textAlign: 'left', width: 172, padding: '0 6px 10px 4px' }}>Período</th>
                 <th style={{ ...th, padding: '0 5px 10px' }}>Leads gerados</th>
-                <th className="tt" data-tip="Qualificado = faturamento declarado ≥ R$ 15 mil/mês." style={{ ...th, padding: '0 5px 10px', cursor: 'help', overflowWrap: 'anywhere' }}>Leads qualificados</th>
+                <th className="tt" data-tip='Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês, área de atuação diferente de "outro" e profissão não ligada a medicina.' style={{ ...th, padding: '0 5px 10px', cursor: 'help', overflowWrap: 'anywhere' }}>Leads qualificados</th>
                 <th style={{ ...th, padding: '0 5px 10px' }}>Custo/lead qualif.</th>
                 <th style={{ ...th, textAlign: 'right', padding: '0 5px 10px' }}>% MQL</th>
                 {FAIXA_COLS.map((fc) => (

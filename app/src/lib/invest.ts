@@ -30,7 +30,7 @@ export interface AdsState {
   gtLinks?: Record<string, Record<string, string>>
   // leads nativos por dia (planilha) — funis Aplicação Direta / Isca
   aplicLeadsBy?: Record<string, number>
-  aplicLeadsRows?: { date: string; faixa: string }[]
+  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean }[]
   iscaLeadsBy?: Record<string, number>
 }
 

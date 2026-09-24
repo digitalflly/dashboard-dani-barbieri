@@ -72,7 +72,7 @@ export interface DashState {
   postMetrics: boolean
   // leads nativos por dia (planilhas) — funis Aplicação Direta / Isca
   aplicLeadsBy?: Record<string, number>
-  aplicLeadsRows?: { date: string; faixa: string }[]
+  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean }[]
   iscaLeadsBy?: Record<string, number>
 }
 
