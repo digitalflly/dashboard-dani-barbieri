@@ -11,8 +11,10 @@ import { ADS_CAMPAIGN_MATCH } from './constants'
 import { RESULTADOS_VENDAS } from './resultadosVendasData'
 import { RESULTADOS_PRODUTO } from './resultadosProdutoData'
 import { RESULTADOS_TRAFEGO } from './resultadosTrafegoData'
+import { RESULTADOS_DETALHES } from './resultadosDetalhesData'
 import { GOLDEN_VENDAS } from './goldenVendasData'
 import { GOLDEN_TRAFEGO } from './goldenTrafegoData'
+import { hbpWindow } from './hbp'
 import type { AdDailyRow } from './types'
 import type { DashState } from './useDashboard'
 
@@ -46,6 +48,7 @@ export interface ResImpRow {
 }
 export interface ResMonth {
   ym: string
+  hasData: boolean
   label: string
   kpis: ResKpi[]
   funilRows: ResFunilRow[]
@@ -68,11 +71,15 @@ const MN = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
 const MN2 = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
 export function resultadosVM(S: DashState): ResultadosVM {
-  const RV = RESULTADOS_VENDAS.meses || {}
+  // vendas HBP: mês atual + anterior ao vivo da planilha; meses mais antigos do snapshot
+  const RV: Record<string, import('./resultadosVendasData').ResVendaMes> = { ...(RESULTADOS_VENDAS.meses || {}) }
+  if (S.rvLive) hbpWindow().forEach((ym) => { RV[ym] = S.rvLive![ym] || { vendas: 0, fat: 0, byFunil: {} } })
   const PROD = RESULTADOS_PRODUTO
   const TF = RESULTADOS_TRAFEGO
+  const DET = RESULTADOS_DETALHES
   const raw: AdDailyRow[] = S.adsRaw || []
   const money = (v: number): string => 'R$ ' + fmtNum(Math.round(v))
+  const pctRoas = (v: number): string => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'x'
   const BOOST = ADS_CAMPAIGN_MATCH.turbinamento
   const curYm = new Date().toISOString().slice(0, 7)
 
@@ -91,6 +98,8 @@ export function resultadosVM(S: DashState): ResultadosVM {
   raw.forEach((x) => { if (x.date) ymSet.add(x.date.slice(0, 7)) })
   Object.keys(RV).forEach((k) => ymSet.add(k))
   Object.keys(PROD).forEach((k) => ymSet.add(k))
+  Object.keys(TF).forEach((k) => ymSet.add(k))
+  Object.keys(DET).forEach((k) => ymSet.add(k))
   let yms = [...ymSet].filter((y) => y >= '2026-01').sort()
   if (S.month && S.month !== 'all') yms = yms.filter((y) => y === S.month)
 
@@ -126,38 +135,56 @@ export function resultadosVM(S: DashState): ResultadosVM {
       ]
       // funis ativos (exclui impulsionamento, tratado à parte)
       const funilRows: ResFunilRow[] = []
-      TYPES.forEach((t) => {
-        const rws = monthRows.filter((x) => t.re.test(x.campaign) && !BOOST.test(x.campaign))
-        const sp = rws.reduce((a, x) => a + (x.spend || 0), 0)
-        if (sp <= 0) return
-        const res = rws.reduce((a, x) => a + (x.leads || 0) + (x.purchases || 0), 0)
-        const adAgg: Record<string, { name: string; link: string; res: number; imp: number; clk: number }> = {}
-        rws.forEach((x) => {
-          const a =
-            adAgg[x.ad] ||
-            (adAgg[x.ad] = { name: x.ad, link: x.permalink || (x.adId ? 'https://www.facebook.com/ads/library/?id=' + x.adId : ''), res: 0, imp: 0, clk: 0 })
-          a.res += (x.leads || 0) + (x.purchases || 0)
-          a.imp += x.impressions || 0
-          a.clk += x.linkClicks || 0
-          if (!a.link && x.permalink) a.link = x.permalink
+      const fz = ym !== curYm ? DET[ym] : null
+      if (fz) {
+        // meses fechados: detalhes CONGELADOS do snapshot
+        fz.funil.forEach((f) => {
+          const hb = f.hbp ? sv.byFunil[f.hbp] || { c: 0, rev: 0 } : { c: 0, rev: 0 }
+          const top: ResCreative[] = f.top.map((a, i) => ({ n: i + 1 + '. ' + a.n, link: a.l || '', noLink: !a.l, res: fmtNum(a.r), ctr: a.i ? fmtPct((a.c / a.i) * 100) : '—' }))
+          funilRows.push({
+            label: f.label,
+            invest: money(f.sp),
+            creatives: top,
+            res: fmtNum(f.res),
+            vendasHbp: fmtNum(hb.c),
+            fatHbp: money(hb.rev),
+            roas: f.sp && hb.rev > 0 ? pctRoas(hb.rev / f.sp) : '—',
+          })
         })
-        const top: ResCreative[] = Object.values(adAgg)
-          .filter((a) => a.res > 0)
-          .sort((a, b) => b.res - a.res)
-          .slice(0, 3)
-          .map((a, i) => ({ n: i + 1 + '. ' + a.name, link: a.link || '', noLink: !a.link, res: fmtNum(a.res), ctr: a.imp ? fmtPct((a.clk / a.imp) * 100) : '—' }))
-        const hb = t.hbp ? sv.byFunil[t.hbp] || { c: 0, rev: 0 } : { c: 0, rev: 0 }
-        const froas = sp ? hb.rev / sp : null
-        funilRows.push({
-          label: t.label,
-          invest: money(sp),
-          creatives: top,
-          res: fmtNum(res),
-          vendasHbp: fmtNum(hb.c),
-          fatHbp: money(hb.rev),
-          roas: froas != null && hb.rev > 0 ? froas.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'x' : '—',
+      } else {
+        TYPES.forEach((t) => {
+          const rws = monthRows.filter((x) => t.re.test(x.campaign) && !BOOST.test(x.campaign))
+          const sp = rws.reduce((a, x) => a + (x.spend || 0), 0)
+          if (sp <= 0) return
+          const res = rws.reduce((a, x) => a + (x.leads || 0) + (x.purchases || 0), 0)
+          const adAgg: Record<string, { name: string; link: string; res: number; imp: number; clk: number }> = {}
+          rws.forEach((x) => {
+            const a =
+              adAgg[x.ad] ||
+              (adAgg[x.ad] = { name: x.ad, link: x.permalink || (x.adId ? 'https://www.facebook.com/ads/library/?id=' + x.adId : ''), res: 0, imp: 0, clk: 0 })
+            a.res += (x.leads || 0) + (x.purchases || 0)
+            a.imp += x.impressions || 0
+            a.clk += x.linkClicks || 0
+            if (!a.link && x.permalink) a.link = x.permalink
+          })
+          const top: ResCreative[] = Object.values(adAgg)
+            .filter((a) => a.res > 0)
+            .sort((a, b) => b.res - a.res)
+            .slice(0, 3)
+            .map((a, i) => ({ n: i + 1 + '. ' + a.name, link: a.link || '', noLink: !a.link, res: fmtNum(a.res), ctr: a.imp ? fmtPct((a.clk / a.imp) * 100) : '—' }))
+          const hb = t.hbp ? sv.byFunil[t.hbp] || { c: 0, rev: 0 } : { c: 0, rev: 0 }
+          const froas = sp ? hb.rev / sp : null
+          funilRows.push({
+            label: t.label,
+            invest: money(sp),
+            creatives: top,
+            res: fmtNum(res),
+            vendasHbp: fmtNum(hb.c),
+            fatHbp: money(hb.rev),
+            roas: froas != null && hb.rev > 0 ? pctRoas(froas) : '—',
+          })
         })
-      })
+      }
       // impulsionamento
       const impR = monthRows.filter((x) => BOOST.test(x.campaign))
       const impByC: Record<string, { name: string; spend: number; reach: number; impressions: number; linkClicks: number }> = {}
@@ -168,20 +195,29 @@ export function resultadosVM(S: DashState): ResultadosVM {
         c.impressions += x.impressions || 0
         c.linkClicks += x.linkClicks || 0
       })
-      const impRows: ResImpRow[] = Object.values(impByC)
-        .sort((a, b) => b.linkClicks - a.linkClicks)
-        .slice(0, 5)
-        .map((c) => ({
-          name: c.name.replace(/^.*?do instagram:?\s*/i, '').slice(0, 60) || c.name.slice(0, 60),
-          invest: money(c.spend),
-          reach: fmtNum(c.reach),
-          impressions: fmtNum(c.impressions),
-          visitas: fmtNum(c.linkClicks),
-        }))
-      const impTotal = impR.reduce((a, x) => a + (x.spend || 0), 0)
+      const impRows: ResImpRow[] = fz
+        ? fz.imp.map((c) => ({
+            name: c.n.replace(/^.*?do instagram:?\s*/i, '').slice(0, 60) || c.n.slice(0, 60),
+            invest: money(c.s),
+            reach: fmtNum(c.r),
+            impressions: fmtNum(c.i),
+            visitas: fmtNum(c.c),
+          }))
+        : Object.values(impByC)
+            .sort((a, b) => b.linkClicks - a.linkClicks)
+            .slice(0, 5)
+            .map((c) => ({
+              name: c.name.replace(/^.*?do instagram:?\s*/i, '').slice(0, 60) || c.name.slice(0, 60),
+              invest: money(c.spend),
+              reach: fmtNum(c.reach),
+              impressions: fmtNum(c.impressions),
+              visitas: fmtNum(c.linkClicks),
+            }))
+      const impTotal = fz ? fz.impTotal : impR.reduce((a, x) => a + (x.spend || 0), 0)
       const open = !!(S.resOpen && S.resOpen[ym])
       return {
         ym,
+        hasData: invest > 0 || leads > 0 || sv.vendas > 0 || gVend > 0,
         label: MN[+ym.slice(5, 7) - 1] + ' ' + ym.slice(0, 4),
         kpis,
         funilRows,
@@ -194,7 +230,7 @@ export function resultadosVM(S: DashState): ResultadosVM {
         impTotal: money(impTotal),
       }
     })
-    .filter((mo) => mo.funilShow || mo.impShow || mo.kpis[3].value !== '0')
+    .filter((mo) => mo.hasData || mo.funilShow || mo.impShow)
 
   // gráfico mensal (todos os meses): faturamento (barras), vendas HBP (linha), Golden (marcador)
   const allYms = [...ymSet].filter((y) => y >= '2026-01').sort()

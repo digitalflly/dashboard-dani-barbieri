@@ -12,6 +12,7 @@ import { fetchFunnel as fetchFunnelCsv, funnelSpec } from './sheets'
 import { persistCovers } from './cache'
 import { lastMonthRange } from './dates'
 import { fetchAplicLeads, fetchIscaLeads } from './leads'
+import { fetchVendasHBP } from './hbp'
 import {
   loadGtThumbs,
   saveGtThumbs,
@@ -24,6 +25,7 @@ import {
 } from './goldenThumbs'
 import { FUNNELS } from './constants'
 import type { Model, FunnelData, AdDailyRow } from './types'
+import type { ResVendaMes } from './resultadosVendasData'
 
 export type PageKey = 'conta' | 'conteudos' | 'insights' | 'candidaturas' | 'resultados' | 'plano'
 
@@ -53,6 +55,12 @@ export interface DashState {
   resOpen: Record<string, boolean>
   ctExpanded: Record<string, boolean>
   aqExpanded: Record<string, boolean>
+  // Acompanhamento — métricas dos gráficos + drill
+  acompMetric: string
+  aqMetric: string
+  aqWeek: string | null
+  // vendas HBP ao vivo (mês atual + anterior)
+  rvLive: Record<string, ResVendaMes> | null
   imersao: string
   gtThumbs: GtThumbs
   gtLinks: GtLinks
@@ -106,6 +114,10 @@ export function useDashboard(): Dashboard {
     resOpen: {},
     ctExpanded: {},
     aqExpanded: {},
+    acompMetric: 'reelsReach',
+    aqMetric: 'qual',
+    aqWeek: null,
+    rvLive: null,
     imersao: 'nea',
     gtThumbs: loadGtThumbs(),
     gtLinks: loadGtLinks(),
@@ -134,8 +146,20 @@ export function useDashboard(): Dashboard {
   const liveRef = useRef<LiveAccount | null>(null)
   const aplicLeadsRef = useRef(false)
   const iscaLeadsRef = useRef(false)
+  const hbpRef = useRef(false)
   const funnelRef = useRef(state.funnel)
   funnelRef.current = state.funnel
+
+  const loadVendasHBP = useCallback(async () => {
+    if (hbpRef.current) return
+    hbpRef.current = true
+    try {
+      const rv = await fetchVendasHBP()
+      setState({ rvLive: rv })
+    } catch {
+      /* silencioso — cai no snapshot congelado */
+    }
+  }, [setState])
 
   const loadAplicLeads = useCallback(async () => {
     if (aplicLeadsRef.current) return
@@ -303,7 +327,8 @@ export function useDashboard(): Dashboard {
     void loadAds()
     // funil padrão é 'aplicacao' (só anúncios + planilha de leads nativa)
     void loadAplicLeads()
-  }, [fetchLive, loadAds, loadAplicLeads])
+    void loadVendasHBP()
+  }, [fetchLive, loadAds, loadAplicLeads, loadVendasHBP])
 
   // Golden Ticket — busca/embute capas + links dos anúncios da imersão ativa (cache localStorage)
   const gtBusyRef = useRef<string | null>(null)
