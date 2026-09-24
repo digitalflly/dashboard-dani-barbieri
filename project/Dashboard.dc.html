@@ -23,6 +23,7 @@
   <script src="resultados-vendas-data.js"></script>
   <script src="resultados-produto-data.js"></script>
   <script src="resultados-trafego-data.js"></script>
+  <script src="resultados-detalhes-data.js"></script>
   <script src="nea-vendas-data.js"></script>
   <style>
     *{ box-sizing:border-box; }
@@ -876,6 +877,17 @@
       <div style="margin:0 0 16px;">
         <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Conteúdo</div>
       </div>
+      <div class="b-card" style="padding:20px 22px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+          <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Por dia de publicação</div>
+          <select class="b-select" value="{{ acompMetric }}" onChange="{{ onAcompMetric }}" style="height:34px; padding:0 12px; min-width:210px;">
+            <sc-for list="{{ acompMetricOptions }}" as="o" hint-placeholder-count="4">
+              <option value="{{ o.value }}">{{ o.label }}</option>
+            </sc-for>
+          </select>
+        </div>
+        <div style="height:190px; position:relative;"><canvas id="acomp-line"></canvas></div>
+      </div>
       <div class="b-card" style="padding:20px 22px; margin-bottom:30px;">
         <div style="overflow-x:auto; margin:0 -4px;">
           <table style="border-collapse:collapse; width:100%; min-width:640px;">
@@ -914,16 +926,35 @@
         <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:22px; color:var(--text-strong);">Aquisição</div>
         <div style="font-size:12px; color:var(--text-muted); margin-top:5px;">Clique no mês para abrir as semanas, e na semana para abrir os dias.</div>
       </div>
+      <div class="b-card" style="padding:20px 22px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <sc-if value="{{ aqDrill }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ onAqBack }}" style="height:28px; padding:0 10px; font-family:var(--font-sans); font-size:12px; font-weight:600; cursor:pointer; border-radius:6px; border:1px solid var(--border-strong); background:transparent; color:#771520;">← semanas</button>
+            </sc-if>
+            <div style="font-size:11px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">{{ aqChartTitle }}</div>
+          </div>
+          <select class="b-select" value="{{ aqMetric }}" onChange="{{ onAqMetric }}" style="height:34px; padding:0 12px; min-width:210px;">
+            <sc-for list="{{ aqMetricOptions }}" as="o" hint-placeholder-count="4">
+              <option value="{{ o.value }}">{{ o.label }}</option>
+            </sc-for>
+          </select>
+        </div>
+        <div style="height:190px; position:relative;"><canvas id="aq-line"></canvas></div>
+      </div>
       <div class="b-card" style="padding:20px 22px;">
-        <div style="overflow-x:auto; margin:0 -4px;">
-          <table style="border-collapse:collapse; width:100%; min-width:640px;">
+        <div style="margin:0 -4px;">
+          <table style="border-collapse:collapse; width:100%; table-layout:fixed;">
             <thead>
               <tr style="text-align:right;">
-                <th style="text-align:left; padding:0 10px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Período</th>
-                <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Leads gerados</th>
-                <th class="tt" data-tip="Qualificado = faturamento declarado ≥ R$ 15 mil/mês." style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help;">Leads qualificados</th>
-                <th style="padding:0 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Custo/lead qualif.</th>
-                <th style="text-align:right; padding:0 4px 10px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;">% ≥ R$ 15 mil</th>
+                <th style="text-align:left; width:172px; padding:0 6px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Período</th>
+                <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Leads gerados</th>
+                <th class="tt" data-tip="Qualificado = faturamento declarado ≥ R$ 15 mil/mês." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
+                <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Custo/lead qualif.</th>
+                <th style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">% MQL</th>
+                <sc-for list="{{ faixaCols }}" as="fc" hint-placeholder-count="7">
+                  <th class="tt" data-tip="{{ fc.tip }}" style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;  cursor:help; overflow-wrap:anywhere; hyphens:auto; vertical-align:bottom; line-height:1.3;">{{ fc.label }}</th>
+                </sc-for>
               </tr>
             </thead>
             <tbody>
@@ -937,10 +968,13 @@
                       <span style="display:inline-block; margin-left:{{ r.indent }}; padding-left:17px; color:var(--text-body);">{{ r.label }}</span>
                     </sc-if>
                   </td>
-                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.leads }}</td>
-                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; font-weight:600; color:#771520;">{{ r.qual }}</td>
-                  <td data-keepcase="1" style="text-align:right; padding:10px 10px; font-size:12.5px; color:var(--text-strong); white-space:nowrap;">{{ r.custo }}</td>
-                  <td data-keepcase="1" style="text-align:right; padding:10px 4px 10px 10px; font-size:12.5px; color:var(--text-strong);">{{ r.pct }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong);">{{ r.leads }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.qual }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong); white-space:nowrap;">{{ r.custo }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.pct }}</td>
+                  <sc-for list="{{ r.fx }}" as="x" hint-placeholder-count="7">
+                    <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong);">{{ x.v }}</td>
+                  </sc-for>
                 </tr>
               </sc-for>
             </tbody>
@@ -979,6 +1013,9 @@ class Component extends DCLogic {
       candMonth: 'all',
       resOpen: {},
       aqExpanded: {},
+      acompMetric: 'reelsReach',
+      aqMetric: 'qual',
+      aqWeek: null,
       acompTab: 'conteudo',
       candFrom: '',
       candTo: '',
@@ -989,6 +1026,30 @@ class Component extends DCLogic {
       adsError: '',
     };
     this.ADS_ACCOUNT_ID = '450830237045296';
+    this.ACOMP_METRICS = [
+      {key:'reelsReach', label:'Reels · alcance médio', type:'reel', fn:p=>p.reach||0},
+      {key:'reelsPlays', label:'Reels · plays médio', type:'reel', fn:p=>p.views||0},
+      {key:'carrSave', label:'Carrossel · salvamento médio', type:'carr', fn:p=>p.saves||0},
+      {key:'carrShare', label:'Carrossel · compartilhamento médio', type:'carr', fn:p=>p.shares||0},
+    ];
+    this.AQ_METRICS = [
+      {key:'leads', label:'Leads gerados'},
+      {key:'qual', label:'Leads qualificados'},
+      {key:'custo', label:'Custo/lead qualificado'},
+      {key:'pct', label:'% MQL'},
+    ];
+    // faixas de faturamento (form novo) + agrupamentos do form antigo
+    this.FAIXA_COLS = [
+      {key:'A', label:'Faixa A', tip:'R$ 20 a 50 mil'},
+      {key:'B', label:'Faixa B', tip:'R$ 15 a 20 mil'},
+      {key:'C', label:'Faixa C', tip:'R$ 8 a 15 mil'},
+      {key:'D', label:'Faixa D', tip:'acima de R$ 50 mil'},
+      {key:'Q', label:'Desqualificado', tip:'até R$ 8 mil'},
+      {key:'AB', label:'R$ 15 a 50 mil', tip:'resposta "15 a 50 mil" — não dá pra separar Faixa A de Faixa B'},
+      {key:'U', label:'Abaixo de R$ 15 mil', tip:'resposta "abaixo de 15 mil" — não dá pra separar Faixa C de Desqualificado'},
+    ];
+    this.FAIXA_MQL=['A','B','D','AB'];
+    this.AQ_METRICS = this.AQ_METRICS.concat(this.FAIXA_COLS.map(c=>({key:'fx_'+c.key, label:'% '+c.label})));
     this.ADS_CAMPAIGN_MATCH = { aplicacao:/aplica[çc][aã]o/i, isca:/isca/i, low:/low/i, premium:/sess[aã]o\s*premium/i, diagnostico:/diagn[oó]stico/i, seguidores:/seguidores|do instagram/i, turbinamento:/do instagram/i, nea2:/nea\s*2\.?0/i, gamb:/(?=.*\bamb\b)(?=.*venda)/i, gnea:/(?=.*\bnea\b)(?=.*venda)/i, gieb:/(?=.*\bieb\b)(?=.*venda)/i };
     this.SHEET_ID = '1SEHe4kbnkOj_D5l4vCvnvEM2pPObgCrX25elBh_FH1o';
     // degradê do vermelho da marca (intenso → claro)
@@ -1344,7 +1405,7 @@ class Component extends DCLogic {
   }
 
   /* ============ CHARTS ============ */
-  componentDidMount(){ this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); this.wireSort(); if(this.state.funnel==='aplicacao') this.fetchAplicLeads(); if(this.state.funnel==='isca') this.fetchIscaLeads(); }
+  componentDidMount(){ this.fetchVendasHBP(); this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); this.wireSort(); if(this.state.funnel==='aplicacao') this.fetchAplicLeads(); if(this.state.funnel==='isca') this.fetchIscaLeads(); }
 
   /* ============ ORDENAÇÃO DE TABELAS ============ */
   // ordena qualquer tabela clicando no cabeçalho (delegação no documento, funciona em todas as tabelas)
@@ -1394,7 +1455,7 @@ class Component extends DCLogic {
     const OLD_GID='1528543515';
     const NEW_GIDS=['2053208403','295805099','1933064365'];
     // faixas de faturamento reconhecidas (antigo + novo form) — usadas p/ achar a coluna certa por conteúdo
-    const FAIXA_RE=/^(abaixo_de_8_mil|8_a_15_mil|abaixo_de_15_mil|15_a_50_mil|50_a_100_mil|100_a_200_mil|200_a_500_mil|acima_de_500_mil)$/i;
+    const FAIXA_RE=/^(abaixo_de_\d+_mil|at[eé]_\d+_mil|\d+_a_\d+_mil|acima_de_\d+_mil)$/i;
     const findFaixa=(rw)=>{ for(const c of rw){ const v=String(c||'').toLowerCase().trim(); if(FAIXA_RE.test(v)) return v; } return ''; };
     const load=async(gid)=>{
       const url='https://docs.google.com/spreadsheets/d/10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc/export?format=csv&gid='+gid+'&_cb='+Date.now();
@@ -1726,7 +1787,7 @@ class Component extends DCLogic {
     const cfgs = this.state.page==='conta' ? this._chartCfgs : (this.state.page==='candidaturas' ? this._funnelCfgs : null);
     if(this.state.page==='candidaturas' && this._investChartCfg){ const el=document.getElementById('inv-ingressos-day'); if(el){ this.charts['inv-ingressos-day']=new window.Chart(el.getContext('2d'), this._investChartCfg); } }
     if(this.state.page==='resultados' && this._resChartCfg){ const el=document.getElementById('res-monthly'); if(el){ this.charts['res-monthly']=new window.Chart(el.getContext('2d'), this._resChartCfg); } }
-    if(this.state.page==='plano'){ this.buildAcompCfgs(); const r=document.getElementById('acomp-reels'); if(r&&this._acompReels){ this.charts['acomp-reels']=new window.Chart(r.getContext('2d'), this._acompReels); } const c=document.getElementById('acomp-cs'); if(c&&this._acompCs){ this.charts['acomp-cs']=new window.Chart(c.getContext('2d'), this._acompCs); } }
+    if(this.state.page==='plano'){ this.buildAcompCfgs(); const ln=document.getElementById('acomp-line'); if(ln&&this._acompLine){ this.charts['acomp-line']=new window.Chart(ln.getContext('2d'), this._acompLine); } const aql=document.getElementById('aq-line'); if(aql&&this._aqLine){ this.charts['aq-line']=new window.Chart(aql.getContext('2d'), this._aqLine); } const r=document.getElementById('acomp-reels'); if(r&&this._acompReels){ this.charts['acomp-reels']=new window.Chart(r.getContext('2d'), this._acompReels); } const c=document.getElementById('acomp-cs'); if(c&&this._acompCs){ this.charts['acomp-cs']=new window.Chart(c.getContext('2d'), this._acompCs); } }
     if(!cfgs) return;
     Object.keys(cfgs).forEach(id=>{ const el=document.getElementById(id); if(!el) return; this.charts[id]=new window.Chart(el.getContext('2d'), cfgs[id]); });
   }
@@ -1798,10 +1859,42 @@ class Component extends DCLogic {
   }
 
   /* ============ RESULTADOS MENSAIS ============ */
+  // vendas HBP: mês atual + anterior ao vivo da planilha; meses mais antigos do snapshot
+  hbpWindow(){ const d=new Date(); const cur=d.toISOString().slice(0,7); const p=new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()-1, 1)).toISOString().slice(0,7); return [p,cur]; }
+  vendasHbpMerged(){
+    const base={...(((window.__RESULTADOS_VENDAS__||{}).meses)||{})};
+    if(this._rvLive){ this.hbpWindow().forEach(ym=>{ base[ym]=this._rvLive[ym]||{vendas:0,fat:0,byFunil:{}}; }); }
+    return base;
+  }
+  async fetchVendasHBP(){
+    if(this._rvLiveLoading || this._rvLive) return;
+    this._rvLiveLoading=true;
+    try{
+      const url='https://docs.google.com/spreadsheets/d/1jPnVK6OHycOXFRWqwoB54PKZL86wvjUa--SfMoiVQWI/export?format=csv&_cb='+Date.now();
+      const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status);
+      const rows=this.parseCSV(await r.text()); if(rows.length<2) throw new Error('vazia');
+      const H=rows[0].map(h=>String(h||'').toLowerCase().trim());
+      let cD=H.findIndex(h=>/^data|date/.test(h)); if(cD<0) cD=1;
+      let cF=H.findIndex(h=>/funil|origem/.test(h)); if(cF<0) cF=2;
+      let cV=H.findIndex(h=>/valor|pre[çc]o|ticket|fatur/.test(h)); if(cV<0) cV=3;
+      const num=(v)=>{ let s=String(v||'').replace(/[^\d.,-]/g,''); if(/,\d{1,2}$/.test(s)) s=s.replace(/\./g,'').replace(',','.'); else s=s.replace(/[.,](?=\d{3}(\D|$))/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
+      const win=this.hbpWindow(); const out={}; win.forEach(ym=>out[ym]={vendas:0,fat:0,byFunil:{}});
+      rows.slice(1).forEach(rw=>{ const v=String(rw[cD]||'').trim(); let ym=null, m;
+        if((m=v.match(/(\d{4})-(\d{2})-\d{2}/))) ym=m[1]+'-'+m[2];
+        else if((m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) ym=m[3]+'-'+String(m[1]).padStart(2,'0');
+        if(!ym || !out[ym]) return;
+        const KNOWN=['golden ticket','sessão premium','aplicação direta','diagnóstico'];
+        const parts=String(rw[cF]||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
+        const f=parts.find(p=>KNOWN.indexOf(p)>=0)||parts[0]||'', val=num(rw[cV]);
+        const o=out[ym]; o.vendas++; o.fat+=val; const b=o.byFunil[f]||(o.byFunil[f]={c:0,rev:0}); b.c++; b.rev+=val; });
+      this._rvLive=out; this._resCache=null; this.forceUpdate();
+    }catch(e){ this._rvLiveErr=(e&&e.message)||'falha'; }
+    finally{ this._rvLiveLoading=false; }
+  }
   resultadosVals(){
-    const _key=(this._adsRaw?this._adsRaw.length:0)+'|'+this.state.month+'|'+(this.state.candFrom||'')+'|'+(this.state.candTo||'')+'|'+JSON.stringify(this.state.resOpen||{})+'|'+((window.__RESULTADOS_VENDAS__&&window.__RESULTADOS_VENDAS__.atualizadoEm)||'');
+    const _key=(this._rvLive?'L':'S')+'|'+(this._adsRaw?this._adsRaw.length:0)+'|'+this.state.month+'|'+(this.state.candFrom||'')+'|'+(this.state.candTo||'')+'|'+JSON.stringify(this.state.resOpen||{})+'|'+((window.__RESULTADOS_VENDAS__&&window.__RESULTADOS_VENDAS__.atualizadoEm)||'');
     if(this._resCache && this._resCacheKey===_key) return this._resCache;
-    const S=this.state, RV=(window.__RESULTADOS_VENDAS__||{}).meses||{}, PROD=(window.__RESULTADOS_PRODUTO__||{});
+    const S=this.state, RV=this.vendasHbpMerged(), PROD=(window.__RESULTADOS_PRODUTO__||{});
     const raw=(this._adsRaw||[]);
     const money=(v)=>'R$ '+this.fmtNum(Math.round(v));
     const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -1816,11 +1909,14 @@ class Component extends DCLogic {
       {key:'golden', label:'Golden Ticket', re:/(\bamb\b|\bnea\b|\bieb\b|nea\s*2\.?0)/i, hbp:'golden ticket'},
     ];
     // meses disponíveis (jan → último com gasto ou venda), respeitando o filtro
-    const ymSet=new Set(); raw.forEach(x=>{ if(x.date) ymSet.add(x.date.slice(0,7)); }); Object.keys(RV).forEach(k=>ymSet.add(k)); Object.keys(PROD).forEach(k=>ymSet.add(k));
+    const ymSet=new Set(); raw.forEach(x=>{ if(x.date) ymSet.add(x.date.slice(0,7)); }); Object.keys(RV).forEach(k=>ymSet.add(k)); Object.keys(PROD).forEach(k=>ymSet.add(k)); Object.keys(window.__RESULTADOS_TRAFEGO__||{}).forEach(k=>ymSet.add(k)); Object.keys(window.__RESULTADOS_DETALHES__||{}).forEach(k=>ymSet.add(k));
+    const _DET=(window.__RESULTADOS_DETALHES__||{}); const _curYm=new Date().toISOString().slice(0,7);
+    // meses fechados congelados não precisam varrer a base de anúncios
+    const _rawByYm={}; raw.forEach(x=>{ if(!x.date)return; const k=x.date.slice(0,7); if(_DET[k] && k!==_curYm) return; (_rawByYm[k]=_rawByYm[k]||[]).push(x); });
     let yms=[...ymSet].filter(y=>y>='2026-01').sort();
     if(S.month && S.month!=='all') yms=yms.filter(y=>y===S.month);
     const resMonths = yms.map(ym=>{
-      const monthRows=raw.filter(x=>x.date && x.date.slice(0,7)===ym);
+      const monthRows=_rawByYm[ym]||[];
       const _tf=(window.__RESULTADOS_TRAFEGO__||{}); const _cur=new Date().toISOString().slice(0,7);
       const _liveInv=monthRows.reduce((a,x)=>a+(x.spend||0),0), _liveLeads=monthRows.reduce((a,x)=>a+(x.leads||0),0);
       const invest = (ym!==_cur && _tf[ym]) ? _tf[ym].invest : _liveInv;
@@ -1841,6 +1937,13 @@ class Component extends DCLogic {
       ];
       // funis ativos (exclui impulsionamento, tratado à parte)
       const funilRows=[];
+      const _fz = (ym!==_curYm) ? _DET[ym] : null;
+      const _pct=(v)=>v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'x';
+      if(_fz){
+        _fz.funil.forEach(f=>{ const hb=f.hbp? (sv.byFunil[f.hbp]||{c:0,rev:0}) : {c:0,rev:0};
+          const top=f.top.map((a,i)=>({n:(i+1)+'. '+a.n, link:a.l||'', noLink:!a.l, res:this.fmtNum(a.r), ctr:a.i? this.fmtPct(a.c/a.i*100):'—'}));
+          funilRows.push({ label:f.label, invest:money(f.sp), creatives:top, res:this.fmtNum(f.res), vendasHbp:this.fmtNum(hb.c), fatHbp:money(hb.rev), roas: f.sp&&hb.rev>0? _pct(hb.rev/f.sp):'—' }); });
+      } else
       TYPES.forEach(t=>{
         const rws=monthRows.filter(x=>t.re.test(x.campaign) && !BOOST.test(x.campaign));
         const sp=rws.reduce((a,x)=>a+(x.spend||0),0);
@@ -1855,11 +1958,12 @@ class Component extends DCLogic {
       // impulsionamento
       const impR=monthRows.filter(x=>BOOST.test(x.campaign));
       const impBy={}; impR.forEach(x=>{ const c=impBy[x.campaign]||(impBy[x.campaign]={name:x.campaign,spend:0,reach:0,impressions:0,linkClicks:0}); c.spend+=(x.spend||0); c.reach+=(x.reach||0); c.impressions+=(x.impressions||0); c.linkClicks+=(x.linkClicks||0); });
-      const impRows=Object.values(impBy).sort((a,b)=>b.linkClicks-a.linkClicks).slice(0,5).map(c=>({ name:c.name.replace(/^.*?do instagram:?\s*/i,'').slice(0,60)||c.name.slice(0,60), invest:money(c.spend), reach:this.fmtNum(c.reach), impressions:this.fmtNum(c.impressions), clicks:this.fmtNum(c.linkClicks), visitas:this.fmtNum(c.linkClicks) }));
-      const impTotal=impR.reduce((a,x)=>a+(x.spend||0),0);
+      const impRows=_fz ? _fz.imp.map(c=>({ name:c.n.replace(/^.*?do instagram:?\s*/i,'').slice(0,60)||c.n.slice(0,60), invest:money(c.s), reach:this.fmtNum(c.r), impressions:this.fmtNum(c.i), clicks:this.fmtNum(c.c), visitas:this.fmtNum(c.c) }))
+        : Object.values(impBy).sort((a,b)=>b.linkClicks-a.linkClicks).slice(0,5).map(c=>({ name:c.name.replace(/^.*?do instagram:?\s*/i,'').slice(0,60)||c.name.slice(0,60), invest:money(c.spend), reach:this.fmtNum(c.reach), impressions:this.fmtNum(c.impressions), clicks:this.fmtNum(c.linkClicks), visitas:this.fmtNum(c.linkClicks) }));
+      const impTotal=_fz ? _fz.impTotal : impR.reduce((a,x)=>a+(x.spend||0),0);
       const _open=!!(this.state.resOpen&&this.state.resOpen[ym]);
-      return { ym, label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4), kpis, funilRows, funilShow:funilRows.length>0, funilOpen:_open&&funilRows.length>0, impOpen:_open&&impRows.length>0, detailLabel:_open?'− detalhes':'+ detalhes', onToggle:()=>this.setState(s=>({resOpen:{...(s.resOpen||{}), [ym]:!(s.resOpen&&s.resOpen[ym])}})), impRows, impShow:impRows.length>0, impTotal:money(impTotal) };
-    }).filter(mo=>mo.funilShow || mo.impShow || mo.kpis[3].value!=='0');
+      return { ym, hasData:(invest>0||leads>0||sv.vendas>0||gVend>0), label:MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4), kpis, funilRows, funilShow:funilRows.length>0, funilOpen:_open&&funilRows.length>0, impOpen:_open&&impRows.length>0, detailLabel:_open?'− detalhes':'+ detalhes', onToggle:()=>this.setState(s=>({resOpen:{...(s.resOpen||{}), [ym]:!(s.resOpen&&s.resOpen[ym])}})), impRows, impShow:impRows.length>0, impTotal:money(impTotal) };
+    }).filter(mo=>mo.hasData || mo.funilShow || mo.impShow);
     // gráfico mensal (todos os meses): investimento + faturamento (barras) e vendas HBP (linha)
     const allYms=[...ymSet].filter(y=>y>='2026-01').sort();
     const MN2=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -1871,7 +1975,7 @@ class Component extends DCLogic {
       const _gtSnap=(window.__GOLDEN_TRAFEGO__||{}); Object.keys(_gtSnap).forEach(k=>{ const days=(_gtSnap[k].daily||[]).filter(([d,s])=>s>0).map(([d])=>d).sort(); if(days.length) goldMonths.add(days[days.length-1].slice(0,7)); });
       const liveGold={}; raw.forEach(x=>{ if(x.date && _goldRe.test(x.campaign) && (x.spend||0)>0){ const p=x.campaign.match(/nea\s*2\.?0/i)?'nea2':(x.campaign.match(/\bamb\b/i)?'amb':(x.campaign.match(/\bnea\b/i)?'nea':'ieb')); if(!liveGold[p]||x.date>liveGold[p]) liveGold[p]=x.date; } });
       Object.values(liveGold).forEach(d=>goldMonths.add(d.slice(0,7)));
-      allYms.forEach(ym=>{ const _tf=(window.__RESULTADOS_TRAFEGO__||{}); const _cur=new Date().toISOString().slice(0,7); const mr=raw.filter(x=>x.date&&x.date.slice(0,7)===ym); const inv=(ym!==_cur&&_tf[ym])? _tf[ym].invest : mr.reduce((a,x)=>a+(x.spend||0),0); const sv=RV[ym]||{vendas:0,fat:0,byFunil:{}}; const gt=goldMonths.has(ym); labs.push(MN2[+ym.slice(5,7)-1]+(gt?' ◆':'')); invArr.push(Math.round(inv)); fatArr.push(Math.round(sv.fat)); vArr.push(sv.vendas); gtArr.push(gt? sv.vendas : null); });
+      allYms.forEach(ym=>{ const _tf=(window.__RESULTADOS_TRAFEGO__||{}); const _cur=new Date().toISOString().slice(0,7); const mr=_rawByYm[ym]||[]; const inv=(ym!==_cur&&_tf[ym])? _tf[ym].invest : mr.reduce((a,x)=>a+(x.spend||0),0); const sv=RV[ym]||{vendas:0,fat:0,byFunil:{}}; const gt=goldMonths.has(ym); labs.push(MN2[+ym.slice(5,7)-1]+(gt?' ◆':'')); invArr.push(Math.round(inv)); fatArr.push(Math.round(sv.fat)); vArr.push(sv.vendas); gtArr.push(gt? sv.vendas : null); });
       this._resChartCfg={
         data:{ labels:labs, datasets:[
           { type:'bar', label:'Faturamento HBP', data:fatArr, backgroundColor:'#771520', borderRadius:4, borderSkipped:false, maxBarThickness:34, categoryPercentage:0.9, barPercentage:0.9, yAxisID:'y', order:2 },
@@ -1907,8 +2011,15 @@ class Component extends DCLogic {
           y1:{ beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ font:{family:'Arimo', size:10}, color:'#9A7637', callback:(v)=> lineFmt==='pct'? self.fmtNum(v)+'%' : self.fmtNum(v) } } } }
     };
   }
+  // aplica o mesmo formato da tabela aos ticks do eixo Y e ao tooltip
+  fmtChart(cfg, fmt, label){
+    const o=cfg.options=cfg.options||{}; o.scales=o.scales||{}; o.scales.y=o.scales.y||{}; o.scales.y.ticks=o.scales.y.ticks||{};
+    o.scales.y.ticks.callback=(v)=>fmt(v);
+    o.plugins=o.plugins||{}; o.plugins.tooltip=o.plugins.tooltip||{}; o.plugins.tooltip.callbacks=o.plugins.tooltip.callbacks||{};
+    o.plugins.tooltip.callbacks.label=(c)=>' '+label+': '+fmt(c.parsed.y);
+  }
   buildAcompCfgs(){
-    const win=this.windowOf();
+    const win=this.planoWin();
     const media=(this.model.media||[]).filter(p=>p.ts>=win.start && p.ts<=win.end);
     const dd=(iso)=>this.ddmm(iso);
     const daysWith=(pred)=>[...new Set(media.filter(pred).map(p=>p.ts))].sort();
@@ -1922,10 +2033,57 @@ class Component extends DCLogic {
     const isCarr=p=>p.type==='CAROUSEL_ALBUM';
     const cd=[...new Set(media.filter(isCarr).map(p=>p.ts))].sort();
     this._acompCs=this.comboCfg(cd.map(dd),'salvamento',cd.map(d=>+avgOn(d,isCarr,p=>p.saves||0).toFixed(1)),'compartilhamento',cd.map(d=>+avgOn(d,isCarr,p=>p.shares||0).toFixed(1)),'num',cd.map(d=>linkOn(d,isCarr)));
+    // linha diária da métrica selecionada (acima da tabela de conteúdo)
+    const MET=this.ACOMP_METRICS.find(m=>m.key===(this.state.acompMetric||'reelsReach'))||this.ACOMP_METRICS[0];
+    const pred = MET.type==='reel'? isReel : isCarr;
+    const ld=daysWith(pred);
+    const _metDec = MET.type==='carr';
+    this._acompLine = ld.length ? this.lineCfg(ld.map(dd), [{label:MET.label, data:ld.map(d=>{ const v=avgOn(d,pred,MET.fn); return _metDec? +v.toFixed(1) : Math.round(v); }), color:'#771520', fill:true, fillColor:'rgba(119,21,32,0.08)'}], {zero:true}) : null;
+    if(this._acompLine) this.fmtChart(this._acompLine, (v)=> v==null? '—' : (_metDec? Number(v).toFixed(1).replace('.',',') : this.fmtNum(Math.round(v))), MET.label);
+    // aquisição — linha diária da métrica selecionada (funil de aplicação)
+    const aqRows=(this._aplicLeadsRows||[]).filter(r=>(!win.start||r.date>=win.start)&&(!win.end||r.date<=win.end));
+    const aqSpend={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) aqSpend[x.date]=(aqSpend[x.date]||0)+(x.spend||0); });
+    const GRP=(f)=>this.faixaGroup(f); const GKEYS=['A','B','C','D','Q','AB','U'];
+    const mkg=()=>({leads:0,qual:0,decl:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
+    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); const gr=GRP(r.faixa); o.leads++; if(gr){ o.decl++; o.g[gr]++; if(this.FAIXA_MQL.indexOf(gr)>=0) o.qual++; } });
+    const aqDaysAll=[...new Set(Object.keys(aqBy).concat(Object.keys(aqSpend)))].sort();
+    const AQ=this.AQ_METRICS.find(m=>m.key===(this.state.aqMetric||'qual'))||this.AQ_METRICS[0];
+    const aqCalc=(o,sp)=>{ if(AQ.key==='leads') return o.leads; if(AQ.key==='qual') return o.qual;
+      if(AQ.key==='custo') return o.qual? +(sp/o.qual).toFixed(2) : null;
+      if(AQ.key.indexOf('fx_')===0){ const k=AQ.key.slice(3); return o.decl? +(o.g[k]/o.decl*100).toFixed(1) : null; }
+      return o.decl? +(o.qual/o.decl*100).toFixed(1) : null; };
+    const aqWeek=this.state.aqWeek;
+    let aqLabels=[], aqData=[], aqKeys=[];
+    if(aqWeek){
+      const days=aqDaysAll.filter(d=>this.monday(d)===aqWeek);
+      aqLabels=days.map(dd); aqData=days.map(d=>aqCalc(aqBy[d]||mkg(), aqSpend[d]||0));
+    } else {
+      const wk={}; aqDaysAll.forEach(d=>{ const w=this.monday(d); const o=wk[w]||(wk[w]={...mkg(),sp:0}); const b=aqBy[d]||mkg(); o.leads+=b.leads; o.qual+=b.qual; o.decl+=b.decl; GKEYS.forEach(k=>{ o.g[k]+=b.g[k]; }); o.sp+=(aqSpend[d]||0); });
+      aqKeys=Object.keys(wk).sort(); aqLabels=aqKeys.map(w=>this.ddmm(w)+'–'+this.ddmm(this.addDays(w,6))); aqData=aqKeys.map(w=>aqCalc(wk[w],wk[w].sp));
+    }
+    this._aqLine = aqLabels.length ? this.lineCfg(aqLabels, [{label:AQ.label, data:aqData, color:'#771520', fill:true, fillColor:'rgba(119,21,32,0.08)'}], {zero:true}) : null;
+    if(this._aqLine){ const _ds=this._aqLine.data.datasets[0]; _ds.spanGaps=true; _ds.pointRadius=aqWeek?3:5; _ds.pointHoverRadius=aqWeek?5:7;
+      const fmtAq=(v)=> v==null? '—' : AQ.key==='custo'? 'R$ '+this.fmtNum(Math.round(v)) : (AQ.key==='pct'||AQ.key.indexOf('fx_')===0)? this.fmtPct(v) : this.fmtNum(Math.round(v));
+      this.fmtChart(this._aqLine, fmtAq, AQ.label);
+      if(!aqWeek){ this._aqLine.options.onClick=(e,els,chart)=>{ let pts=(els&&els.length)?els:chart.getElementsAtEventForMode(e,'index',{intersect:false},false); if(pts&&pts.length){ const w=aqKeys[pts[0].index]; if(w) this.setState({aqWeek:w}); } };
+        this._aqLine.options.onHover=(e,els,chart)=>{ const pts=(els&&els.length)?els:chart.getElementsAtEventForMode(e,'index',{intersect:false},false); e.native.target.style.cursor=(pts&&pts.length)?'pointer':'default'; }; } }
   }
 
+  // classifica a resposta de faturamento do formulário (novo e antigo) em faixas
+  faixaGroup(f){
+    f=String(f||'').toLowerCase().replace(/é/g,'e'); if(!f) return '';
+    let m;
+    if((m=f.match(/^(?:abaixo_de|ate)_(\d+)_mil$/))){ const n=+m[1]; return n<=8? 'Q' : n<=15? 'U' : ''; }
+    if((m=f.match(/^acima_de_(\d+)_mil$/))){ return +m[1]>=50? 'D' : ''; }
+    if((m=f.match(/^(\d+)_a_(\d+)_mil$/))){ const a=+m[1], b=+m[2];
+      if(a>=50) return 'D'; if(a===20&&b===50) return 'A'; if(a===15&&b===20) return 'B'; if(a===15&&b===50) return 'AB'; if(a===8&&b===15) return 'C';
+      if(b<=8) return 'Q'; if(a>=20) return 'A'; if(a>=15) return b<=20?'B':'AB'; if(a>=8) return 'C'; }
+    return '';
+  }
+  // Acompanhamento: sempre a partir da semana de 17/08/2026
+  planoWin(){ const w=this.windowOf(); const FLOOR='2026-08-17'; return { ...w, start: (!w.start||w.start<FLOOR)? FLOOR : w.start }; }
   contentRows(){
-    const win=this.windowOf();
+    const win=this.planoWin();
     const media=(this.model.media||[]).filter(p=>p.ts>=win.start && p.ts<=win.end);
     const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     const mk=()=>({rReach:0,rViews:0,rN:0,cSave:0,cShare:0,cN:0});
@@ -1952,23 +2110,23 @@ class Component extends DCLogic {
   }
 
   aquisicaoRows(){
-    const win=this.windowOf();
+    const win=this.planoWin();
     const rows=(this._aplicLeadsRows||[]).filter(r=>(!win.start||r.date>=win.start)&&(!win.end||r.date<=win.end));
     const spendBy={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) spendBy[x.date]=(spendBy[x.date]||0)+(x.spend||0); });
-    const QUAL=['15_a_50_mil','50_a_100_mil','100_a_200_mil','200_a_500_mil','acima_de_500_mil'];
-    const DECL=['abaixo_de_8_mil','8_a_15_mil','abaixo_de_15_mil'].concat(QUAL);
+    const GRP=(f)=>this.faixaGroup(f); const GKEYS=['A','B','C','D','Q','AB','U'];
     const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const mk=()=>({leads:0,qual:0,decl:0,spend:0});
+    const mk=()=>({leads:0,qual:0,decl:0,spend:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
     const T={};
     const touch=(ym,wk,day)=>{ const M=T[ym]||(T[ym]={n:mk(),w:{}}); const W=M.w[wk]||(M.w[wk]={n:mk(),d:{}}); const D=W.d[day]||(W.d[day]=mk()); return [M.n,W.n,D]; };
-    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const q=QUAL.indexOf(r.faixa)>=0?1:0, dc=DECL.indexOf(r.faixa)>=0?1:0;
-      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; }); });
+    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const gr=GRP(r.faixa), q=(gr&&this.FAIXA_MQL.indexOf(gr)>=0)?1:0, dc=gr?1:0;
+      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; if(gr) n.g[gr]++; }); });
     Object.keys(spendBy).forEach(day=>{ const ym=day.slice(0,7), wk=this.monday(day); const nodes=touch(ym,wk,day); nodes.forEach(n=>{ n.spend+=spendBy[day]; }); });
     const exp=this.state.aqExpanded||{};
     const fmtRow=(key,level,label,n)=>({ key, level, label, indent:(level*18)+'px',
       leads:this.fmtNum(n.leads), qual:this.fmtNum(n.qual),
       custo: n.qual? ('R$ '+this.fmtNum(Math.round(n.spend/n.qual))) : '—',
       pct: n.decl? this.fmtPct(n.qual/n.decl*100) : '—',
+      fx: this.FAIXA_COLS.map(c=>({v: n.decl? this.fmtPct(n.g[c.key]/n.decl*100) : '—'})),
       hasChildren:level<2, leaf:level>=2, expanded:!!exp[key], caret: level<2? (exp[key]?'−':'+') : '',
       onToggle: level<2? (()=>this.setState(s=>({aqExpanded:{...(s.aqExpanded||{}), [key]:!(s.aqExpanded&&s.aqExpanded[key])}}))) : null });
     const out=[];
@@ -2017,6 +2175,16 @@ class Component extends DCLogic {
       isConta:S.page==='conta', isConteudos:S.page==='conteudos', isInsights:S.page==='insights', isCandidaturas:S.page==='candidaturas', isResultados:S.page==='resultados', isPlano:S.page==='plano',
       aquisicaoRows: S.page==='plano'? this.aquisicaoRows() : [],
       contentRows: S.page==='plano'? this.contentRows() : [],
+      acompMetric: S.acompMetric||'reelsReach',
+      acompMetricOptions: this.ACOMP_METRICS.map(m=>({value:m.key, label:m.label})),
+      onAcompMetric:(e)=>this.setState({acompMetric:e.target.value}),
+      aqMetric: S.aqMetric||'qual',
+      aqMetricOptions: this.AQ_METRICS.map(m=>({value:m.key, label:m.label})),
+      faixaCols: this.FAIXA_COLS,
+      onAqMetric:(e)=>this.setState({aqMetric:e.target.value}),
+      aqDrill: !!S.aqWeek, aqNotDrill: !S.aqWeek,
+      aqChartTitle: S.aqWeek? ('Semana '+this.ddmm(S.aqWeek)+'–'+this.ddmm(this.addDays(S.aqWeek,6))+' · por dia') : 'Por semana · clique em uma semana para ver os dias',
+      onAqBack:()=>this.setState({aqWeek:null}),
       showFilters: S.page!=='candidaturas' && S.page!=='resultados',
       showMonth: S.page!=='candidaturas',
       showFunnelFilters: S.page==='candidaturas',
