@@ -949,7 +949,7 @@
               <tr style="text-align:right;">
                 <th style="text-align:left; width:172px; padding:0 6px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Período</th>
                 <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Leads gerados</th>
-                <th class="tt" data-tip="Qualificado = faturamento declarado ≥ R$ 15 mil/mês." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
+                <th class="tt" data-tip="Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês, área de atuação diferente de &quot;outro&quot; e profissão não ligada a medicina." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
                 <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Custo/lead qualif.</th>
                 <th style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">% MQL</th>
                 <sc-for list="{{ faixaCols }}" as="fc" hint-placeholder-count="7">
@@ -1463,14 +1463,21 @@ class Component extends DCLogic {
       const rows=this.parseCSV(await r.text()); if(!rows.length) return [];
       const h0=rows[0].map(h=>String(h||'').toLowerCase().trim());
       const hasHeader=h0.some(h=>/created.?time/.test(h));
-      let ci,idc, body;
-      if(hasHeader){ ci=h0.findIndex(h=>/created.?time/.test(h)); if(ci<0)ci=1; idc=h0.findIndex(h=>/^id$/.test(h)); body=rows.slice(1); }
+      let ci,idc, body, cArea=-1, cProf=-1;
+      if(hasHeader){ ci=h0.findIndex(h=>/created.?time/.test(h)); if(ci<0)ci=1; idc=h0.findIndex(h=>/^id$/.test(h)); cArea=h0.findIndex(h=>/rea_de_atua|area_de_atua/.test(h)); cProf=h0.findIndex(h=>/profiss/.test(h)); body=rows.slice(1); }
       else { ci=1; idc=0; body=rows; } // layout do form nativo (sem cabeçalho)
       const out=[];
       body.forEach(rw=>{ const joined=rw.join(' ').toLowerCase();
         if(/test lead|<test|test@meta\.com/.test(joined)) return; // ignora leads de teste
         const v=String(rw[ci]||''); const m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
-        if(m) out.push({id:String(rw[idc>=0?idc:0]||''), date:m[1]+'-'+m[2]+'-'+m[3], faixa:findFaixa(rw)}); });
+        // desqualifica por perfil: área de atuação = "outro" ou profissão ligada a medicina
+        const norm=(s)=>String(s||'').toLowerCase().trim();
+        const area = cArea>=0? norm(rw[cArea]) : '';
+        const prof = cProf>=0? norm(rw[cProf]) : '';
+        const areaOutro = cArea>=0 ? /^outr[oa]s?$/.test(area) : rw.some(c=>/^outr[oa]s?$/.test(norm(c)));
+        const MED=/m[eé]dic|medicina|dermatolog|cirurgi|m[eé]dica/;
+        const profMed = cProf>=0 ? MED.test(prof) : false;
+        if(m) out.push({id:String(rw[idc>=0?idc:0]||''), date:m[1]+'-'+m[2]+'-'+m[3], faixa:findFaixa(rw), perfilOk: !(areaOutro||profMed)}); });
       return out;
     };
     try{
@@ -2045,7 +2052,7 @@ class Component extends DCLogic {
     const aqSpend={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) aqSpend[x.date]=(aqSpend[x.date]||0)+(x.spend||0); });
     const GRP=(f)=>this.faixaGroup(f); const GKEYS=['A','B','C','D','Q','AB','U'];
     const mkg=()=>({leads:0,qual:0,decl:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
-    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); const gr=GRP(r.faixa); o.leads++; if(gr){ o.decl++; o.g[gr]++; if(this.FAIXA_MQL.indexOf(gr)>=0) o.qual++; } });
+    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); const gr=GRP(r.faixa); o.leads++; if(gr){ o.decl++; o.g[gr]++; if(this.FAIXA_MQL.indexOf(gr)>=0 && r.perfilOk!==false) o.qual++; } });
     const aqDaysAll=[...new Set(Object.keys(aqBy).concat(Object.keys(aqSpend)))].sort();
     const AQ=this.AQ_METRICS.find(m=>m.key===(this.state.aqMetric||'qual'))||this.AQ_METRICS[0];
     const aqCalc=(o,sp)=>{ if(AQ.key==='leads') return o.leads; if(AQ.key==='qual') return o.qual;
@@ -2118,7 +2125,7 @@ class Component extends DCLogic {
     const mk=()=>({leads:0,qual:0,decl:0,spend:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
     const T={};
     const touch=(ym,wk,day)=>{ const M=T[ym]||(T[ym]={n:mk(),w:{}}); const W=M.w[wk]||(M.w[wk]={n:mk(),d:{}}); const D=W.d[day]||(W.d[day]=mk()); return [M.n,W.n,D]; };
-    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const gr=GRP(r.faixa), q=(gr&&this.FAIXA_MQL.indexOf(gr)>=0)?1:0, dc=gr?1:0;
+    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const gr=GRP(r.faixa), q=(gr&&this.FAIXA_MQL.indexOf(gr)>=0&&r.perfilOk!==false)?1:0, dc=gr?1:0;
       touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; if(gr) n.g[gr]++; }); });
     Object.keys(spendBy).forEach(day=>{ const ym=day.slice(0,7), wk=this.monday(day); const nodes=touch(ym,wk,day); nodes.forEach(n=>{ n.spend+=spendBy[day]; }); });
     const exp=this.state.aqExpanded||{};
