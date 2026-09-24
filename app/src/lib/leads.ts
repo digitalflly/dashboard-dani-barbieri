@@ -10,7 +10,7 @@ import { SHEET_ID } from './constants'
 // planilha de leads da Aplicação Direta — volume por dia + faixa de faturamento.
 // A partir de 2026-07-28 usa as planilhas novas (form nativo, sem cabeçalho);
 // antes disso, a planilha antiga. Dedupe por id, ignora leads de teste.
-export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; rows: { date: string; faixa: string }[] }> {
+export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; rows: { date: string; faixa: string; perfilOk: boolean }[] }> {
   const CUT = '2026-07-28'
   const OLD_GID = '1528543515'
   const NEW_GIDS = ['2053208403', '295805099', '1933064365']
@@ -22,7 +22,7 @@ export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; r
     }
     return ''
   }
-  const load = async (gid: string): Promise<{ id: string; date: string; faixa: string }[]> => {
+  const load = async (gid: string): Promise<{ id: string; date: string; faixa: string; perfilOk: boolean }[]> => {
     const url = 'https://docs.google.com/spreadsheets/d/10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc/export?format=csv&gid=' + gid + '&_cb=' + Date.now()
     const r = await fetch(url, { cache: 'no-store' })
     if (!r.ok) throw new Error('Planilha HTTP ' + r.status)
@@ -33,32 +33,44 @@ export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; r
     let ci: number
     let idc: number
     let body: string[][]
+    let cArea = -1
+    let cProf = -1
     if (hasHeader) {
       ci = h0.findIndex((h) => /created.?time/.test(h))
       if (ci < 0) ci = 1
       idc = h0.findIndex((h) => /^id$/.test(h))
+      cArea = h0.findIndex((h) => /rea_de_atua|area_de_atua/.test(h))
+      cProf = h0.findIndex((h) => /profiss/.test(h))
       body = rows.slice(1)
     } else {
       ci = 1
       idc = 0
       body = rows // layout do form nativo (sem cabeçalho)
     }
-    const out: { id: string; date: string; faixa: string }[] = []
+    const norm = (s: unknown): string => String(s || '').toLowerCase().trim()
+    const MED = /m[eé]dic|medicina|dermatolog|cirurgi|m[eé]dica/
+    const out: { id: string; date: string; faixa: string; perfilOk: boolean }[] = []
     body.forEach((rw) => {
       const joined = rw.join(' ').toLowerCase()
       if (/test lead|<test|test@meta\.com/.test(joined)) return // ignora leads de teste
       const v = String(rw[ci] || '')
       const m = v.match(/(\d{4})-(\d{2})-(\d{2})/)
-      if (m) out.push({ id: String(rw[idc >= 0 ? idc : 0] || ''), date: m[1] + '-' + m[2] + '-' + m[3], faixa: findFaixa(rw) })
+      if (!m) return
+      // desqualifica por perfil: área de atuação = "outro" ou profissão ligada a medicina
+      const area = cArea >= 0 ? norm(rw[cArea]) : ''
+      const prof = cProf >= 0 ? norm(rw[cProf]) : ''
+      const areaOutro = cArea >= 0 ? /^outr[oa]s?$/.test(area) : rw.some((c) => /^outr[oa]s?$/.test(norm(c)))
+      const profMed = cProf >= 0 ? MED.test(prof) : false
+      out.push({ id: String(rw[idc >= 0 ? idc : 0] || ''), date: m[1] + '-' + m[2] + '-' + m[3], faixa: findFaixa(rw), perfilOk: !(areaOutro || profMed) })
     })
     return out
   }
   const results = await Promise.all([load(OLD_GID), ...NEW_GIDS.map(load)])
   const oldRows = results[0]
-  const newRows = ([] as { id: string; date: string; faixa: string }[]).concat(...results.slice(1))
+  const newRows = ([] as { id: string; date: string; faixa: string; perfilOk: boolean }[]).concat(...results.slice(1))
   // dedupe novos por id, mantém >= CUT; antigos ficam < CUT
   const seen = new Set<string>()
-  const newDedup: { id: string; date: string; faixa: string }[] = []
+  const newDedup: { id: string; date: string; faixa: string; perfilOk: boolean }[] = []
   newRows.forEach((r) => {
     if (r.date < CUT) return
     const k = r.id || r.date + '|' + r.faixa
@@ -66,7 +78,7 @@ export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; r
     seen.add(k)
     newDedup.push(r)
   })
-  const rowsF = [...oldRows.filter((r) => r.date < CUT), ...newDedup].map((r) => ({ date: r.date, faixa: r.faixa }))
+  const rowsF = [...oldRows.filter((r) => r.date < CUT), ...newDedup].map((r) => ({ date: r.date, faixa: r.faixa, perfilOk: r.perfilOk }))
   const by: Record<string, number> = {}
   rowsF.forEach((r) => { by[r.date] = (by[r.date] || 0) + 1 })
   return { by, rows: rowsF }

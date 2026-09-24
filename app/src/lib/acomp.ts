@@ -214,7 +214,7 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
     const ym = r.date.slice(0, 7)
     const wk = monday(r.date)
     const gr = faixaGroup(r.faixa)
-    const q = gr && FAIXA_MQL.indexOf(gr) >= 0 ? 1 : 0
+    const q = gr && FAIXA_MQL.indexOf(gr) >= 0 && r.perfilOk !== false ? 1 : 0
     const dc = gr ? 1 : 0
     touch(ym, wk, r.date).forEach((n) => {
       n.leads++
@@ -311,7 +311,7 @@ export function aqLineCfg(M: Model, S: DashState, onDrill: (week: string) => voi
     if (gr) {
       o.decl++
       o.g[gr]++
-      if (FAIXA_MQL.indexOf(gr) >= 0) o.qual++
+      if (FAIXA_MQL.indexOf(gr) >= 0 && r.perfilOk !== false) o.qual++
     }
   })
   const aqDaysAll = [...new Set(Object.keys(aqBy).concat(Object.keys(aqSpend)))].sort()
