@@ -949,9 +949,11 @@
               <tr style="text-align:right;">
                 <th style="text-align:left; width:172px; padding:0 6px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Período</th>
                 <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Leads gerados</th>
-                <th class="tt" data-tip="Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês, área de atuação diferente de &quot;outro&quot; e profissão não ligada a medicina." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
+                <th class="tt" data-tip="Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês e área de atuação diferente de &quot;outro&quot;. Leads de Médica, Biomédica Esteta, Dentista, HOF, Micropigmentadora/Designer de Sobrancelhas, Fisioterapeuta Dermatofuncional e Dermatologista contam mesmo quando a área é &quot;outro&quot;." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
                 <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Custo/lead qualif.</th>
                 <th style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">% MQL</th>
+                <th class="tt" data-tip="Leads marcados em laranja (serão agendados) ou verde (fecharam) na planilha." style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3; cursor:help;">Agenda&shy;mentos</th>
+                <th class="tt" data-tip="Leads marcados em verde na planilha (fecharam)." style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3; cursor:help;">Fecha&shy;mentos</th>
                 <sc-for list="{{ faixaCols }}" as="fc" hint-placeholder-count="7">
                   <th class="tt" data-tip="{{ fc.tip }}" style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;  cursor:help; overflow-wrap:anywhere; hyphens:auto; vertical-align:bottom; line-height:1.3;">{{ fc.label }}</th>
                 </sc-for>
@@ -972,6 +974,8 @@
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.qual }}</td>
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong); white-space:nowrap;">{{ r.custo }}</td>
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.pct }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong);">{{ r.ag }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.fe }}</td>
                   <sc-for list="{{ r.fx }}" as="x" hint-placeholder-count="7">
                     <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong);">{{ x.v }}</td>
                   </sc-for>
@@ -1037,6 +1041,8 @@ class Component extends DCLogic {
       {key:'qual', label:'Leads qualificados'},
       {key:'custo', label:'Custo/lead qualificado'},
       {key:'pct', label:'% MQL'},
+      {key:'ag', label:'Agendamentos'},
+      {key:'fe', label:'Fechamentos'},
     ];
     // faixas de faturamento (form novo) + agrupamentos do form antigo
     this.FAIXA_COLS = [
@@ -1451,14 +1457,14 @@ class Component extends DCLogic {
   async fetchAplicLeads(){
     if(this._aplicLeadsLoading || this._aplicLeadsBy) return;
     this._aplicLeadsLoading = true;
-    const CUT='2026-07-28'; // a partir daqui, usa as planilhas novas (form nativo)
-    const OLD_GID='1528543515';
-    const NEW_GIDS=['2053208403','295805099','1933064365'];
+    const SHEET='10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc';
+    // todas as abas da planilha: descobre os gids automaticamente (abas novas entram sozinhas)
+    const FALLBACK_GIDS=['1528543515','2053208403','295805099','1933064365','197355336'];
     // faixas de faturamento reconhecidas (antigo + novo form) — usadas p/ achar a coluna certa por conteúdo
     const FAIXA_RE=/^(abaixo_de_\d+_mil|at[eé]_\d+_mil|\d+_a_\d+_mil|acima_de_\d+_mil)$/i;
     const findFaixa=(rw)=>{ for(const c of rw){ const v=String(c||'').toLowerCase().trim(); if(FAIXA_RE.test(v)) return v; } return ''; };
     const load=async(gid)=>{
-      const url='https://docs.google.com/spreadsheets/d/10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc/export?format=csv&gid='+gid+'&_cb='+Date.now();
+      const url='https://docs.google.com/spreadsheets/d/'+SHEET+'/export?format=csv&gid='+gid+'&_cb='+Date.now();
       const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('Planilha HTTP '+r.status);
       const rows=this.parseCSV(await r.text()); if(!rows.length) return [];
       const h0=rows[0].map(h=>String(h||'').toLowerCase().trim());
@@ -1469,24 +1475,65 @@ class Component extends DCLogic {
       const out=[];
       body.forEach(rw=>{ const joined=rw.join(' ').toLowerCase();
         if(/test lead|<test|test@meta\.com/.test(joined)) return; // ignora leads de teste
-        const v=String(rw[ci]||''); const m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
+        const v=String(rw[ci]||'');
+        // data do lead no fuso de Brasília (created_time vem em -05:00 do gerenciador)
+        let m=null; const dt=/T\d{2}:\d{2}/.test(v)? new Date(v) : null;
+        if(dt && !isNaN(dt)){ const b=new Date(dt.getTime()-3*3600000); m=[null, String(b.getUTCFullYear()), String(b.getUTCMonth()+1).padStart(2,'0'), String(b.getUTCDate()).padStart(2,'0')]; }
+        else m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
         // desqualifica por perfil: área de atuação = "outro" ou profissão ligada a medicina
         const norm=(s)=>String(s||'').toLowerCase().trim();
         const area = cArea>=0? norm(rw[cArea]) : '';
         const prof = cProf>=0? norm(rw[cProf]) : '';
-        const areaOutro = cArea>=0 ? /^outr[oa]s?$/.test(area) : rw.some(c=>/^outr[oa]s?$/.test(norm(c)));
-        const MED=/m[eé]dic|medicina|dermatolog|cirurgi|m[eé]dica/;
-        const profMed = cProf>=0 ? MED.test(prof) : false;
-        if(m) out.push({id:String(rw[idc>=0?idc:0]||''), date:m[1]+'-'+m[2]+'-'+m[3], faixa:findFaixa(rw), perfilOk: !(areaOutro||profMed)}); });
+        const areaOutro = cArea>=0 ? /^outr[oa]s?\b/.test(area) : rw.some(c=>/^outr[oa]s?$/.test(norm(c)));
+        const MED=/m[eé]dic|biom[eé]dic|dentist|harmoniza|\bhof\b|micropigment|design(?:er)? de sobrancelh|sobrancelh|fisioterap|dermato/;
+        const profMed = (cProf>=0 && MED.test(prof)) || (cArea>=0 && MED.test(area));
+        if(m) out.push({id:String(rw[idc>=0?idc:0]||''), ts:v, date:m[1]+'-'+m[2]+'-'+m[3], faixa:findFaixa(rw), perfilOk: profMed || !areaOutro}); });
       return out;
     };
+    // cores das linhas (laranja = será agendado, verde = fechou) — lidas da versão de visualização
+    const colorKind=(hex)=>{ const h=hex.replace('#',''); const x=h.length===3? h.split('').map(c=>c+c).join('') : h; const r=parseInt(x.slice(0,2),16), g=parseInt(x.slice(2,4),16), b=parseInt(x.slice(4,6),16);
+      if(g>r+15 && g>b+15) return 'fe'; if(r>200 && g>=90 && g<=200 && b<130) return 'ag'; return ''; };
+    const loadColors=async(gid)=>{ const res={};
+      try{ const t=await (await fetch('https://docs.google.com/spreadsheets/d/'+SHEET+'/htmlview/sheet?headers=true&gid='+gid+'&_cb='+Date.now(),{cache:'no-store'})).text();
+        const kindOf={}; for(const m of t.matchAll(/\.(s\d+)\{([^}]*)\}/g)){ const bg=(m[2].match(/background-color:\s*(#[0-9a-f]{3,6})/i)||[])[1]; if(bg){ const k=colorKind(bg.toLowerCase()); if(k) kindOf[m[1]]=k; } }
+        for(const tr of t.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)){ const cells=[...tr[1].matchAll(/<td([^>]*)>([\s\S]*?)<\/td>/g)];
+          let k=''; for(const c of cells){ const ks=((c[1].match(/class="([^"]+)"/)||[])[1]||'').split(' '); const f=ks.map(z=>kindOf[z]).find(Boolean); if(f){ k=f; if(f==='fe') break; } }
+          if(!k) continue; const txt=cells.map(c=>c[2].replace(/<[^>]+>/g,'').trim());
+          const id=txt.find(z=>/^l:\d+/.test(z)); const ts=txt.find(z=>/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(z));
+          [id,ts].filter(Boolean).forEach(key=>{ if(res[key]!=='fe') res[key]=k; }); }
+      }catch(_){}
+      return res; };
+    // leads do Respondi (formulário externo) — planilha própria, mesmas regras de faixa/perfil
+    const RESPONDI='1JxA4fzAR_lSX8c4GP0pm_A_wJc_npKamcJHVw--wPuQ';
+    const respondiFaixa=(s)=>{ s=String(s||'').toLowerCase().replace(/\s+/g,' ').trim(); if(!s) return '';
+      let m; if((m=s.match(/(\d+)\s*a\s*(\d+)\s*mil/))) return m[1]+'_a_'+m[2]+'_mil';
+      if((m=s.match(/(?:at[eé]|abaixo de)\s*r?\$?\s*(\d+)\s*mil/))) return (/abaixo/.test(s)?'abaixo_de_':'ate_')+m[1]+'_mil';
+      if((m=s.match(/acima de\s*r?\$?\s*(\d+)\s*mil/))) return 'acima_de_'+m[1]+'_mil';
+      return ''; };
+    const loadRespondi=async()=>{
+      const r=await fetch('https://docs.google.com/spreadsheets/d/'+RESPONDI+'/export?format=csv&gid=0&_cb='+Date.now(),{cache:'no-store'}); if(!r.ok) throw new Error('Respondi HTTP '+r.status);
+      const rows=this.parseCSV(await r.text()); if(!rows.length) return [];
+      const h=rows[0].map(x=>String(x||'').toLowerCase().trim());
+      const cD=h.findIndex(x=>/^data$/.test(x)), cId=h.findIndex(x=>/^id$/.test(x)), cF=h.findIndex(x=>/faturamento/.test(x)), cA=h.findIndex(x=>/rea de atua/.test(x)), cP=h.findIndex(x=>/profiss/.test(x));
+      const MED=/m[eé]dic|biom[eé]dic|dentist|harmoniza|\bhof\b|micropigment|design(?:er)? de sobrancelh|sobrancelh|fisioterap|dermato/;
+      const out=[];
+      rows.slice(1).forEach(rw=>{ const d=String(rw[cD]||'').match(/(\d{4})-(\d{2})-(\d{2})/); if(!d) return;
+        if(/test/i.test(String(rw[0]||''))) return;
+        const area=String(rw[cA]||'').toLowerCase().trim(), prof=cP>=0? String(rw[cP]||'').toLowerCase().trim() : '';
+        const perfilOk = MED.test(area) || MED.test(prof) || !/^outr[oa]s?\b/.test(area);
+        out.push({id:'r:'+String(rw[cId]||rw.join('|')), ts:String(rw[cD]||''), date:d[1]+'-'+d[2]+'-'+d[3], faixa:respondiFaixa(rw[cF]), perfilOk, fonte:'respondi'}); });
+      return out; };
     try{
-      const results=await Promise.all([load(OLD_GID),...NEW_GIDS.map(load)]);
-      const oldRows=results[0], newRows=[].concat(...results.slice(1));
-      // dedupe novos por id, mantém >= CUT; antigos ficam < CUT
-      const seen=new Set(); const newDedup=[];
-      newRows.forEach(r=>{ if(r.date<CUT) return; const k=r.id||(r.date+'|'+r.faixa); if(seen.has(k)) return; seen.add(k); newDedup.push(r); });
-      const rowsF=[...oldRows.filter(r=>r.date<CUT), ...newDedup];
+      let gids=FALLBACK_GIDS;
+      try{ const hv=await fetch('https://docs.google.com/spreadsheets/d/'+SHEET+'/htmlview?_cb='+Date.now(),{cache:'no-store'}); const ht=await hv.text(); const found=[...new Set([...ht.matchAll(/gid=(\d+)/g)].map(m=>m[1]))]; if(found.length) gids=found; }catch(_){}
+      const settled=await Promise.allSettled(gids.map(load).concat([loadRespondi()]));
+      const colorMaps=await Promise.all(gids.map(loadColors));
+      const COLOR=Object.assign({}, ...colorMaps);
+      const all=[].concat(...settled.filter(s=>s.status==='fulfilled').map(s=>s.value));
+      all.forEach(r=>{ const k=COLOR[r.id]||COLOR[r.ts]||''; if(k) r.status=k; });
+      // dedupe por id do lead entre todas as abas (o mesmo lead pode aparecer em mais de uma); mantém a marcação mais avançada
+      const seen={}; const rowsF=[];
+      all.forEach(r=>{ const k=r.id||(r.date+'|'+r.faixa); const prev=seen[k]; if(prev){ if(r.status==='fe' || (r.status==='ag' && !prev.status)) prev.status=r.status; return; } seen[k]=r; rowsF.push(r); });
       const by={}; rowsF.forEach(r=>{ by[r.date]=(by[r.date]||0)+1; });
       this._aplicLeadsBy = by;
       this._aplicLeadsRows = rowsF;
@@ -2051,11 +2098,11 @@ class Component extends DCLogic {
     const aqRows=(this._aplicLeadsRows||[]).filter(r=>(!win.start||r.date>=win.start)&&(!win.end||r.date<=win.end));
     const aqSpend={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) aqSpend[x.date]=(aqSpend[x.date]||0)+(x.spend||0); });
     const GRP=(f)=>this.faixaGroup(f); const GKEYS=['A','B','C','D','Q','AB','U'];
-    const mkg=()=>({leads:0,qual:0,decl:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
-    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); const gr=GRP(r.faixa); o.leads++; if(gr){ o.decl++; o.g[gr]++; if(this.FAIXA_MQL.indexOf(gr)>=0 && r.perfilOk!==false) o.qual++; } });
+    const mkg=()=>({leads:0,qual:0,decl:0,ag:0,fe:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
+    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); if(r.status==='ag'||r.status==='fe') o.ag++; if(r.status==='fe') o.fe++; const gr=GRP(r.faixa); o.leads++; if(gr){ o.decl++; o.g[gr]++; if(this.FAIXA_MQL.indexOf(gr)>=0 && r.perfilOk!==false) o.qual++; } });
     const aqDaysAll=[...new Set(Object.keys(aqBy).concat(Object.keys(aqSpend)))].sort();
     const AQ=this.AQ_METRICS.find(m=>m.key===(this.state.aqMetric||'qual'))||this.AQ_METRICS[0];
-    const aqCalc=(o,sp)=>{ if(AQ.key==='leads') return o.leads; if(AQ.key==='qual') return o.qual;
+    const aqCalc=(o,sp)=>{ if(AQ.key==='leads') return o.leads; if(AQ.key==='qual') return o.qual; if(AQ.key==='ag') return o.ag; if(AQ.key==='fe') return o.fe;
       if(AQ.key==='custo') return o.qual? +(sp/o.qual).toFixed(2) : null;
       if(AQ.key.indexOf('fx_')===0){ const k=AQ.key.slice(3); return o.decl? +(o.g[k]/o.decl*100).toFixed(1) : null; }
       return o.decl? +(o.qual/o.decl*100).toFixed(1) : null; };
@@ -2122,17 +2169,18 @@ class Component extends DCLogic {
     const spendBy={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) spendBy[x.date]=(spendBy[x.date]||0)+(x.spend||0); });
     const GRP=(f)=>this.faixaGroup(f); const GKEYS=['A','B','C','D','Q','AB','U'];
     const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const mk=()=>({leads:0,qual:0,decl:0,spend:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
+    const mk=()=>({leads:0,qual:0,decl:0,spend:0,ag:0,fe:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
     const T={};
     const touch=(ym,wk,day)=>{ const M=T[ym]||(T[ym]={n:mk(),w:{}}); const W=M.w[wk]||(M.w[wk]={n:mk(),d:{}}); const D=W.d[day]||(W.d[day]=mk()); return [M.n,W.n,D]; };
     rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const gr=GRP(r.faixa), q=(gr&&this.FAIXA_MQL.indexOf(gr)>=0&&r.perfilOk!==false)?1:0, dc=gr?1:0;
-      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; if(gr) n.g[gr]++; }); });
+      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; if(gr) n.g[gr]++; if(r.status==='ag'||r.status==='fe') n.ag++; if(r.status==='fe') n.fe++; }); });
     Object.keys(spendBy).forEach(day=>{ const ym=day.slice(0,7), wk=this.monday(day); const nodes=touch(ym,wk,day); nodes.forEach(n=>{ n.spend+=spendBy[day]; }); });
     const exp=this.state.aqExpanded||{};
     const fmtRow=(key,level,label,n)=>({ key, level, label, indent:(level*18)+'px',
       leads:this.fmtNum(n.leads), qual:this.fmtNum(n.qual),
       custo: n.qual? ('R$ '+this.fmtNum(Math.round(n.spend/n.qual))) : '—',
       pct: n.decl? this.fmtPct(n.qual/n.decl*100) : '—',
+      ag:this.fmtNum(n.ag), fe:this.fmtNum(n.fe),
       fx: this.FAIXA_COLS.map(c=>({v: n.decl? this.fmtPct(n.g[c.key]/n.decl*100) : '—'})),
       hasChildren:level<2, leaf:level>=2, expanded:!!exp[key], caret: level<2? (exp[key]?'−':'+') : '',
       onToggle: level<2? (()=>this.setState(s=>({aqExpanded:{...(s.aqExpanded||{}), [key]:!(s.aqExpanded&&s.aqExpanded[key])}}))) : null });
