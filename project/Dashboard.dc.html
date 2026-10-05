@@ -949,11 +949,9 @@
               <tr style="text-align:right;">
                 <th style="text-align:left; width:172px; padding:0 6px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Período</th>
                 <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Leads gerados</th>
-                <th class="tt" data-tip="Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês e área de atuação diferente de &quot;outro&quot;. Leads de Médica, Biomédica Esteta, Dentista, HOF, Micropigmentadora/Designer de Sobrancelhas, Fisioterapeuta Dermatofuncional e Dermatologista contam mesmo quando a área é &quot;outro&quot;." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
+                <th class="tt" data-tip="Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês e área de atuação diferente de &quot;outro&quot;. Leads de Médica, Biomédica Esteta, Dentista, HOF, Micropigmentadora/Designer de Sobrancelhas, Fisioterapeuta Dermatofuncional e Dermatologista contam mesmo quando a área é &quot;outro&quot;. Leads marcados em laranja ou verde na planilha também contam como qualificados." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
                 <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Custo/lead qualif.</th>
                 <th style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">% MQL</th>
-                <th class="tt" data-tip="Leads marcados em laranja (serão agendados) ou verde (fecharam) na planilha." style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3; cursor:help;">Agenda&shy;mentos</th>
-                <th class="tt" data-tip="Leads marcados em verde na planilha (fecharam)." style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3; cursor:help;">Fecha&shy;mentos</th>
                 <sc-for list="{{ faixaCols }}" as="fc" hint-placeholder-count="7">
                   <th class="tt" data-tip="{{ fc.tip }}" style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;  cursor:help; overflow-wrap:anywhere; hyphens:auto; vertical-align:bottom; line-height:1.3;">{{ fc.label }}</th>
                 </sc-for>
@@ -974,8 +972,6 @@
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.qual }}</td>
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong); white-space:nowrap;">{{ r.custo }}</td>
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.pct }}</td>
-                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong);">{{ r.ag }}</td>
-                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.fe }}</td>
                   <sc-for list="{{ r.fx }}" as="x" hint-placeholder-count="7">
                     <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong);">{{ x.v }}</td>
                   </sc-for>
@@ -1041,8 +1037,6 @@ class Component extends DCLogic {
       {key:'qual', label:'Leads qualificados'},
       {key:'custo', label:'Custo/lead qualificado'},
       {key:'pct', label:'% MQL'},
-      {key:'ag', label:'Agendamentos'},
-      {key:'fe', label:'Fechamentos'},
     ];
     // faixas de faturamento (form novo) + agrupamentos do form antigo
     this.FAIXA_COLS = [
@@ -1284,9 +1278,9 @@ class Component extends DCLogic {
   delta(cur,prev){ if(prev==null||prev===0) return {text:'—', color:'var(--ink-300)', sub:''}; const v=(cur-prev)/prev*100; const up=v>=0; return { text:(up?'▲ ':'▼ ')+this.fmtPct(Math.abs(v)), color: up?'var(--success)':'var(--danger)', sub:'' }; }
 
   /* ============ HANDLERS ============ */
-  setPage(p){ this.setState({page:p}); if(p==='candidaturas'){ const first=(this.FUNNELS[0]||{}).key; if(first && this.state.funnel!==first) this.setFunnel(first); } }
+  setPage(p){ this.setState({page:p}); if(p==='resultados') this.fetchVendasHBP(); if(p==='candidaturas'){ const first=(this.FUNNELS[0]||{}).key; if(first && this.state.funnel!==first) this.setFunnel(first); } }
   scrollTab(key){ requestAnimationFrame(()=>{ const strip=document.getElementById('tabstrip'); if(!strip) return; const ks=['conta','conteudos','candidaturas','plano','resultados']; const btn=strip.children[ks.indexOf(key)]; if(btn) strip.scrollTo({left:Math.max(0, btn.offsetLeft-14), behavior:'smooth'}); }); }
-  onRefresh(){ this.fetchLive(); }
+  onRefresh(){ this.fetchLive(); this.fetchVendasHBP(); this.fetchAplicLeads(true); }
   nowStamp(){ const now=new Date(); const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return now.getDate()+' '+MN[now.getMonth()]+' '+now.getFullYear()+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'); }
   async fetchLive(){
     if(this.state.refreshing) return;
@@ -1411,7 +1405,12 @@ class Component extends DCLogic {
   }
 
   /* ============ CHARTS ============ */
-  componentDidMount(){ this.fetchVendasHBP(); this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); this.wireSort(); if(this.state.funnel==='aplicacao') this.fetchAplicLeads(); if(this.state.funnel==='isca') this.fetchIscaLeads(); }
+  componentWillUnmount(){ clearInterval(this._rvTimer); window.removeEventListener('focus', this._rvOnFocus); document.removeEventListener('visibilitychange', this._rvOnFocus); }
+  componentDidMount(){ this.fetchVendasHBP();
+    // relê a planilha de vendas HBP a cada 60s e sempre que a aba do navegador volta a ficar ativa
+    this._rvTimer=setInterval(()=>{ if(!document.hidden) this.fetchVendasHBP(); }, 60000);
+    this._rvOnFocus=()=>{ if(!document.hidden) this.fetchVendasHBP(); };
+    window.addEventListener('focus', this._rvOnFocus); document.addEventListener('visibilitychange', this._rvOnFocus); this._gtThumbs=this.loadGtThumbs(); this.drawCharts(); this.fetchLive(); this.fetchFunnel(this.state.funnel); this.fetchAds(); if(this.state.funnel==='golden') this.fetchGoldenThumbs(this.state.imersao); this.wireSort(); if(this.state.funnel==='aplicacao') this.fetchAplicLeads(); if(this.state.funnel==='isca') this.fetchIscaLeads(); }
 
   /* ============ ORDENAÇÃO DE TABELAS ============ */
   // ordena qualquer tabela clicando no cabeçalho (delegação no documento, funciona em todas as tabelas)
@@ -1454,8 +1453,8 @@ class Component extends DCLogic {
   }
 
   // leads nativos (planilha de leads da Aplicação) — volume por dia
-  async fetchAplicLeads(){
-    if(this._aplicLeadsLoading || this._aplicLeadsBy) return;
+  async fetchAplicLeads(force){
+    if(this._aplicLeadsLoading || (this._aplicLeadsBy && !force)) return;
     this._aplicLeadsLoading = true;
     const SHEET='10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc';
     // todas as abas da planilha: descobre os gids automaticamente (abas novas entram sozinhas)
@@ -1921,10 +1920,10 @@ class Component extends DCLogic {
     return base;
   }
   async fetchVendasHBP(){
-    if(this._rvLiveLoading || this._rvLive) return;
+    if(this._rvLiveLoading) return;
     this._rvLiveLoading=true;
     try{
-      const url='https://docs.google.com/spreadsheets/d/1jPnVK6OHycOXFRWqwoB54PKZL86wvjUa--SfMoiVQWI/export?format=csv&_cb='+Date.now();
+      const url='https://docs.google.com/spreadsheets/d/1jPnVK6OHycOXFRWqwoB54PKZL86wvjUa--SfMoiVQWI/export?format=csv&gid=2019867497&_cb='+Date.now();
       const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status);
       const rows=this.parseCSV(await r.text()); if(rows.length<2) throw new Error('vazia');
       const H=rows[0].map(h=>String(h||'').toLowerCase().trim());
@@ -1941,12 +1940,14 @@ class Component extends DCLogic {
         const parts=String(rw[cF]||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
         const f=parts.find(p=>KNOWN.indexOf(p)>=0)||parts[0]||'', val=num(rw[cV]);
         const o=out[ym]; o.vendas++; o.fat+=val; const b=o.byFunil[f]||(o.byFunil[f]={c:0,rev:0}); b.c++; b.rev+=val; });
-      this._rvLive=out; this._resCache=null; this.forceUpdate();
+      const sig=JSON.stringify(out);
+      if(sig!==this._rvSig){ this._rvSig=sig; this._rvRev=(this._rvRev||0)+1; this._rvLive=out; this._resCache=null; this.forceUpdate(); }
+      else if(!this._rvLive){ this._rvLive=out; this.forceUpdate(); }
     }catch(e){ this._rvLiveErr=(e&&e.message)||'falha'; }
     finally{ this._rvLiveLoading=false; }
   }
   resultadosVals(){
-    const _key=(this._rvLive?'L':'S')+'|'+(this._adsRaw?this._adsRaw.length:0)+'|'+this.state.month+'|'+(this.state.candFrom||'')+'|'+(this.state.candTo||'')+'|'+JSON.stringify(this.state.resOpen||{})+'|'+((window.__RESULTADOS_VENDAS__&&window.__RESULTADOS_VENDAS__.atualizadoEm)||'');
+    const _key=(this._rvLive?'L'+(this._rvRev||0):'S')+'|'+(this._adsRaw?this._adsRaw.length:0)+'|'+this.state.month+'|'+(this.state.candFrom||'')+'|'+(this.state.candTo||'')+'|'+JSON.stringify(this.state.resOpen||{})+'|'+((window.__RESULTADOS_VENDAS__&&window.__RESULTADOS_VENDAS__.atualizadoEm)||'');
     if(this._resCache && this._resCacheKey===_key) return this._resCache;
     const S=this.state, RV=this.vendasHbpMerged(), PROD=(window.__RESULTADOS_PRODUTO__||{});
     const raw=(this._adsRaw||[]);
@@ -2099,7 +2100,7 @@ class Component extends DCLogic {
     const aqSpend={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) aqSpend[x.date]=(aqSpend[x.date]||0)+(x.spend||0); });
     const GRP=(f)=>this.faixaGroup(f); const GKEYS=['A','B','C','D','Q','AB','U'];
     const mkg=()=>({leads:0,qual:0,decl:0,ag:0,fe:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
-    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); if(r.status==='ag'||r.status==='fe') o.ag++; if(r.status==='fe') o.fe++; const gr=GRP(r.faixa); o.leads++; if(gr){ o.decl++; o.g[gr]++; if(this.FAIXA_MQL.indexOf(gr)>=0 && r.perfilOk!==false) o.qual++; } });
+    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); const gr=GRP(r.faixa); const mark=(r.status==='ag'||r.status==='fe'); o.leads++; if(gr){ o.g[gr]++; } if(gr||mark) o.decl++; if(mark || (gr && this.FAIXA_MQL.indexOf(gr)>=0 && r.perfilOk!==false)) o.qual++; });
     const aqDaysAll=[...new Set(Object.keys(aqBy).concat(Object.keys(aqSpend)))].sort();
     const AQ=this.AQ_METRICS.find(m=>m.key===(this.state.aqMetric||'qual'))||this.AQ_METRICS[0];
     const aqCalc=(o,sp)=>{ if(AQ.key==='leads') return o.leads; if(AQ.key==='qual') return o.qual; if(AQ.key==='ag') return o.ag; if(AQ.key==='fe') return o.fe;
@@ -2172,8 +2173,8 @@ class Component extends DCLogic {
     const mk=()=>({leads:0,qual:0,decl:0,spend:0,ag:0,fe:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
     const T={};
     const touch=(ym,wk,day)=>{ const M=T[ym]||(T[ym]={n:mk(),w:{}}); const W=M.w[wk]||(M.w[wk]={n:mk(),d:{}}); const D=W.d[day]||(W.d[day]=mk()); return [M.n,W.n,D]; };
-    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const gr=GRP(r.faixa), q=(gr&&this.FAIXA_MQL.indexOf(gr)>=0&&r.perfilOk!==false)?1:0, dc=gr?1:0;
-      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; if(gr) n.g[gr]++; if(r.status==='ag'||r.status==='fe') n.ag++; if(r.status==='fe') n.fe++; }); });
+    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const gr=GRP(r.faixa), mark=(r.status==='ag'||r.status==='fe'), q=(mark || (gr&&this.FAIXA_MQL.indexOf(gr)>=0&&r.perfilOk!==false))?1:0, dc=(gr||mark)?1:0;
+      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; if(gr) n.g[gr]++; }); });
     Object.keys(spendBy).forEach(day=>{ const ym=day.slice(0,7), wk=this.monday(day); const nodes=touch(ym,wk,day); nodes.forEach(n=>{ n.spend+=spendBy[day]; }); });
     const exp=this.state.aqExpanded||{};
     const fmtRow=(key,level,label,n)=>({ key, level, label, indent:(level*18)+'px',
