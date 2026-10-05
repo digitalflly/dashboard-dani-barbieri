@@ -119,14 +119,16 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
       </div>
       <div className="b-card" style={{ padding: '20px 22px' }}>
         <div style={{ overflowX: 'auto', margin: '0 -4px' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', minWidth: 900 }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', minWidth: 1040 }}>
             <thead>
               <tr style={{ textAlign: 'right' }}>
                 <th style={{ ...th, textAlign: 'left', width: 172, padding: '0 6px 10px 4px' }}>Período</th>
                 <th style={{ ...th, padding: '0 5px 10px' }}>Leads gerados</th>
-                <th className="tt" data-tip='Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês, área de atuação diferente de "outro" e profissão não ligada a medicina.' style={{ ...th, padding: '0 5px 10px', cursor: 'help', overflowWrap: 'anywhere' }}>Leads qualificados</th>
+                <th className="tt" data-tip='Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês e área de atuação diferente de "outro". Leads de Médica, Biomédica Esteta, Dentista, HOF, Micropigmentadora/Designer de Sobrancelhas, Fisioterapeuta Dermatofuncional e Dermatologista contam mesmo quando a área é "outro".' style={{ ...th, padding: '0 5px 10px', cursor: 'help', overflowWrap: 'anywhere' }}>Leads qualificados</th>
                 <th style={{ ...th, padding: '0 5px 10px' }}>Custo/lead qualif.</th>
                 <th style={{ ...th, textAlign: 'right', padding: '0 5px 10px' }}>% MQL</th>
+                <th className="tt" data-tip="Leads marcados em laranja (serão agendados) ou verde (fecharam) na planilha." style={{ ...th, textAlign: 'right', padding: '0 5px 10px', cursor: 'help' }}>Agendamentos</th>
+                <th className="tt" data-tip="Leads marcados em verde na planilha (fecharam)." style={{ ...th, textAlign: 'right', padding: '0 5px 10px', cursor: 'help' }}>Fechamentos</th>
                 {FAIXA_COLS.map((fc) => (
                   <th key={fc.key} className="tt" data-tip={fc.tip} style={{ ...th, textAlign: 'right', padding: '0 5px 10px', cursor: 'help', overflowWrap: 'anywhere', hyphens: 'auto' }}>{fc.label}</th>
                 ))}
@@ -142,6 +144,8 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
                   <td data-keepcase="1" style={{ ...tdNum, fontWeight: 600, color: '#771520' }}>{r.qual}</td>
                   <td data-keepcase="1" style={{ ...tdNum, whiteSpace: 'nowrap' }}>{r.custo}</td>
                   <td data-keepcase="1" style={{ ...tdNum, fontWeight: 600, color: '#771520' }}>{r.pct}</td>
+                  <td data-keepcase="1" style={tdNum}>{r.ag}</td>
+                  <td data-keepcase="1" style={{ ...tdNum, fontWeight: 600, color: '#771520' }}>{r.fe}</td>
                   {r.fx.map((x, i) => (
                     <td key={i} data-keepcase="1" style={tdNum}>{x.v}</td>
                   ))}

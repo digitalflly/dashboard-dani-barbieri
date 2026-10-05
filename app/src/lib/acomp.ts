@@ -39,6 +39,8 @@ export interface AquisicaoRow extends AcompRow {
   qual: string
   custo: string
   pct: string
+  ag: string
+  fe: string
   fx: { v: string }[]
 }
 export interface FaixaCol {
@@ -81,6 +83,8 @@ export const AQ_METRIC_OPTIONS = [
   { value: 'qual', label: 'Leads qualificados' },
   { value: 'custo', label: 'Custo/lead qualificado' },
   { value: 'pct', label: '% MQL' },
+  { value: 'ag', label: 'Agendamentos' },
+  { value: 'fe', label: 'Fechamentos' },
   ...FAIXA_COLS.map((c) => ({ value: 'fx_' + c.key, label: '% ' + c.label })),
 ]
 
@@ -130,6 +134,8 @@ interface ANode {
   qual: number
   decl: number
   spend: number
+  ag: number
+  fe: number
   g: Record<string, number>
 }
 
@@ -202,7 +208,7 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
     if (x.date && ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start || x.date >= win.start) && (!win.end || x.date <= win.end))
       spendBy[x.date] = (spendBy[x.date] || 0) + (x.spend || 0)
   })
-  const mk = (): ANode => ({ leads: 0, qual: 0, decl: 0, spend: 0, g: { A: 0, B: 0, C: 0, D: 0, Q: 0, AB: 0, U: 0 } })
+  const mk = (): ANode => ({ leads: 0, qual: 0, decl: 0, spend: 0, ag: 0, fe: 0, g: { A: 0, B: 0, C: 0, D: 0, Q: 0, AB: 0, U: 0 } })
   const T: Record<string, { n: ANode; w: Record<string, { n: ANode; d: Record<string, ANode> }> }> = {}
   const touch = (ym: string, wk: string, day: string): ANode[] => {
     const Mo = T[ym] || (T[ym] = { n: mk(), w: {} })
@@ -221,6 +227,8 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
       n.qual += q
       n.decl += dc
       if (gr) n.g[gr]++
+      if (r.status === 'ag' || r.status === 'fe') n.ag++
+      if (r.status === 'fe') n.fe++
     })
   })
   Object.keys(spendBy).forEach((day) => {
@@ -238,6 +246,8 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
     qual: fmtNum(n.qual),
     custo: n.qual ? 'R$ ' + fmtNum(Math.round(n.spend / n.qual)) : '—',
     pct: n.decl ? fmtPct((n.qual / n.decl) * 100) : '—',
+    ag: fmtNum(n.ag),
+    fe: fmtNum(n.fe),
     fx: FAIXA_COLS.map((c) => ({ v: n.decl ? fmtPct((n.g[c.key] / n.decl) * 100) : '—' })),
     hasChildren: level < 2,
     leaf: level >= 2,
@@ -302,10 +312,12 @@ export function aqLineCfg(M: Model, S: DashState, onDrill: (week: string) => voi
     if (x.date && ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start || x.date >= win.start) && (!win.end || x.date <= win.end))
       aqSpend[x.date] = (aqSpend[x.date] || 0) + (x.spend || 0)
   })
-  const mkg = (): ANode & { sp?: number } => ({ leads: 0, qual: 0, decl: 0, spend: 0, g: { A: 0, B: 0, C: 0, D: 0, Q: 0, AB: 0, U: 0 } })
+  const mkg = (): ANode & { sp?: number } => ({ leads: 0, qual: 0, decl: 0, spend: 0, ag: 0, fe: 0, g: { A: 0, B: 0, C: 0, D: 0, Q: 0, AB: 0, U: 0 } })
   const aqBy: Record<string, ANode> = {}
   aqRows.forEach((r) => {
     const o = aqBy[r.date] || (aqBy[r.date] = mkg())
+    if (r.status === 'ag' || r.status === 'fe') o.ag++
+    if (r.status === 'fe') o.fe++
     const gr = faixaGroup(r.faixa)
     o.leads++
     if (gr) {
@@ -319,6 +331,8 @@ export function aqLineCfg(M: Model, S: DashState, onDrill: (week: string) => voi
   const aqCalc = (o: ANode, sp: number): number | null => {
     if (aqKey === 'leads') return o.leads
     if (aqKey === 'qual') return o.qual
+    if (aqKey === 'ag') return o.ag
+    if (aqKey === 'fe') return o.fe
     if (aqKey === 'custo') return o.qual ? +(sp / o.qual).toFixed(2) : null
     if (aqKey.indexOf('fx_') === 0) {
       const k = aqKey.slice(3)
@@ -343,6 +357,8 @@ export function aqLineCfg(M: Model, S: DashState, onDrill: (week: string) => voi
       o.leads += b.leads
       o.qual += b.qual
       o.decl += b.decl
+      o.ag += b.ag
+      o.fe += b.fe
       GKEYS.forEach((k) => (o.g[k] += b.g[k]))
       o.sp += aqSpend[d] || 0
     })
