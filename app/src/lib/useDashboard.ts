@@ -144,9 +144,10 @@ export function useDashboard(): Dashboard {
   const funnelLoadingRef = useRef<Record<string, boolean>>({})
   const funnelDataRef = useRef<Record<string, FunnelData>>({})
   const liveRef = useRef<LiveAccount | null>(null)
-  const aplicLeadsRef = useRef(false)
+  const aplicLoadingRef = useRef(false)
+  const aplicDoneRef = useRef(false)
   const iscaLeadsRef = useRef(false)
-  const hbpRef = useRef(false)
+  const hbpRef = useRef(false) // in-flight guard (re-fetchable)
   const funnelRef = useRef(state.funnel)
   funnelRef.current = state.funnel
 
@@ -158,19 +159,27 @@ export function useDashboard(): Dashboard {
       setState({ rvLive: rv })
     } catch {
       /* silencioso — cai no snapshot congelado */
+    } finally {
+      hbpRef.current = false
     }
   }, [setState])
 
-  const loadAplicLeads = useCallback(async () => {
-    if (aplicLeadsRef.current) return
-    aplicLeadsRef.current = true
-    try {
-      const { by, rows } = await fetchAplicLeads()
-      setState({ aplicLeadsBy: by, aplicLeadsRows: rows })
-    } catch {
-      /* silencioso — a seção some sem os dados */
-    }
-  }, [setState])
+  const loadAplicLeads = useCallback(
+    async (force?: boolean) => {
+      if (aplicLoadingRef.current || (aplicDoneRef.current && !force)) return
+      aplicLoadingRef.current = true
+      try {
+        const { by, rows } = await fetchAplicLeads()
+        setState({ aplicLeadsBy: by, aplicLeadsRows: rows })
+        aplicDoneRef.current = true
+      } catch {
+        /* silencioso — a seção some sem os dados */
+      } finally {
+        aplicLoadingRef.current = false
+      }
+    },
+    [setState]
+  )
 
   const loadIscaLeads = useCallback(async () => {
     if (iscaLeadsRef.current) return
@@ -330,6 +339,21 @@ export function useDashboard(): Dashboard {
     void loadVendasHBP()
   }, [fetchLive, loadAds, loadAplicLeads, loadVendasHBP])
 
+  // relê a planilha de vendas HBP a cada 60s e quando a aba volta a ficar ativa
+  useEffect(() => {
+    const tick = (): void => {
+      if (!document.hidden) void loadVendasHBP()
+    }
+    const timer = setInterval(tick, 60000)
+    window.addEventListener('focus', tick)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', tick)
+      document.removeEventListener('visibilitychange', tick)
+    }
+  }, [loadVendasHBP])
+
   // Golden Ticket — busca/embute capas + links dos anúncios da imersão ativa (cache localStorage)
   const gtBusyRef = useRef<string | null>(null)
   useEffect(() => {
@@ -355,7 +379,9 @@ export function useDashboard(): Dashboard {
 
   const onRefresh = useCallback(() => {
     void fetchLive()
-  }, [fetchLive])
+    void loadVendasHBP()
+    void loadAplicLeads(true)
+  }, [fetchLive, loadVendasHBP, loadAplicLeads])
 
   const setFunnel = useCallback(
     (key: string) => {
@@ -387,13 +413,14 @@ export function useDashboard(): Dashboard {
   const setPage = useCallback(
     (p: PageKey) => {
       setState({ page: p })
+      if (p === 'resultados') void loadVendasHBP()
       // ao entrar em Dados dos Funis, garante um funil visível selecionado (o primeiro)
       if (p === 'candidaturas') {
         const first = FUNNELS.find((f) => !f.hidden)?.key
         if (first && funnelRef.current !== first) setFunnel(first)
       }
     },
-    [setState, setFunnel]
+    [setState, setFunnel, loadVendasHBP]
   )
 
   return { model, state, setState, onRefresh, setPage, setFunnel }

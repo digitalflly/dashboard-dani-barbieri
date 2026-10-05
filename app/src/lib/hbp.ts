@@ -27,7 +27,7 @@ const parseNum = (v: unknown): number => {
 }
 
 export async function fetchVendasHBP(): Promise<Record<string, ResVendaMes>> {
-  const url = 'https://docs.google.com/spreadsheets/d/1jPnVK6OHycOXFRWqwoB54PKZL86wvjUa--SfMoiVQWI/export?format=csv&_cb=' + Date.now()
+  const url = 'https://docs.google.com/spreadsheets/d/1jPnVK6OHycOXFRWqwoB54PKZL86wvjUa--SfMoiVQWI/export?format=csv&gid=2019867497&_cb=' + Date.now()
   const r = await fetch(url, { cache: 'no-store' })
   if (!r.ok) throw new Error('HTTP ' + r.status)
   const rows = parseCSV(await r.text())
