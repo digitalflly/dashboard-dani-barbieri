@@ -12,7 +12,7 @@ import type { ChartConfiguration } from 'chart.js'
 import { fmtNum, fmtPct } from './format'
 import { windowOf } from './model'
 import { lineCfg } from './charts'
-import { monday, addDays, ddmm } from './dates'
+import { monday, addDays, ddmm, lastDayOf } from './dates'
 import { ADS_CAMPAIGN_MATCH } from './constants'
 import type { Model, MediaPost } from './types'
 import type { DashState } from './useDashboard'
@@ -39,6 +39,7 @@ export interface AquisicaoRow extends AcompRow {
   qual: string
   custo: string
   pct: string
+  ag: string
   fx: { v: string }[]
 }
 export interface FaixaCol {
@@ -81,6 +82,7 @@ export const AQ_METRIC_OPTIONS = [
   { value: 'qual', label: 'Leads qualificados' },
   { value: 'custo', label: 'Custo/lead qualificado' },
   { value: 'pct', label: '% MQL' },
+  { value: 'ag', label: 'Análise comercial' },
   ...FAIXA_COLS.map((c) => ({ value: 'fx_' + c.key, label: '% ' + c.label })),
 ]
 
@@ -117,6 +119,16 @@ export function planoWin(M: Model, S: DashState): { start: string; end: string }
   return { start: !w.start || w.start < FLOOR ? FLOOR : w.start, end: w.end }
 }
 
+// rótulo da semana recortado aos limites do mês (ex.: 'Semana 01/09–07/09')
+function weekLabel(ym: string, wk: string): string {
+  const first = ym + '-01'
+  const last = lastDayOf(ym)
+  const s = wk < first ? first : wk
+  const e0 = addDays(wk, 6)
+  const e = e0 > last ? last : e0
+  return 'Semana ' + ddmm(s) + '–' + ddmm(e)
+}
+
 interface CNode {
   rReach: number
   rViews: number
@@ -130,6 +142,7 @@ interface ANode {
   qual: number
   decl: number
   spend: number
+  ag: number
   g: Record<string, number>
 }
 
@@ -184,7 +197,7 @@ export function contentRows(M: Model, S: DashState): ContentRow[] {
     if (exp[ym]) {
       Object.keys(Mo.w).sort().reverse().forEach((wk) => {
         const W = Mo.w[wk]
-        out.push(fmtRow(ym + '|' + wk, 1, 'Semana ' + ddmm(wk) + '–' + ddmm(addDays(wk, 6)), W.n))
+        out.push(fmtRow(ym + '|' + wk, 1, weekLabel(ym, wk), W.n))
         if (exp[ym + '|' + wk]) {
           Object.keys(W.d).sort().reverse().forEach((day) => out.push(fmtRow(ym + '|' + wk + '|' + day, 2, ddmm(day), W.d[day])))
         }
@@ -202,7 +215,7 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
     if (x.date && ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start || x.date >= win.start) && (!win.end || x.date <= win.end))
       spendBy[x.date] = (spendBy[x.date] || 0) + (x.spend || 0)
   })
-  const mk = (): ANode => ({ leads: 0, qual: 0, decl: 0, spend: 0, g: { A: 0, B: 0, C: 0, D: 0, Q: 0, AB: 0, U: 0 } })
+  const mk = (): ANode => ({ leads: 0, qual: 0, decl: 0, spend: 0, ag: 0, g: { A: 0, B: 0, C: 0, D: 0, Q: 0, AB: 0, U: 0 } })
   const T: Record<string, { n: ANode; w: Record<string, { n: ANode; d: Record<string, ANode> }> }> = {}
   const touch = (ym: string, wk: string, day: string): ANode[] => {
     const Mo = T[ym] || (T[ym] = { n: mk(), w: {} })
@@ -214,13 +227,14 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
     const ym = r.date.slice(0, 7)
     const wk = monday(r.date)
     const gr = faixaGroup(r.faixa)
-    const mark = r.status === 'ag' || r.status === 'fe'
-    const q = mark || (gr && FAIXA_MQL.indexOf(gr) >= 0 && r.perfilOk !== false) ? 1 : 0
-    const dc = gr || mark ? 1 : 0
+    const q = gr && FAIXA_MQL.indexOf(gr) >= 0 && r.perfilOk !== false ? 1 : 0
+    const dc = gr ? 1 : 0
+    const ac = r.status === 'ag' ? 1 : 0
     touch(ym, wk, r.date).forEach((n) => {
       n.leads++
       n.qual += q
       n.decl += dc
+      n.ag += ac
       if (gr) n.g[gr]++
     })
   })
@@ -239,6 +253,7 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
     qual: fmtNum(n.qual),
     custo: n.qual ? 'R$ ' + fmtNum(Math.round(n.spend / n.qual)) : '—',
     pct: n.decl ? fmtPct((n.qual / n.decl) * 100) : '—',
+    ag: fmtNum(n.ag),
     fx: FAIXA_COLS.map((c) => ({ v: n.decl ? fmtPct((n.g[c.key] / n.decl) * 100) : '—' })),
     hasChildren: level < 2,
     leaf: level >= 2,
@@ -251,7 +266,7 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
     if (exp[ym]) {
       Object.keys(Mo.w).sort().reverse().forEach((wk) => {
         const W = Mo.w[wk]
-        out.push(fmtRow(ym + '|' + wk, 1, 'Semana ' + ddmm(wk) + '–' + ddmm(addDays(wk, 6)), W.n))
+        out.push(fmtRow(ym + '|' + wk, 1, weekLabel(ym, wk), W.n))
         if (exp[ym + '|' + wk]) {
           Object.keys(W.d).sort().reverse().forEach((day) => out.push(fmtRow(ym + '|' + wk + '|' + day, 2, ddmm(day), W.d[day])))
         }
@@ -303,22 +318,25 @@ export function aqLineCfg(M: Model, S: DashState, onDrill: (week: string) => voi
     if (x.date && ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start || x.date >= win.start) && (!win.end || x.date <= win.end))
       aqSpend[x.date] = (aqSpend[x.date] || 0) + (x.spend || 0)
   })
-  const mkg = (): ANode & { sp?: number } => ({ leads: 0, qual: 0, decl: 0, spend: 0, g: { A: 0, B: 0, C: 0, D: 0, Q: 0, AB: 0, U: 0 } })
+  const mkg = (): ANode & { sp?: number } => ({ leads: 0, qual: 0, decl: 0, spend: 0, ag: 0, g: { A: 0, B: 0, C: 0, D: 0, Q: 0, AB: 0, U: 0 } })
   const aqBy: Record<string, ANode> = {}
   aqRows.forEach((r) => {
     const o = aqBy[r.date] || (aqBy[r.date] = mkg())
     const gr = faixaGroup(r.faixa)
-    const mark = r.status === 'ag' || r.status === 'fe'
     o.leads++
-    if (gr) o.g[gr]++
-    if (gr || mark) o.decl++
-    if (mark || (gr && FAIXA_MQL.indexOf(gr) >= 0 && r.perfilOk !== false)) o.qual++
+    if (gr) {
+      o.g[gr]++
+      o.decl++
+    }
+    if (r.status === 'ag') o.ag++
+    if (gr && FAIXA_MQL.indexOf(gr) >= 0 && r.perfilOk !== false) o.qual++
   })
   const aqDaysAll = [...new Set(Object.keys(aqBy).concat(Object.keys(aqSpend)))].sort()
   const aqKey = S.aqMetric || 'qual'
   const aqCalc = (o: ANode, sp: number): number | null => {
     if (aqKey === 'leads') return o.leads
     if (aqKey === 'qual') return o.qual
+    if (aqKey === 'ag') return o.ag
     if (aqKey === 'custo') return o.qual ? +(sp / o.qual).toFixed(2) : null
     if (aqKey.indexOf('fx_') === 0) {
       const k = aqKey.slice(3)
@@ -343,6 +361,7 @@ export function aqLineCfg(M: Model, S: DashState, onDrill: (week: string) => voi
       o.leads += b.leads
       o.qual += b.qual
       o.decl += b.decl
+      o.ag += b.ag
       GKEYS.forEach((k) => (o.g[k] += b.g[k]))
       o.sp += aqSpend[d] || 0
     })
