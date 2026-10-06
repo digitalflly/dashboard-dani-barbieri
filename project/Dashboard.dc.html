@@ -949,9 +949,10 @@
               <tr style="text-align:right;">
                 <th style="text-align:left; width:172px; padding:0 6px 10px 4px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Período</th>
                 <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Leads gerados</th>
-                <th class="tt" data-tip="Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês e área de atuação diferente de &quot;outro&quot;. Leads de Médica, Biomédica Esteta, Dentista, HOF, Micropigmentadora/Designer de Sobrancelhas, Fisioterapeuta Dermatofuncional e Dermatologista contam mesmo quando a área é &quot;outro&quot;. Leads marcados em laranja ou verde na planilha também contam como qualificados." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
+                <th class="tt" data-tip="Qualificado (MQL) = faturamento declarado ≥ R$ 15 mil/mês e área de atuação diferente de &quot;outro&quot;. Leads de Médica, Biomédica Esteta, Dentista, HOF, Micropigmentadora/Designer de Sobrancelhas, Fisioterapeuta Dermatofuncional e Dermatologista contam mesmo quando a área é &quot;outro&quot;." style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; cursor:help; overflow-wrap:anywhere; vertical-align:bottom; line-height:1.3;">Leads qualificados</th>
                 <th style="padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">Custo/lead qualif.</th>
                 <th style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3;">% MQL</th>
+                <th class="tt" data-tip="Leads marcados em laranja na planilha (em análise do comercial para agendamento)." style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600; vertical-align:bottom; line-height:1.3; cursor:help;">Análise comercial</th>
                 <sc-for list="{{ faixaCols }}" as="fc" hint-placeholder-count="7">
                   <th class="tt" data-tip="{{ fc.tip }}" style="text-align:right; padding:0 5px 10px; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); font-weight:600;  cursor:help; overflow-wrap:anywhere; hyphens:auto; vertical-align:bottom; line-height:1.3;">{{ fc.label }}</th>
                 </sc-for>
@@ -972,6 +973,7 @@
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.qual }}</td>
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong); white-space:nowrap;">{{ r.custo }}</td>
                   <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; font-weight:600; color:#771520;">{{ r.pct }}</td>
+                  <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong);">{{ r.ag }}</td>
                   <sc-for list="{{ r.fx }}" as="x" hint-placeholder-count="7">
                     <td data-keepcase="1" style="text-align:right; padding:10px 5px; font-size:12px; color:var(--text-strong);">{{ x.v }}</td>
                   </sc-for>
@@ -1037,6 +1039,7 @@ class Component extends DCLogic {
       {key:'qual', label:'Leads qualificados'},
       {key:'custo', label:'Custo/lead qualificado'},
       {key:'pct', label:'% MQL'},
+      {key:'ag', label:'Análise comercial'},
     ];
     // faixas de faturamento (form novo) + agrupamentos do form antigo
     this.FAIXA_COLS = [
@@ -2100,7 +2103,7 @@ class Component extends DCLogic {
     const aqSpend={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) aqSpend[x.date]=(aqSpend[x.date]||0)+(x.spend||0); });
     const GRP=(f)=>this.faixaGroup(f); const GKEYS=['A','B','C','D','Q','AB','U'];
     const mkg=()=>({leads:0,qual:0,decl:0,ag:0,fe:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
-    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); const gr=GRP(r.faixa); const mark=(r.status==='ag'||r.status==='fe'); o.leads++; if(gr){ o.g[gr]++; } if(gr||mark) o.decl++; if(mark || (gr && this.FAIXA_MQL.indexOf(gr)>=0 && r.perfilOk!==false)) o.qual++; });
+    const aqBy={}; aqRows.forEach(r=>{ const o=aqBy[r.date]||(aqBy[r.date]=mkg()); const gr=GRP(r.faixa); o.leads++; if(gr){ o.g[gr]++; o.decl++; } if(r.status==='ag') o.ag++; if(gr && this.FAIXA_MQL.indexOf(gr)>=0 && r.perfilOk!==false) o.qual++; });
     const aqDaysAll=[...new Set(Object.keys(aqBy).concat(Object.keys(aqSpend)))].sort();
     const AQ=this.AQ_METRICS.find(m=>m.key===(this.state.aqMetric||'qual'))||this.AQ_METRICS[0];
     const aqCalc=(o,sp)=>{ if(AQ.key==='leads') return o.leads; if(AQ.key==='qual') return o.qual; if(AQ.key==='ag') return o.ag; if(AQ.key==='fe') return o.fe;
@@ -2157,7 +2160,8 @@ class Component extends DCLogic {
     Object.keys(T).sort().reverse().forEach(ym=>{ const M=T[ym];
       out.push(fmtRow(ym,0,MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4),M.n));
       if(exp[ym]){ Object.keys(M.w).sort().reverse().forEach(wk=>{ const W=M.w[wk];
-        out.push(fmtRow(ym+'|'+wk,1,'Semana '+this.ddmm(wk)+'–'+this.ddmm(this.addDays(wk,6)),W.n));
+        const _s=wk<ym+'-01'?ym+'-01':wk, _e0=this.addDays(wk,6), _last=ym+'-'+String(new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7),0)).getUTCDate()).padStart(2,'0'), _e=_e0>_last?_last:_e0;
+        out.push(fmtRow(ym+'|'+wk,1,'Semana '+this.ddmm(_s)+'–'+this.ddmm(_e),W.n));
         if(exp[ym+'|'+wk]){ Object.keys(W.d).sort().reverse().forEach(day=>{ out.push(fmtRow(ym+'|'+wk+'|'+day,2,this.ddmm(day),W.d[day])); }); }
       }); }
     });
@@ -2173,8 +2177,8 @@ class Component extends DCLogic {
     const mk=()=>({leads:0,qual:0,decl:0,spend:0,ag:0,fe:0,g:{A:0,B:0,C:0,D:0,Q:0,AB:0,U:0}});
     const T={};
     const touch=(ym,wk,day)=>{ const M=T[ym]||(T[ym]={n:mk(),w:{}}); const W=M.w[wk]||(M.w[wk]={n:mk(),d:{}}); const D=W.d[day]||(W.d[day]=mk()); return [M.n,W.n,D]; };
-    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const gr=GRP(r.faixa), mark=(r.status==='ag'||r.status==='fe'), q=(mark || (gr&&this.FAIXA_MQL.indexOf(gr)>=0&&r.perfilOk!==false))?1:0, dc=(gr||mark)?1:0;
-      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; if(gr) n.g[gr]++; }); });
+    rows.forEach(r=>{ const ym=r.date.slice(0,7), wk=this.monday(r.date); const gr=GRP(r.faixa), q=(gr&&this.FAIXA_MQL.indexOf(gr)>=0&&r.perfilOk!==false)?1:0, dc=gr?1:0, ac=r.status==='ag'?1:0;
+      touch(ym,wk,r.date).forEach(n=>{ n.leads++; n.qual+=q; n.decl+=dc; n.ag+=ac; if(gr) n.g[gr]++; }); });
     Object.keys(spendBy).forEach(day=>{ const ym=day.slice(0,7), wk=this.monday(day); const nodes=touch(ym,wk,day); nodes.forEach(n=>{ n.spend+=spendBy[day]; }); });
     const exp=this.state.aqExpanded||{};
     const fmtRow=(key,level,label,n)=>({ key, level, label, indent:(level*18)+'px',
@@ -2188,8 +2192,8 @@ class Component extends DCLogic {
     const out=[];
     Object.keys(T).sort().reverse().forEach(ym=>{ const M=T[ym]; const mLabel=MN[+ym.slice(5,7)-1]+' '+ym.slice(0,4);
       out.push(fmtRow(ym,0,mLabel,M.n));
-      if(exp[ym]){ Object.keys(M.w).sort().reverse().forEach(wk=>{ const W=M.w[wk]; const endW=this.addDays(wk,6);
-        out.push(fmtRow(ym+'|'+wk,1,'Semana '+this.ddmm(wk)+'–'+this.ddmm(endW),W.n));
+      if(exp[ym]){ Object.keys(M.w).sort().reverse().forEach(wk=>{ const W=M.w[wk]; const _e0=this.addDays(wk,6), _last=ym+'-'+String(new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7),0)).getUTCDate()).padStart(2,'0'); const startW=wk<ym+'-01'?ym+'-01':wk, endW=_e0>_last?_last:_e0;
+        out.push(fmtRow(ym+'|'+wk,1,'Semana '+this.ddmm(startW)+'–'+this.ddmm(endW),W.n));
         if(exp[ym+'|'+wk]){ Object.keys(W.d).sort().reverse().forEach(day=>{ out.push(fmtRow(ym+'|'+wk+'|'+day,2,this.ddmm(day),W.d[day])); }); }
       }); }
     });
