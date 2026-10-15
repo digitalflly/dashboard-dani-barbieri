@@ -37,6 +37,8 @@ export interface DashState {
   dayTo: string
   metric2: string
   topMetric: string
+  postSort: string
+  postSortDir: string
   refreshing: boolean
   lastSync: string
   live: boolean
@@ -97,6 +99,8 @@ export function useDashboard(): Dashboard {
     dayTo: '',
     metric2: 'views',
     topMetric: 'views',
+    postSort: 'date',
+    postSortDir: 'desc',
     refreshing: false,
     lastSync: initialModel.lastSync,
     live: false,

@@ -2,7 +2,7 @@ import type { Dashboard } from '../lib/useDashboard'
 import { contentVM } from '../lib/viewmodel'
 
 export default function ConteudosPage({ dash }: { dash: Dashboard }) {
-  const { model: M, state: S } = dash
+  const { model: M, state: S, setState } = dash
   const v = contentVM(M, S)
 
   return (
@@ -32,6 +32,29 @@ export default function ConteudosPage({ dash }: { dash: Dashboard }) {
           Conteúdos postados
         </div>
         <span className="b-badge">{v.postedCount}</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 10, letterSpacing: 'var(--ls-label)', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Ordenar por</span>
+            <select
+              className="b-select"
+              value={v.postSort}
+              onChange={(e) => setState({ postSort: e.target.value })}
+              style={{ height: 36, padding: '0 12px', minWidth: 190 }}
+            >
+              {v.postSortOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            onClick={() => setState((s) => ({ postSortDir: s.postSortDir === 'asc' ? 'desc' : 'asc' }))}
+            style={{ height: 36, padding: '0 12px', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600, cursor: 'pointer', borderRadius: 6, border: '1px solid var(--border-strong)', background: 'transparent', color: '#771520', whiteSpace: 'nowrap' }}
+          >
+            {v.postSortDirLabel}
+          </button>
+        </div>
       </div>
 
       {v.hasPosted && (

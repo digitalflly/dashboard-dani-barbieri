@@ -224,6 +224,9 @@ export interface ContentVM {
   contentEmpty: boolean
   noMetrics: boolean
   metricsNote: string
+  postSort: string
+  postSortOptions: { value: string; label: string }[]
+  postSortDirLabel: string
 }
 
 export function contentVM(M: Model, S: DashState): ContentVM {
@@ -268,7 +271,43 @@ export function contentVM(M: Model, S: DashState): ContentVM {
       ],
     }
   }
-  const posted = contentMedia.filter((p) => !isTest(p)).map(cardOf)
+  const SORTS: Record<string, (p: MediaPost) => number | string> = {
+    date: (p) => p.ts,
+    views: (p) => p.views || 0,
+    reach: (p) => p.reach || 0,
+    eng: (p) => p.eng || 0,
+    likes: (p) => p.likes || 0,
+    comments: (p) => p.comments || 0,
+    shares: (p) => p.shares || 0,
+    saves: (p) => p.saves || 0,
+    engRate: (p) => (p.reach ? p.eng / p.reach : 0),
+    saveRate: (p) => (p.reach ? p.saves / p.reach : 0),
+    shareRate: (p) => (p.reach ? p.shares / p.reach : 0),
+    follows: (p) => p.follows || 0,
+  }
+  const sk = SORTS[S.postSort] ? S.postSort : 'date'
+  const sf = SORTS[sk]
+  const dir = S.postSortDir === 'asc' ? 1 : -1
+  const sortedMedia = contentMedia.slice().sort((a, b) => {
+    const va = sf(a)
+    const vb = sf(b)
+    return (va < vb ? -1 : va > vb ? 1 : 0) * dir
+  })
+  const postSortOptions = [
+    { value: 'date', label: 'Data de publicação' },
+    { value: 'views', label: 'Visualizações' },
+    { value: 'reach', label: 'Alcance' },
+    { value: 'eng', label: 'Interações' },
+    { value: 'engRate', label: '% Eng. geral' },
+    { value: 'saveRate', label: 'Tx. salvamento' },
+    { value: 'shareRate', label: 'Tx. compart.' },
+    { value: 'follows', label: 'Seguidores' },
+    { value: 'likes', label: 'Curtidas' },
+    { value: 'comments', label: 'Comentários' },
+    { value: 'shares', label: 'Compartilhamentos' },
+    { value: 'saves', label: 'Salvamentos' },
+  ]
+  const posted = sortedMedia.filter((p) => !isTest(p)).map(cardOf)
   return {
     posted,
     postedCount: String(posted.length),
@@ -276,6 +315,9 @@ export function contentVM(M: Model, S: DashState): ContentVM {
     contentEmpty: posted.length === 0,
     noMetrics: !PM,
     metricsNote: metricsNote(M),
+    postSort: sk,
+    postSortOptions,
+    postSortDirLabel: dir === 1 ? '↑ Crescente' : '↓ Decrescente',
   }
 }
 

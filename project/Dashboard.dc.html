@@ -229,6 +229,17 @@
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
         <div style="font-family:var(--font-sans); font-weight:600; letter-spacing:-0.01em; font-size:20px; color:var(--text-strong);">Conteúdos postados</div>
         <span class="b-badge">{{ postedCount }}</span>
+        <div style="margin-left:auto; display:flex; align-items:flex-end; gap:8px;">
+          <label style="display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:10px; letter-spacing:var(--ls-label); text-transform:uppercase; color:var(--text-muted);">Ordenar por</span>
+            <select class="b-select" value="{{ postSort }}" onChange="{{ onPostSort }}" style="height:36px; padding:0 12px; min-width:190px;">
+              <sc-for list="{{ postSortOptions }}" as="o" hint-placeholder-count="6">
+                <option value="{{ o.value }}">{{ o.label }}</option>
+              </sc-for>
+            </select>
+          </label>
+          <button onClick="{{ onPostSortDir }}" style="height:36px; padding:0 12px; font-family:var(--font-sans); font-size:12px; font-weight:600; cursor:pointer; border-radius:6px; border:1px solid var(--border-strong); background:transparent; color:#771520; white-space:nowrap;">{{ postSortDirLabel }}</button>
+        </div>
       </div>
       <sc-if value="{{ hasPosted }}" hint-placeholder-val="{{ true }}">
         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(248px, 1fr)); gap:18px; margin-bottom:34px;">
@@ -1014,6 +1025,7 @@ class Component extends DCLogic {
       funnelError: {},
       candMonth: 'all',
       resOpen: {},
+      postSort: 'date', postSortDir: 'desc',
       aqExpanded: {},
       acompMetric: 'reelsReach',
       aqMetric: 'qual',
@@ -2314,8 +2326,13 @@ class Component extends DCLogic {
           {label:'Seguidores', value: PM?(p.follows==null?'—':this.fmtNum(p.follows)):'—'},
         ] };
     };
-    const posted=contentMedia.filter(p=>!isTest(p)).map(cardOf);
-    const tests=contentMedia.filter(isTest).map(cardOf);
+    const SORTS={ date:p=>p.ts, views:p=>p.views||0, reach:p=>p.reach||0, eng:p=>p.eng||0, likes:p=>p.likes||0, comments:p=>p.comments||0, shares:p=>p.shares||0, saves:p=>p.saves||0,
+      engRate:p=>p.reach?p.eng/p.reach:0, saveRate:p=>p.reach?p.saves/p.reach:0, shareRate:p=>p.reach?p.shares/p.reach:0, follows:p=>p.follows||0 };
+    const sk=SORTS[S.postSort]?S.postSort:'date', sf=SORTS[sk], dir=S.postSortDir==='asc'?1:-1;
+    const sortedMedia=contentMedia.slice().sort((a,b)=>{ const va=sf(a), vb=sf(b); return (va<vb?-1:va>vb?1:0)*dir; });
+    const posted=sortedMedia.filter(p=>!isTest(p)).map(cardOf);
+    const tests=sortedMedia.filter(isTest).map(cardOf);
+    const postSortOptions=[{value:'date',label:'Data de publicação'},{value:'views',label:'Visualizações'},{value:'reach',label:'Alcance'},{value:'eng',label:'Interações'},{value:'engRate',label:'% Eng. geral'},{value:'saveRate',label:'Tx. salvamento'},{value:'shareRate',label:'Tx. compart.'},{value:'follows',label:'Seguidores'},{value:'likes',label:'Curtidas'},{value:'comments',label:'Comentários'},{value:'shares',label:'Compartilhamentos'},{value:'saves',label:'Salvamentos'}];
 
     // INSIGHTS
     const winDays=M.daily.filter(r=>r.date>=win.start && r.date<=win.end);
@@ -2358,6 +2375,8 @@ class Component extends DCLogic {
       themeRows:themeList, themeShow: themeList.length>0,
       kpis, metric2:S.metric2, metric2Options, onMetric2:(e)=>this.setState({metric2:e.target.value}),
       posted, tests, postedCount:String(posted.length), testCount:String(tests.length),
+      postSort:sk, postSortOptions, onPostSort:(e)=>this.setState({postSort:e.target.value}),
+      postSortDirLabel: dir===1?'↑ Crescente':'↓ Decrescente', onPostSortDir:()=>this.setState(s=>({postSortDir:s.postSortDir==='asc'?'desc':'asc'})),
       hasPosted:posted.length>0, hasTest:tests.length>0, contentEmpty: posted.length===0 && tests.length===0,
       averages, top3, topMetric:S.topMetric, topMetricOptions, onTopMetric:(e)=>this.setState({topMetric:e.target.value}),
       worked, notWorked,
