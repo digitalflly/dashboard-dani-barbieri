@@ -215,6 +215,7 @@ export interface CardVM {
   shares: string
   saves: string
   coverStyle: CSSProperties
+  link: string
   metrics: CardMetric[]
 }
 export interface ContentVM {
@@ -260,6 +261,7 @@ export function contentVM(M: Model, S: DashState): ContentVM {
       shares: PM ? fmtNum(p.shares) : '—',
       saves: PM ? fmtNum(p.saves) : '—',
       coverStyle,
+      link: p.permalink || '',
       metrics: [
         { label: 'Visualizações', value: PM ? fmtNum(p.views) : '—' },
         { label: 'Alcance', value: PM ? fmtNum(p.reach) : '—' },
