@@ -59,8 +59,9 @@ export default function ConteudosPage({ dash }: { dash: Dashboard }) {
 
       {v.hasPosted && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(248px, 1fr))', gap: 18, marginBottom: 34 }}>
-          {v.posted.map((c, i) => (
-            <div key={i} className="b-card" style={{ padding: 0, overflow: 'hidden' }}>
+          {v.posted.map((c, i) => {
+            const inner = (
+              <>
               <div style={c.coverStyle}>
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: 80, color: 'rgba(250,248,247,0.16)', lineHeight: 1, userSelect: 'none' }}>
                   {M.profile.initial}
@@ -123,8 +124,26 @@ export default function ConteudosPage({ dash }: { dash: Dashboard }) {
                   ))}
                 </div>
               </div>
-            </div>
-          ))}
+              </>
+            )
+            return c.link ? (
+              <a
+                key={i}
+                href={c.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Abrir post no Instagram"
+                className="b-card b-card--link"
+                style={{ padding: 0, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+              >
+                {inner}
+              </a>
+            ) : (
+              <div key={i} className="b-card" style={{ padding: 0, overflow: 'hidden' }}>
+                {inner}
+              </div>
+            )
+          })}
         </div>
       )}
 

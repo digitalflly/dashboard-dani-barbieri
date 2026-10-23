@@ -104,10 +104,11 @@ export async function fetchMedia(): Promise<{ media: MediaPost[]; ckey: string; 
   // (v2 = 365 dias, cobre todo 2026). O marcador é persistido no cache — posts fora
   // da janela de fetch nunca recebem o campo, então re-derivar deixaria o backfill ligado
   // para sempre.
-  const needsFollowsBackfill = seeded && followsBackfill < 2
+  // (v3 = re-seed de 365 dias para preencher `follows` e `permalink` nos posts já cacheados)
+  const needsFollowsBackfill = seeded && followsBackfill < 3
   const win = seeded && !needsFollowsBackfill ? 30 : 365
   const mRows = await getF(
-    'media_id,timestamp,media_type,media_product_type,media_caption,media_like_count,media_comments_count,media_reach,media_saved,media_shares,media_views,media_follows,media_url,media_thumbnail_url,username',
+    'media_id,timestamp,media_type,media_product_type,media_caption,media_like_count,media_comments_count,media_reach,media_saved,media_shares,media_views,media_follows,media_permalink,media_url,media_thumbnail_url,username',
     win,
     to
   )
@@ -133,6 +134,7 @@ export async function fetchMedia(): Promise<{ media: MediaPost[]; ckey: string; 
         reach,
         eng,
         follows: num(r.media_follows),
+        permalink: String(r.media_permalink || ''),
         caption: String(r.media_caption || 'Sem legenda').replace(/\s+/g, ' ').trim().slice(0, 140),
         coverIdx: i,
         cover: String(r.media_url || r.media_thumbnail_url || ''),
@@ -169,6 +171,6 @@ export async function fetchMedia(): Promise<{ media: MediaPost[]; ckey: string; 
     .sort((a, b) => (a.ts < b.ts ? -1 : 1))
   const savedAt = fd(to)
   // persiste tudo até hoje, para a próxima atualização puxar só 30 dias
-  saveCache(ckey, media, savedAt, { followsBackfill: 2 })
+  saveCache(ckey, media, savedAt, { followsBackfill: 3 })
   return { media, ckey, savedAt }
 }

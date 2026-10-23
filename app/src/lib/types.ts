@@ -39,6 +39,8 @@ export interface MediaPost {
   eng: number
   // seguidores ganhos a partir da publicação (media_follows)
   follows?: number
+  // link do post no Instagram (media_permalink)
+  permalink?: string
   caption: string
   coverIdx: number
   cover?: string

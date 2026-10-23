@@ -128,5 +128,5 @@ export async function persistCovers(
   }
   await Promise.all(Array.from({ length: conc }, work))
   if (onProgress) onProgress()
-  saveCache(ckey, media, savedAt, { followsBackfill: 2 })
+  saveCache(ckey, media, savedAt, { followsBackfill: 3 })
 }
