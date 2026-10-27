@@ -162,11 +162,14 @@ async function loadRespondi(): Promise<RawLead[]> {
   const cF = h.findIndex((x) => /faturamento/.test(x))
   const cA = h.findIndex((x) => /rea de atua/.test(x))
   const cP = h.findIndex((x) => /profiss/.test(x))
+  const cS = h.findIndex((x) => /^status$/.test(x))
   const out: RawLead[] = []
   rows.slice(1).forEach((rw) => {
     const d = String(rw[cD] || '').match(/(\d{4})-(\d{2})-(\d{2})/)
     if (!d) return
     if (/test/i.test(String(rw[0] || ''))) return
+    // só respostas completas do Respondi entram no dashboard
+    if (cS >= 0 && !/^complet/i.test(String(rw[cS] || '').trim())) return
     const area = norm(rw[cA])
     const prof = cP >= 0 ? norm(rw[cP]) : ''
     const perfilOk = MED.test(area) || MED.test(prof) || !/^outr[oa]s?\b/.test(area)
