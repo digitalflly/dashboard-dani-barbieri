@@ -1528,11 +1528,13 @@ class Component extends DCLogic {
       const r=await fetch('https://docs.google.com/spreadsheets/d/'+RESPONDI+'/export?format=csv&gid=0&_cb='+Date.now(),{cache:'no-store'}); if(!r.ok) throw new Error('Respondi HTTP '+r.status);
       const rows=this.parseCSV(await r.text()); if(!rows.length) return [];
       const h=rows[0].map(x=>String(x||'').toLowerCase().trim());
-      const cD=h.findIndex(x=>/^data$/.test(x)), cId=h.findIndex(x=>/^id$/.test(x)), cF=h.findIndex(x=>/faturamento/.test(x)), cA=h.findIndex(x=>/rea de atua/.test(x)), cP=h.findIndex(x=>/profiss/.test(x));
+      const cD=h.findIndex(x=>/^data$/.test(x)), cId=h.findIndex(x=>/^id$/.test(x)), cF=h.findIndex(x=>/faturamento/.test(x)), cA=h.findIndex(x=>/rea de atua/.test(x)), cP=h.findIndex(x=>/profiss/.test(x)), cS=h.findIndex(x=>/^status$/.test(x));
       const MED=/m[eé]dic|biom[eé]dic|dentist|harmoniza|\bhof\b|micropigment|design(?:er)? de sobrancelh|sobrancelh|fisioterap|dermato/;
       const out=[];
       rows.slice(1).forEach(rw=>{ const d=String(rw[cD]||'').match(/(\d{4})-(\d{2})-(\d{2})/); if(!d) return;
         if(/test/i.test(String(rw[0]||''))) return;
+        // só respostas completas do Respondi entram no dashboard
+        if(cS>=0 && !/^complet/i.test(String(rw[cS]||'').trim())) return;
         const area=String(rw[cA]||'').toLowerCase().trim(), prof=cP>=0? String(rw[cP]||'').toLowerCase().trim() : '';
         const perfilOk = MED.test(area) || MED.test(prof) || !/^outr[oa]s?\b/.test(area);
         out.push({id:'r:'+String(rw[cId]||rw.join('|')), ts:String(rw[cD]||''), date:d[1]+'-'+d[2]+'-'+d[3], faixa:respondiFaixa(rw[cF]), perfilOk, fonte:'respondi'}); });
