@@ -209,7 +209,13 @@ export function contentRows(M: Model, S: DashState): ContentRow[] {
 
 export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
   const win = planoWin(M, S)
-  const rows = (S.aplicLeadsRows || []).filter((r) => (!win.start || r.date >= win.start) && (!win.end || r.date <= win.end))
+  const src = S.aqSrc || 'all'
+  const rows = (S.aplicLeadsRows || []).filter(
+    (r) =>
+      (!win.start || r.date >= win.start) &&
+      (!win.end || r.date <= win.end) &&
+      (src === 'all' || (src === 'respondi' ? r.fonte === 'respondi' : r.fonte !== 'respondi'))
+  )
   const spendBy: Record<string, number> = {}
   ;(S.adsRaw || []).forEach((x) => {
     if (x.date && ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start || x.date >= win.start) && (!win.end || x.date <= win.end))
