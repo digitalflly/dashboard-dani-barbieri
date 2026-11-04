@@ -60,6 +60,7 @@ export interface DashState {
   // Acompanhamento — métricas dos gráficos + drill
   acompMetric: string
   aqMetric: string
+  aqSrc: string
   aqWeek: string | null
   // vendas HBP ao vivo (mês atual + anterior)
   rvLive: Record<string, ResVendaMes> | null
@@ -74,7 +75,7 @@ export interface DashState {
   postMetrics: boolean
   // leads nativos por dia (planilhas) — funis Aplicação Direta / Isca
   aplicLeadsBy?: Record<string, number>
-  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string }[]
+  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string; fonte?: string }[]
   iscaLeadsBy?: Record<string, number>
 }
 
@@ -120,6 +121,7 @@ export function useDashboard(): Dashboard {
     aqExpanded: {},
     acompMetric: 'reelsReach',
     aqMetric: 'qual',
+    aqSrc: 'all',
     aqWeek: null,
     rvLive: null,
     imersao: 'nea',

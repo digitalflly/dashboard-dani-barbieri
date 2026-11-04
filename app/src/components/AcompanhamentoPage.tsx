@@ -117,6 +117,21 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
         </div>
         <div style={{ height: 190, position: 'relative' }}>{aq.cfg && <ChartCanvas id="aq-line" config={aq.cfg} />}</div>
       </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 10, letterSpacing: 'var(--ls-label)', textTransform: 'uppercase', color: 'var(--text-muted)', marginRight: 4 }}>Fonte</span>
+        {[['all', 'Todos'], ['meta', 'Meta'], ['respondi', 'Respondi']].map(([k, label]) => {
+          const on = (S.aqSrc || 'all') === k
+          return (
+            <button
+              key={k}
+              onClick={() => setState({ aqSrc: k })}
+              style={{ height: 30, padding: '0 14px', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600, cursor: 'pointer', borderRadius: 999, border: `1px solid ${on ? '#771520' : 'var(--border-strong)'}`, background: on ? '#771520' : 'transparent', color: on ? '#fff' : 'var(--text-muted)' }}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
       <div className="b-card" style={{ padding: '20px 22px' }}>
         <div style={{ overflowX: 'auto', margin: '0 -4px' }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', minWidth: 980 }}>

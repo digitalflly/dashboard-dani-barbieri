@@ -15,6 +15,7 @@ export interface AplicLeadRow {
   faixa: string
   perfilOk: boolean
   status?: string // 'ag' (laranja) | 'fe' (verde) | undefined
+  fonte?: string // 'respondi' (form externo) | undefined (Meta)
 }
 
 interface RawLead {
@@ -24,6 +25,7 @@ interface RawLead {
   faixa: string
   perfilOk: boolean
   status?: string
+  fonte?: string
 }
 
 const SHEET = '10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc'
@@ -173,7 +175,7 @@ async function loadRespondi(): Promise<RawLead[]> {
     const area = norm(rw[cA])
     const prof = cP >= 0 ? norm(rw[cP]) : ''
     const perfilOk = MED.test(area) || MED.test(prof) || !/^outr[oa]s?\b/.test(area)
-    out.push({ id: 'r:' + String(rw[cId] || rw.join('|')), ts: String(rw[cD] || ''), date: d[1] + '-' + d[2] + '-' + d[3], faixa: respondiFaixa(rw[cF]), perfilOk })
+    out.push({ id: 'r:' + String(rw[cId] || rw.join('|')), ts: String(rw[cD] || ''), date: d[1] + '-' + d[2] + '-' + d[3], faixa: respondiFaixa(rw[cF]), perfilOk, fonte: 'respondi' })
   })
   return out
 }
@@ -213,7 +215,7 @@ export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; r
   })
   const by: Record<string, number> = {}
   rowsF.forEach((r) => { by[r.date] = (by[r.date] || 0) + 1 })
-  return { by, rows: rowsF.map((r) => ({ date: r.date, faixa: r.faixa, perfilOk: r.perfilOk, status: r.status })) }
+  return { by, rows: rowsF.map((r) => ({ date: r.date, faixa: r.faixa, perfilOk: r.perfilOk, status: r.status, fonte: r.fonte })) }
 }
 
 // planilha de leads (aba 1) do funil Isca — volume por dia
