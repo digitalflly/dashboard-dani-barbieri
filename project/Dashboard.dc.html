@@ -1474,6 +1474,14 @@ class Component extends DCLogic {
     }, true);
   }
 
+  // identifica a pessoa por e-mail (ou, sem e-mail, pelos 9 últimos dígitos do telefone)
+  personKey(mail, tel){
+    const e=String(mail||'').toLowerCase().replace(/\s+/g,'').trim();
+    if(/@/.test(e)) return 'e:'+e;
+    const p=String(tel||'').replace(/\D/g,'').slice(-9);
+    return p.length>=8 ? 'p:'+p : '';
+  }
+
   // leads nativos (planilha de leads da Aplicação) — volume por dia
   async fetchAplicLeads(force){
     if(this._aplicLeadsLoading || (this._aplicLeadsBy && !force)) return;
@@ -1490,8 +1498,8 @@ class Component extends DCLogic {
       const rows=this.parseCSV(await r.text()); if(!rows.length) return [];
       const h0=rows[0].map(h=>String(h||'').toLowerCase().trim());
       const hasHeader=h0.some(h=>/created.?time/.test(h));
-      let ci,idc, body, cArea=-1, cProf=-1;
-      if(hasHeader){ ci=h0.findIndex(h=>/created.?time/.test(h)); if(ci<0)ci=1; idc=h0.findIndex(h=>/^id$/.test(h)); cArea=h0.findIndex(h=>/rea_de_atua|area_de_atua/.test(h)); cProf=h0.findIndex(h=>/profiss/.test(h)); body=rows.slice(1); }
+      let ci,idc, body, cArea=-1, cProf=-1, cMail=-1, cTel=-1;
+      if(hasHeader){ ci=h0.findIndex(h=>/created.?time/.test(h)); if(ci<0)ci=1; idc=h0.findIndex(h=>/^id$/.test(h)); cArea=h0.findIndex(h=>/rea_de_atua|area_de_atua/.test(h)); cProf=h0.findIndex(h=>/profiss/.test(h)); cMail=h0.findIndex(h=>/e-?mail/.test(h)); cTel=h0.findIndex(h=>/phone|telefone|whats|celular/.test(h)); body=rows.slice(1); }
       else { ci=1; idc=0; body=rows; } // layout do form nativo (sem cabeçalho)
       const out=[];
       body.forEach(rw=>{ const joined=rw.join(' ').toLowerCase();
@@ -1508,7 +1516,9 @@ class Component extends DCLogic {
         const areaOutro = cArea>=0 ? /^outr[oa]s?\b/.test(area) : rw.some(c=>/^outr[oa]s?$/.test(norm(c)));
         const MED=/m[eé]dic|biom[eé]dic|dentist|harmoniza|\bhof\b|micropigment|design(?:er)? de sobrancelh|sobrancelh|fisioterap|dermato/;
         const profMed = (cProf>=0 && MED.test(prof)) || (cArea>=0 && MED.test(area));
-        if(m) out.push({id:String(rw[idc>=0?idc:0]||''), ts:v, date:m[1]+'-'+m[2]+'-'+m[3], faixa:findFaixa(rw), perfilOk: profMed || !areaOutro}); });
+        const mail = cMail>=0? rw[cMail] : (rw.find(c=>/@/.test(String(c||'')))||'');
+        const tel = cTel>=0? rw[cTel] : (rw.find(c=>/^\+?\d[\d\s()-]{9,}$/.test(String(c||'').trim()))||'');
+        if(m) out.push({id:String(rw[idc>=0?idc:0]||''), ts:v, date:m[1]+'-'+m[2]+'-'+m[3], faixa:findFaixa(rw), perfilOk: profMed || !areaOutro, pk:this.personKey(mail,tel)}); });
       return out;
     };
     // cores das linhas (laranja = será agendado, verde = fechou) — lidas da versão de visualização
@@ -1544,11 +1554,12 @@ class Component extends DCLogic {
         if(cS>=0 && !/^complet/i.test(String(rw[cS]||'').trim())) return;
         const area=String(rw[cA]||'').toLowerCase().trim(), prof=cP>=0? String(rw[cP]||'').toLowerCase().trim() : '';
         const perfilOk = MED.test(area) || MED.test(prof) || !/^outr[oa]s?\b/.test(area);
-        out.push({id:'r:'+String(rw[cId]||rw.join('|')), ts:String(rw[cD]||''), date:d[1]+'-'+d[2]+'-'+d[3], faixa:respondiFaixa(rw[cF]), perfilOk, fonte:'respondi'}); });
+        const cM=h.findIndex(x=>/e-?mail/.test(x)), cT=h.findIndex(x=>/telefone|whats|celular|phone/.test(x));
+        out.push({id:'r:'+String(rw[cId]||rw.join('|')), ts:String(rw[cD]||''), date:d[1]+'-'+d[2]+'-'+d[3], faixa:respondiFaixa(rw[cF]), perfilOk, fonte:'respondi', pk:this.personKey(cM>=0?rw[cM]:'', cT>=0?rw[cT]:'')}); });
       return out; };
     try{
       let gids=FALLBACK_GIDS;
-      try{ const hv=await fetch('https://docs.google.com/spreadsheets/d/'+SHEET+'/htmlview?_cb='+Date.now(),{cache:'no-store'}); const ht=await hv.text(); const found=[...new Set([...ht.matchAll(/gid=(\d+)/g)].map(m=>m[1]))]; if(found.length) gids=found; }catch(_){}
+      try{ const hv=await fetch('https://docs.google.com/spreadsheets/d/'+SHEET+'/htmlview?_cb='+Date.now(),{cache:'no-store'}); const ht=await hv.text(); const found=[...ht.matchAll(/gid=(\d+)/g)].map(m=>m[1]); gids=[...new Set(FALLBACK_GIDS.concat(found))]; }catch(_){}
       const settled=await Promise.allSettled(gids.map(load).concat([loadRespondi()]));
       const colorMaps=await Promise.all(gids.map(loadColors));
       const COLOR=Object.assign({}, ...colorMaps);
@@ -1556,7 +1567,10 @@ class Component extends DCLogic {
       all.forEach(r=>{ const k=COLOR[r.id]||COLOR[r.ts]||''; if(k) r.status=k; });
       // dedupe por id do lead entre todas as abas (o mesmo lead pode aparecer em mais de uma); mantém a marcação mais avançada
       const seen={}; const rowsF=[];
-      all.forEach(r=>{ const k=r.id||(r.date+'|'+r.faixa); const prev=seen[k]; if(prev){ if(r.status==='fe' || (r.status==='ag' && !prev.status)) prev.status=r.status; return; } seen[k]=r; rowsF.push(r); });
+      // ordem cronológica: a 1ª entrada da pessoa é a que conta (mesmo e-mail/telefone em outra aba ou fonte = duplicado)
+      all.sort((a,b)=>String(a.ts).localeCompare(String(b.ts)));
+      const seenP={};
+      all.forEach(r=>{ const k=r.id||(r.date+'|'+r.faixa); const prev=seen[k]||(r.pk? seenP[r.pk] : null); if(prev){ if(r.status==='fe' || (r.status==='ag' && !prev.status)) prev.status=r.status; return; } seen[k]=r; if(r.pk) seenP[r.pk]=r; rowsF.push(r); });
       const by={}; rowsF.forEach(r=>{ by[r.date]=(by[r.date]||0)+1; });
       this._aplicLeadsBy = by;
       this._aplicLeadsRows = rowsF;
@@ -2189,8 +2203,16 @@ class Component extends DCLogic {
     return out;
   }
 
+  // colunas de faixa visíveis: as do form antigo (AB/U) só aparecem se o período tiver algum lead com essas respostas
+  aqFaixaCols(){
+    const win=this.planoWin(); const _src=this.state.aqSrc||'all';
+    const has={}; (this._aplicLeadsRows||[]).forEach(r=>{ if((win.start&&r.date<win.start)||(win.end&&r.date>win.end)) return; if(_src!=='all'&&(_src==='respondi')!==(r.fonte==='respondi')) return; const g=this.faixaGroup(r.faixa); if(g) has[g]=1; });
+    return this.FAIXA_COLS.filter(c=> (c.key!=='AB'&&c.key!=='U') || has[c.key]);
+  }
+
   aquisicaoRows(){
     const win=this.planoWin();
+    const _cols=this.aqFaixaCols();
     const _src=this.state.aqSrc||'all';
     const rows=(this._aplicLeadsRows||[]).filter(r=>(!win.start||r.date>=win.start)&&(!win.end||r.date<=win.end)&&(_src==='all'||(_src==='respondi'? r.fonte==='respondi' : r.fonte!=='respondi')));
     const spendBy={}; (this._adsRaw||[]).forEach(x=>{ if(x.date && this.ADS_CAMPAIGN_MATCH.aplicacao.test(x.campaign) && (!win.start||x.date>=win.start)&&(!win.end||x.date<=win.end)) spendBy[x.date]=(spendBy[x.date]||0)+(x.spend||0); });
@@ -2208,7 +2230,7 @@ class Component extends DCLogic {
       custo: n.qual? ('R$ '+this.fmtNum(Math.round(n.spend/n.qual))) : '—',
       pct: n.decl? this.fmtPct(n.qual/n.decl*100) : '—',
       ag:this.fmtNum(n.ag), fe:this.fmtNum(n.fe),
-      fx: this.FAIXA_COLS.map(c=>({v: n.decl? this.fmtPct(n.g[c.key]/n.decl*100) : '—'})),
+      fx: _cols.map(c=>({v: n.decl? this.fmtPct(n.g[c.key]/n.decl*100) : '—'})),
       hasChildren:level<2, leaf:level>=2, expanded:!!exp[key], caret: level<2? (exp[key]?'−':'+') : '',
       onToggle: level<2? (()=>this.setState(s=>({aqExpanded:{...(s.aqExpanded||{}), [key]:!(s.aqExpanded&&s.aqExpanded[key])}}))) : null });
     const out=[];
@@ -2261,8 +2283,8 @@ class Component extends DCLogic {
       acompMetricOptions: this.ACOMP_METRICS.map(m=>({value:m.key, label:m.label})),
       onAcompMetric:(e)=>this.setState({acompMetric:e.target.value}),
       aqMetric: S.aqMetric||'qual',
-      aqMetricOptions: this.AQ_METRICS.map(m=>({value:m.key, label:m.label})),
-      faixaCols: this.FAIXA_COLS,
+      aqMetricOptions: this.AQ_METRICS.filter(m=>!/^fx_(AB|U)$/.test(m.key) || this.aqFaixaCols().some(c=>'fx_'+c.key===m.key)).map(m=>({value:m.key, label:m.label})),
+      faixaCols: this.aqFaixaCols(),
       onAqMetric:(e)=>this.setState({aqMetric:e.target.value}),
       aqDrill: !!S.aqWeek, aqNotDrill: !S.aqWeek,
       aqChartTitle: S.aqWeek? ('Semana '+this.ddmm(S.aqWeek)+'–'+this.ddmm(this.addDays(S.aqWeek,6))+' · por dia') : 'Por semana · clique em uma semana para ver os dias',

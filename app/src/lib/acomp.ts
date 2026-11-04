@@ -207,8 +207,23 @@ export function contentRows(M: Model, S: DashState): ContentRow[] {
   return out
 }
 
+// colunas de faixa visíveis: as do form antigo (AB/U) só aparecem se o período+fonte tiver leads nelas
+export function aqFaixaCols(M: Model, S: DashState): FaixaCol[] {
+  const win = planoWin(M, S)
+  const src = S.aqSrc || 'all'
+  const has: Record<string, 1> = {}
+  ;(S.aplicLeadsRows || []).forEach((r) => {
+    if ((win.start && r.date < win.start) || (win.end && r.date > win.end)) return
+    if (src !== 'all' && (src === 'respondi') !== (r.fonte === 'respondi')) return
+    const g = faixaGroup(r.faixa)
+    if (g) has[g] = 1
+  })
+  return FAIXA_COLS.filter((c) => (c.key !== 'AB' && c.key !== 'U') || has[c.key])
+}
+
 export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
   const win = planoWin(M, S)
+  const cols = aqFaixaCols(M, S)
   const src = S.aqSrc || 'all'
   const rows = (S.aplicLeadsRows || []).filter(
     (r) =>
@@ -260,7 +275,7 @@ export function aquisicaoRows(M: Model, S: DashState): AquisicaoRow[] {
     custo: n.qual ? 'R$ ' + fmtNum(Math.round(n.spend / n.qual)) : '—',
     pct: n.decl ? fmtPct((n.qual / n.decl) * 100) : '—',
     ag: fmtNum(n.ag),
-    fx: FAIXA_COLS.map((c) => ({ v: n.decl ? fmtPct((n.g[c.key] / n.decl) * 100) : '—' })),
+    fx: cols.map((c) => ({ v: n.decl ? fmtPct((n.g[c.key] / n.decl) * 100) : '—' })),
     hasChildren: level < 2,
     leaf: level >= 2,
     caret: level < 2 ? (exp[key] ? '−' : '+') : '',
