@@ -26,6 +26,7 @@ interface RawLead {
   perfilOk: boolean
   status?: string
   fonte?: string
+  pk?: string
 }
 
 const SHEET = '10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc'
@@ -44,6 +45,14 @@ const findFaixa = (rw: string[]): string => {
   return ''
 }
 
+// identifica a pessoa por e-mail (ou, sem e-mail, pelos 9 últimos dígitos do telefone)
+function personKey(mail: unknown, tel: unknown): string {
+  const e = String(mail || '').toLowerCase().replace(/\s+/g, '').trim()
+  if (/@/.test(e)) return 'e:' + e
+  const p = String(tel || '').replace(/\D/g, '').slice(-9)
+  return p.length >= 8 ? 'p:' + p : ''
+}
+
 async function loadTab(gid: string): Promise<RawLead[]> {
   const url = 'https://docs.google.com/spreadsheets/d/' + SHEET + '/export?format=csv&gid=' + gid + '&_cb=' + Date.now()
   const r = await fetch(url, { cache: 'no-store' })
@@ -57,12 +66,16 @@ async function loadTab(gid: string): Promise<RawLead[]> {
   let body: string[][]
   let cArea = -1
   let cProf = -1
+  let cMail = -1
+  let cTel = -1
   if (hasHeader) {
     ci = h0.findIndex((h) => /created.?time/.test(h))
     if (ci < 0) ci = 1
     idc = h0.findIndex((h) => /^id$/.test(h))
     cArea = h0.findIndex((h) => /rea_de_atua|area_de_atua/.test(h))
     cProf = h0.findIndex((h) => /profiss/.test(h))
+    cMail = h0.findIndex((h) => /e-?mail/.test(h))
+    cTel = h0.findIndex((h) => /phone|telefone|whats|celular/.test(h))
     body = rows.slice(1)
   } else {
     ci = 1
@@ -89,7 +102,9 @@ async function loadTab(gid: string): Promise<RawLead[]> {
     const prof = cProf >= 0 ? norm(rw[cProf]) : ''
     const areaOutro = cArea >= 0 ? /^outr[oa]s?\b/.test(area) : rw.some((c) => /^outr[oa]s?$/.test(norm(c)))
     const profMed = (cProf >= 0 && MED.test(prof)) || (cArea >= 0 && MED.test(area))
-    out.push({ id: String(rw[idc >= 0 ? idc : 0] || ''), ts: v, date, faixa: findFaixa(rw), perfilOk: profMed || !areaOutro })
+    const mail = cMail >= 0 ? rw[cMail] : rw.find((c) => /@/.test(String(c || ''))) || ''
+    const tel = cTel >= 0 ? rw[cTel] : rw.find((c) => /^\+?\d[\d\s()-]{9,}$/.test(String(c || '').trim())) || ''
+    out.push({ id: String(rw[idc >= 0 ? idc : 0] || ''), ts: v, date, faixa: findFaixa(rw), perfilOk: profMed || !areaOutro, pk: personKey(mail, tel) })
   })
   return out
 }
@@ -175,18 +190,28 @@ async function loadRespondi(): Promise<RawLead[]> {
     const area = norm(rw[cA])
     const prof = cP >= 0 ? norm(rw[cP]) : ''
     const perfilOk = MED.test(area) || MED.test(prof) || !/^outr[oa]s?\b/.test(area)
-    out.push({ id: 'r:' + String(rw[cId] || rw.join('|')), ts: String(rw[cD] || ''), date: d[1] + '-' + d[2] + '-' + d[3], faixa: respondiFaixa(rw[cF]), perfilOk, fonte: 'respondi' })
+    const cM = h.findIndex((x) => /e-?mail/.test(x))
+    const cT = h.findIndex((x) => /telefone|whats|celular|phone/.test(x))
+    out.push({
+      id: 'r:' + String(rw[cId] || rw.join('|')),
+      ts: String(rw[cD] || ''),
+      date: d[1] + '-' + d[2] + '-' + d[3],
+      faixa: respondiFaixa(rw[cF]),
+      perfilOk,
+      fonte: 'respondi',
+      pk: personKey(cM >= 0 ? rw[cM] : '', cT >= 0 ? rw[cT] : ''),
+    })
   })
   return out
 }
 
 export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; rows: AplicLeadRow[] }> {
-  // descobre os gids das abas pela htmlview (abas novas entram sozinhas)
+  // descobre os gids das abas pela htmlview (abas novas entram sozinhas), unidas ao fallback
   let gids = FALLBACK_GIDS
   try {
     const ht = await (await fetch('https://docs.google.com/spreadsheets/d/' + SHEET + '/htmlview?_cb=' + Date.now(), { cache: 'no-store' })).text()
-    const found = [...new Set([...ht.matchAll(/gid=(\d+)/g)].map((m) => m[1]))]
-    if (found.length) gids = found
+    const found = [...ht.matchAll(/gid=(\d+)/g)].map((m) => m[1])
+    gids = [...new Set(FALLBACK_GIDS.concat(found))]
   } catch {
     /* usa o fallback */
   }
@@ -200,17 +225,21 @@ export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; r
     const k = COLOR[r.id] || COLOR[r.ts] || ''
     if (k) r.status = k
   })
-  // dedupe por id entre todas as abas; mantém a marcação mais avançada (fe > ag)
+  // dedupe por id entre abas e por pessoa (e-mail/telefone) entre abas e fontes;
+  // em ordem cronológica, a 1ª entrada da pessoa conta; mantém a marcação mais avançada (fe > ag)
+  all.sort((a, b) => String(a.ts).localeCompare(String(b.ts)))
   const seen: Record<string, RawLead> = {}
+  const seenP: Record<string, RawLead> = {}
   const rowsF: RawLead[] = []
   all.forEach((r) => {
     const k = r.id || r.date + '|' + r.faixa
-    const prev = seen[k]
+    const prev = seen[k] || (r.pk ? seenP[r.pk] : null)
     if (prev) {
       if (r.status === 'fe' || (r.status === 'ag' && !prev.status)) prev.status = r.status
       return
     }
     seen[k] = r
+    if (r.pk) seenP[r.pk] = r
     rowsF.push(r)
   })
   const by: Record<string, number> = {}

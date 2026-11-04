@@ -3,11 +3,11 @@ import type { Dashboard } from '../lib/useDashboard'
 import {
   contentRows,
   aquisicaoRows,
+  aqFaixaCols,
   acompLineCfg,
   aqLineCfg,
   ACOMP_METRIC_OPTIONS,
   AQ_METRIC_OPTIONS,
-  FAIXA_COLS,
   type ContentRow,
   type AquisicaoRow,
 } from '../lib/acomp'
@@ -40,6 +40,8 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
   const aRows = aquisicaoRows(M, S)
   const acompLine = acompLineCfg(M, S)
   const aq = aqLineCfg(M, S, (w) => setState({ aqWeek: w }))
+  const faixaCols = aqFaixaCols(M, S)
+  const aqMetricOptions = AQ_METRIC_OPTIONS.filter((o) => !/^fx_(AB|U)$/.test(o.value) || faixaCols.some((c) => 'fx_' + c.key === o.value))
   const toggleCt = (key: string): void => setState((s) => ({ ctExpanded: { ...(s.ctExpanded || {}), [key]: !(s.ctExpanded && s.ctExpanded[key]) } }))
   const toggleAq = (key: string): void => setState((s) => ({ aqExpanded: { ...(s.aqExpanded || {}), [key]: !(s.aqExpanded && s.aqExpanded[key]) } }))
   const tdLabel: CSSProperties = { textAlign: 'left', padding: '10px 5px 10px 4px', fontSize: 13, color: 'var(--text-strong)', whiteSpace: 'nowrap' }
@@ -110,7 +112,7 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
             <div style={eyebrow}>{S.aqWeek ? 'Semana ' + ddmm(S.aqWeek) + '–' + ddmm(addDays(S.aqWeek, 6)) + ' · por dia' : 'Por semana · clique em uma semana para ver os dias'}</div>
           </div>
           <select className="b-select" value={S.aqMetric} onChange={(e) => setState({ aqMetric: e.target.value })} style={selectStyle}>
-            {AQ_METRIC_OPTIONS.map((o) => (
+            {aqMetricOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
@@ -143,7 +145,7 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
                 <th style={{ ...th, padding: '0 5px 10px' }}>Custo/lead qualif.</th>
                 <th style={{ ...th, textAlign: 'right', padding: '0 5px 10px' }}>% MQL</th>
                 <th className="tt" data-tip="Leads marcados em laranja na planilha (em análise do comercial para agendamento)." style={{ ...th, textAlign: 'right', padding: '0 5px 10px', cursor: 'help' }}>Análise comercial</th>
-                {FAIXA_COLS.map((fc) => (
+                {faixaCols.map((fc) => (
                   <th key={fc.key} className="tt" data-tip={fc.tip} style={{ ...th, textAlign: 'right', padding: '0 5px 10px', cursor: 'help', overflowWrap: 'anywhere', hyphens: 'auto' }}>{fc.label}</th>
                 ))}
               </tr>
