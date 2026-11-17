@@ -87,16 +87,10 @@ async function loadTab(gid: string): Promise<RawLead[]> {
     const joined = rw.join(' ').toLowerCase()
     if (/test lead|<test|test@meta\.com/.test(joined)) return
     const v = String(rw[ci] || '')
-    // data do lead no fuso de Brasília (created_time vem em -05:00 do gerenciador)
+    // data do lead = a data que está na planilha, sem conversão de fuso (p/ bater com o comercial)
     let date = ''
-    const dt = /T\d{2}:\d{2}/.test(v) ? new Date(v) : null
-    if (dt && !isNaN(dt.getTime())) {
-      const b = new Date(dt.getTime() - 3 * 3600000)
-      date = b.getUTCFullYear() + '-' + String(b.getUTCMonth() + 1).padStart(2, '0') + '-' + String(b.getUTCDate()).padStart(2, '0')
-    } else {
-      const mm = v.match(/(\d{4})-(\d{2})-(\d{2})/)
-      if (mm) date = mm[1] + '-' + mm[2] + '-' + mm[3]
-    }
+    const mm = v.match(/(\d{4})-(\d{2})-(\d{2})/)
+    if (mm) date = mm[1] + '-' + mm[2] + '-' + mm[3]
     if (!date) return
     const area = cArea >= 0 ? norm(rw[cArea]) : ''
     const prof = cProf >= 0 ? norm(rw[cProf]) : ''
