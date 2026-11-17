@@ -1505,10 +1505,8 @@ class Component extends DCLogic {
       body.forEach(rw=>{ const joined=rw.join(' ').toLowerCase();
         if(/test lead|<test|test@meta\.com/.test(joined)) return; // ignora leads de teste
         const v=String(rw[ci]||'');
-        // data do lead no fuso de Brasília (created_time vem em -05:00 do gerenciador)
-        let m=null; const dt=/T\d{2}:\d{2}/.test(v)? new Date(v) : null;
-        if(dt && !isNaN(dt)){ const b=new Date(dt.getTime()-3*3600000); m=[null, String(b.getUTCFullYear()), String(b.getUTCMonth()+1).padStart(2,'0'), String(b.getUTCDate()).padStart(2,'0')]; }
-        else m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
+        // data do lead = a data que está na planilha, sem conversão de fuso (p/ bater com o comercial)
+        let m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
         // desqualifica por perfil: área de atuação = "outro" ou profissão ligada a medicina
         const norm=(s)=>String(s||'').toLowerCase().trim();
         const area = cArea>=0? norm(rw[cArea]) : '';
