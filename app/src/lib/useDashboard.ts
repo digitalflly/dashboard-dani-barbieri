@@ -176,10 +176,12 @@ export function useDashboard(): Dashboard {
         const data = await fetchAudience()
         setState({ audData: data, audLoading: false, audError: '' })
       } catch (e) {
-        // modo-preview: só em localhost (nunca em produção), usa o snapshot real
-        // embutido quando a rede do sandbox bloqueia o Windsor, para visualizar a aba.
+        // modo-preview: fora de produção (qualquer host que não seja *.vercel.app),
+        // usa o snapshot real embutido quando a rede de preview bloqueia o Windsor,
+        // para visualizar a aba. Em produção (vercel.app) nunca cai aqui.
         const host = typeof location !== 'undefined' ? location.hostname : ''
-        if (host === 'localhost' || host === '127.0.0.1') {
+        const isProd = /\.vercel\.app$/i.test(host)
+        if (!isProd) {
           setState({ audData: AUDIENCE_DEMO, audLoading: false, audError: '' })
         } else {
           const msg = (e instanceof Error && e.message) || 'Falha ao ler a demografia da audiência.'
