@@ -7,6 +7,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { buildModel, nowStamp } from './model'
 import { fetchAccount, fetchMedia, type LiveAccount } from './windsor'
+import { fetchAudience, type AudienceData } from './audience'
+import { AUDIENCE_DEMO } from './audienceDemo'
 import { fetchAds } from './facebook'
 import { fetchFunnel as fetchFunnelCsv, funnelSpec } from './sheets'
 import { persistCovers } from './cache'
@@ -27,7 +29,7 @@ import { FUNNELS } from './constants'
 import type { Model, FunnelData, AdDailyRow } from './types'
 import type { ResVendaMes } from './resultadosVendasData'
 
-export type PageKey = 'conta' | 'conteudos' | 'insights' | 'candidaturas' | 'resultados' | 'plano'
+export type PageKey = 'conta' | 'audiencia' | 'conteudos' | 'insights' | 'candidaturas' | 'resultados' | 'plano'
 
 export interface DashState {
   page: PageKey
@@ -77,6 +79,10 @@ export interface DashState {
   aplicLeadsBy?: Record<string, number>
   aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string; fonte?: string }[]
   iscaLeadsBy?: Record<string, number>
+  // Audiência — demografia + split seguidor/não-seguidor (ao vivo, Windsor)
+  audData: AudienceData | null
+  audLoading: boolean
+  audError: string
 }
 
 export interface Dashboard {
@@ -133,6 +139,9 @@ export function useDashboard(): Dashboard {
     adsLoading: false,
     adsError: '',
     postMetrics: true,
+    audData: null,
+    audLoading: false,
+    audError: '',
   }))
 
   const setState = useCallback(
@@ -154,8 +163,34 @@ export function useDashboard(): Dashboard {
   const aplicDoneRef = useRef(false)
   const iscaLeadsRef = useRef(false)
   const hbpRef = useRef(false) // in-flight guard (re-fetchable)
+  const audRef = useRef(false) // in-flight guard (re-fetchable)
   const funnelRef = useRef(state.funnel)
   funnelRef.current = state.funnel
+
+  const loadAudience = useCallback(
+    async (force?: boolean) => {
+      if (audRef.current) return
+      audRef.current = true
+      setState((s) => (force || !s.audData ? { audLoading: true, audError: '' } : {}))
+      try {
+        const data = await fetchAudience()
+        setState({ audData: data, audLoading: false, audError: '' })
+      } catch (e) {
+        // modo-preview: só em localhost (nunca em produção), usa o snapshot real
+        // embutido quando a rede do sandbox bloqueia o Windsor, para visualizar a aba.
+        const host = typeof location !== 'undefined' ? location.hostname : ''
+        if (host === 'localhost' || host === '127.0.0.1') {
+          setState({ audData: AUDIENCE_DEMO, audLoading: false, audError: '' })
+        } else {
+          const msg = (e instanceof Error && e.message) || 'Falha ao ler a demografia da audiência.'
+          setState({ audLoading: false, audError: msg })
+        }
+      } finally {
+        audRef.current = false
+      }
+    },
+    [setState]
+  )
 
   const loadVendasHBP = useCallback(async () => {
     if (hbpRef.current) return
@@ -343,7 +378,8 @@ export function useDashboard(): Dashboard {
     // funil padrão é 'aplicacao' (só anúncios + planilha de leads nativa)
     void loadAplicLeads()
     void loadVendasHBP()
-  }, [fetchLive, loadAds, loadAplicLeads, loadVendasHBP])
+    void loadAudience()
+  }, [fetchLive, loadAds, loadAplicLeads, loadVendasHBP, loadAudience])
 
   // relê a planilha de vendas HBP a cada 60s e quando a aba volta a ficar ativa
   useEffect(() => {
@@ -387,7 +423,8 @@ export function useDashboard(): Dashboard {
     void fetchLive()
     void loadVendasHBP()
     void loadAplicLeads(true)
-  }, [fetchLive, loadVendasHBP, loadAplicLeads])
+    void loadAudience(true)
+  }, [fetchLive, loadVendasHBP, loadAplicLeads, loadAudience])
 
   const setFunnel = useCallback(
     (key: string) => {

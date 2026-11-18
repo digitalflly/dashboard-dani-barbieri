@@ -60,7 +60,9 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
   const pageTitle =
     S.page === 'conta'
       ? 'Dados da Conta'
-      : S.page === 'conteudos'
+      : S.page === 'audiencia'
+        ? 'Audiência'
+        : S.page === 'conteudos'
         ? 'Dados dos Conteúdos'
         : S.page === 'insights'
           ? 'Insights dos Conteúdos'
@@ -75,9 +77,9 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
     dormant: S.dormant && !S.mediaLoading,
     pageTitle,
     // filtros (mês + intervalo de datas) — conta / conteúdos / acompanhamento
-    showFilters: S.page !== 'candidaturas' && S.page !== 'resultados',
+    showFilters: S.page !== 'candidaturas' && S.page !== 'resultados' && S.page !== 'audiencia',
     // seletor de mês — também em Resultados Mensais
-    showMonth: S.page !== 'candidaturas',
+    showMonth: S.page !== 'candidaturas' && S.page !== 'audiencia',
     showFunnelFilters: S.page === 'candidaturas',
     refreshLabel: S.refreshing ? 'Atualizando…' : 'Atualizar',
     dayMin: M.minDate,

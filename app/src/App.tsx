@@ -5,6 +5,7 @@ import { funisVM } from './lib/funisvm'
 import { installTableSort } from './lib/tableSort'
 import Header from './components/Header'
 import ContaPage from './components/ContaPage'
+import AudienciaPage from './components/AudienciaPage'
 import ConteudosPage from './components/ConteudosPage'
 import InsightsPage from './components/InsightsPage'
 import FunisPage from './components/FunisPage'
@@ -59,6 +60,7 @@ export default function App() {
         )}
 
         {S.page === 'conta' && <ContaPage dash={dash} />}
+        {S.page === 'audiencia' && <AudienciaPage dash={dash} />}
         {S.page === 'conteudos' && <ConteudosPage dash={dash} />}
         {S.page === 'insights' && <InsightsPage dash={dash} />}
         {S.page === 'candidaturas' && <FunisPage dash={dash} funis={funis} />}
