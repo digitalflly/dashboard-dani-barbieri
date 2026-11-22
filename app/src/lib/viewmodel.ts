@@ -7,7 +7,7 @@
 import { ddmm, addDays } from './dates'
 import { fmtNum, fmtPct, delta } from './format'
 import { windowOf, kpiWindowOf, agg, tlAt, dailyAt } from './model'
-import { lineCfg, type LineOpts } from './charts'
+import { lineCfg, followersCfg, type LineOpts } from './charts'
 import { learnings, type Learning, type ThemeRow } from './learnings'
 import { ORIGEM_FOLLOW } from './origemFollow'
 import { ACCENT, COVER_BG } from './constants'
@@ -190,10 +190,17 @@ export function contaVM(M: Model, S: DashState): ContaVM {
   const dailyData = (fn: (r: DailyRow) => number | null): (number | null)[] => dRows.map((r) => (r ? fn(r) : null))
   const metricLabel = metric2Options.find((o) => o.value === S.metric2)?.label || 'métrica'
   const chartCfgs: Record<string, ChartConfiguration> = {
-    'chart-followers': lineCfg(
+    'chart-followers': followersCfg(
       flWin.map((t) => ddmm(t.date)),
-      [{ label: 'seguidores', data: flWin.map((t) => t.value), color: accent, fill: true, fillColor: 'rgba(119,21,32,0.08)' }],
-      lo({ zero: false, originMap: ORIGEM_FOLLOW })
+      flWin.map((t) => t.value),
+      flWin.map((t) => {
+        const o = ORIGEM_FOLLOW[ddmm(t.date)]
+        return o ? o.p : null
+      }),
+      flWin.map((t) => {
+        const o = ORIGEM_FOLLOW[ddmm(t.date)]
+        return o ? o.o : null
+      })
     ),
     'chart-metric2': lineCfg(
       dLabels,

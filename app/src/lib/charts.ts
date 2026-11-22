@@ -6,7 +6,7 @@
 
 import type { Chart, ChartConfiguration, Plugin } from 'chart.js'
 import { fmtNum, fmtPct } from './format'
-import { RED_RAMP } from './constants'
+import { RED_RAMP, ACCENT } from './constants'
 import type { TallyItem } from './types'
 
 export interface LineDataset {
@@ -20,8 +20,6 @@ export interface LineDataset {
 export interface LineOpts {
   pct?: boolean
   zero?: boolean
-  /** mapa dd/mm -> {p: novos pagos, o: novos não pagos} para sobrepor no tooltip */
-  originMap?: Record<string, { p: number; o: number }>
 }
 
 export function lineCfg(labels: string[], datasets: LineDataset[], opts: LineOpts = {}): ChartConfiguration {
@@ -62,17 +60,9 @@ export function lineCfg(labels: string[], datasets: LineDataset[], opts: LineOpt
           cornerRadius: 8,
           titleFont: { family: 'Arimo', weight: 'bold' },
           bodyFont: { family: 'Arimo' },
-          callbacks: {
-            label: opts.pct ? (c) => c.dataset.label + ': ' + fmtPct(c.parsed.y) : (c) => c.dataset.label + ': ' + fmtNum(c.parsed.y),
-            ...(opts.originMap
-              ? {
-                  afterBody: (items: { label: string }[]) => {
-                    const o = opts.originMap![(items[0] || { label: '' }).label]
-                    return o ? ['Novos pagos (anúncio): ' + fmtNum(o.p), 'Novos não pagos: ' + fmtNum(o.o)] : []
-                  },
-                }
-              : {}),
-          },
+          callbacks: opts.pct
+            ? { label: (c) => c.dataset.label + ': ' + fmtPct(c.parsed.y) }
+            : { label: (c) => c.dataset.label + ': ' + fmtNum(c.parsed.y) },
         },
       },
       scales: {
@@ -89,6 +79,98 @@ export function lineCfg(labels: string[], datasets: LineDataset[], opts: LineOpt
             callback: opts.pct ? (v) => fmtPct(v as number) : (v) => fmtNum(v as number),
           },
         },
+      },
+    },
+  }
+  return cfg as ChartConfiguration
+}
+
+// Gráfico de crescimento de seguidores com origem pago/orgânico.
+// A linha "seguidores" + dois datasets de pontos ocultos ("novos pagos",
+// "novos orgânicos") num eixo secundário: aparecem só no tooltip, com os
+// ícones de cor (displayColors) iguais ao de "seguidores".
+export function followersCfg(
+  labels: string[],
+  seguidores: (number | null)[],
+  pagos: (number | null)[],
+  organicos: (number | null)[]
+): ChartConfiguration {
+  const cfg: ChartConfiguration<'line'> = {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'seguidores',
+          data: seguidores as number[],
+          borderColor: ACCENT,
+          backgroundColor: 'rgba(119,21,32,0.08)',
+          tension: 0.35,
+          borderWidth: 2.2,
+          pointRadius: seguidores.length > 14 ? 0 : 2.5,
+          pointHoverRadius: 4,
+          fill: true,
+          yAxisID: 'y',
+        },
+        {
+          label: 'novos pagos',
+          data: pagos as number[],
+          borderColor: '#771520',
+          backgroundColor: '#771520',
+          pointRadius: 0,
+          borderWidth: 0,
+          showLine: false,
+          pointHoverRadius: 0,
+          yAxisID: 'y2',
+        },
+        {
+          label: 'novos orgânicos',
+          data: organicos as number[],
+          borderColor: '#C9BBAF',
+          backgroundColor: '#C9BBAF',
+          pointRadius: 0,
+          borderWidth: 0,
+          showLine: false,
+          pointHoverRadius: 0,
+          yAxisID: 'y2',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#271217',
+          titleColor: '#F6EFE8',
+          bodyColor: '#EAD9C9',
+          borderColor: '#4A3338',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+          titleFont: { family: 'Arimo', weight: 'bold' },
+          bodyFont: { family: 'Arimo' },
+          displayColors: true,
+          boxWidth: 9,
+          boxHeight: 9,
+          boxPadding: 4,
+          filter: (it) => it.raw != null,
+          callbacks: { label: (c) => c.dataset.label + ': ' + fmtNum(c.parsed.y) },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Arimo', size: 10 }, color: '#6E595D', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 },
+        },
+        y: {
+          beginAtZero: false,
+          grid: { color: 'rgba(119,21,32,0.07)' },
+          ticks: { font: { family: 'Arimo', size: 10 }, color: '#6E595D', callback: (v) => fmtNum(v as number) },
+        },
+        y2: { display: false, beginAtZero: true },
       },
     },
   }
