@@ -20,6 +20,8 @@ export interface LineDataset {
 export interface LineOpts {
   pct?: boolean
   zero?: boolean
+  /** mapa dd/mm -> {p: novos pagos, o: novos não pagos} para sobrepor no tooltip */
+  originMap?: Record<string, { p: number; o: number }>
 }
 
 export function lineCfg(labels: string[], datasets: LineDataset[], opts: LineOpts = {}): ChartConfiguration {
@@ -60,9 +62,17 @@ export function lineCfg(labels: string[], datasets: LineDataset[], opts: LineOpt
           cornerRadius: 8,
           titleFont: { family: 'Arimo', weight: 'bold' },
           bodyFont: { family: 'Arimo' },
-          callbacks: opts.pct
-            ? { label: (c) => c.dataset.label + ': ' + fmtPct(c.parsed.y) }
-            : { label: (c) => c.dataset.label + ': ' + fmtNum(c.parsed.y) },
+          callbacks: {
+            label: opts.pct ? (c) => c.dataset.label + ': ' + fmtPct(c.parsed.y) : (c) => c.dataset.label + ': ' + fmtNum(c.parsed.y),
+            ...(opts.originMap
+              ? {
+                  afterBody: (items: { label: string }[]) => {
+                    const o = opts.originMap![(items[0] || { label: '' }).label]
+                    return o ? ['Novos pagos (anúncio): ' + fmtNum(o.p), 'Novos não pagos: ' + fmtNum(o.o)] : []
+                  },
+                }
+              : {}),
+          },
         },
       },
       scales: {

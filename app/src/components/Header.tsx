@@ -13,9 +13,9 @@ const labelCap: CSSProperties = {
 
 const PAGES: { key: PageKey; label: string }[] = [
   { key: 'conta', label: 'Dados da Conta' },
-  { key: 'audiencia', label: 'Audiência' },
   { key: 'conteudos', label: 'Dados dos Conteúdos' },
   { key: 'candidaturas', label: 'Dados dos Funis' },
+  { key: 'audiencia', label: 'Dados da Audiência' },
   { key: 'plano', label: 'Acompanhamento' },
   { key: 'resultados', label: 'Resultados Mensais' },
 ]

@@ -9,6 +9,7 @@ import { fmtNum, fmtPct, delta } from './format'
 import { windowOf, kpiWindowOf, agg, tlAt, dailyAt } from './model'
 import { lineCfg, type LineOpts } from './charts'
 import { learnings, type Learning, type ThemeRow } from './learnings'
+import { ORIGEM_FOLLOW } from './origemFollow'
 import { ACCENT, COVER_BG } from './constants'
 import type { Model, MonthDef, MediaPost, DailyRow } from './types'
 import type { ChartConfiguration } from 'chart.js'
@@ -61,7 +62,7 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
     S.page === 'conta'
       ? 'Dados da Conta'
       : S.page === 'audiencia'
-        ? 'Audiência'
+        ? 'Dados da Audiência'
         : S.page === 'conteudos'
         ? 'Dados dos Conteúdos'
         : S.page === 'insights'
@@ -192,7 +193,7 @@ export function contaVM(M: Model, S: DashState): ContaVM {
     'chart-followers': lineCfg(
       flWin.map((t) => ddmm(t.date)),
       [{ label: 'seguidores', data: flWin.map((t) => t.value), color: accent, fill: true, fillColor: 'rgba(119,21,32,0.08)' }],
-      lo({ zero: false })
+      lo({ zero: false, originMap: ORIGEM_FOLLOW })
     ),
     'chart-metric2': lineCfg(
       dLabels,
