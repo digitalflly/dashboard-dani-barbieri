@@ -21,6 +21,7 @@ const mapRow = (thumbs: Record<string, string>, links: Record<string, string>, e
   purchases: a.pur,
   revenue: a.rev,
   spend: a.spend,
+  follows: 0,
 })
 
 export function goldenAgg(
