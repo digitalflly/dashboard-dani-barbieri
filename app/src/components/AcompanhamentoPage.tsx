@@ -6,10 +6,12 @@ import {
   aqFaixaCols,
   acompLineCfg,
   aqLineCfg,
+  seguidoresRows,
   ACOMP_METRIC_OPTIONS,
   AQ_METRIC_OPTIONS,
   type ContentRow,
   type AquisicaoRow,
+  type SeguidorRow,
 } from '../lib/acomp'
 import { ddmm, addDays } from '../lib/dates'
 import ChartCanvas from './ChartCanvas'
@@ -19,7 +21,7 @@ const th: CSSProperties = { fontSize: 10, letterSpacing: '0.04em', textTransform
 const sectionTitle: CSSProperties = { fontFamily: 'var(--font-sans)', fontWeight: 600, letterSpacing: '-0.01em', fontSize: 22, color: 'var(--text-strong)' }
 const selectStyle: CSSProperties = { height: 34, padding: '0 12px', minWidth: 210 }
 
-function LabelCell({ r, onToggle }: { r: ContentRow | AquisicaoRow; onToggle: (key: string) => void }) {
+function LabelCell({ r, onToggle }: { r: ContentRow | AquisicaoRow | SeguidorRow; onToggle: (key: string) => void }) {
   if (r.hasChildren) {
     return (
       <button
@@ -42,8 +44,10 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
   const aq = aqLineCfg(M, S, (w) => setState({ aqWeek: w }))
   const faixaCols = aqFaixaCols(M, S)
   const aqMetricOptions = AQ_METRIC_OPTIONS.filter((o) => !/^fx_(AB|U)$/.test(o.value) || faixaCols.some((c) => 'fx_' + c.key === o.value))
+  const sRows = seguidoresRows(S)
   const toggleCt = (key: string): void => setState((s) => ({ ctExpanded: { ...(s.ctExpanded || {}), [key]: !(s.ctExpanded && s.ctExpanded[key]) } }))
   const toggleAq = (key: string): void => setState((s) => ({ aqExpanded: { ...(s.aqExpanded || {}), [key]: !(s.aqExpanded && s.aqExpanded[key]) } }))
+  const toggleSeg = (key: string): void => setState((s) => ({ segExpanded: { ...(s.segExpanded || {}), [key]: !(s.segExpanded && s.segExpanded[key]) } }))
   const tdLabel: CSSProperties = { textAlign: 'left', padding: '10px 5px 10px 4px', fontSize: 13, color: 'var(--text-strong)', whiteSpace: 'nowrap' }
   const tdNum: CSSProperties = { textAlign: 'right', padding: '10px 5px', fontSize: 12, color: 'var(--text-strong)' }
 
@@ -168,6 +172,52 @@ export default function AcompanhamentoPage({ dash }: { dash: Dashboard }) {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* SEGUIDORES QUALIFICADOS */}
+      <div style={{ margin: '30px 0 16px' }}>
+        <div style={sectionTitle}>Seguidores qualificados</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 5, lineHeight: 1.5 }}>
+          Classificação da base por @ + biografia (profissão dentro do ICP). Dado extraído manualmente — outubro 01–31/10, novembro 01–18/11
+          (parcial). Clique no mês para abrir as semanas, e na semana para abrir os dias.
+        </div>
+      </div>
+      <div className="b-card" style={{ padding: '20px 22px', marginBottom: 16 }}>
+        <div style={{ overflowX: 'auto', margin: '0 -4px' }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 520 }}>
+            <thead>
+              <tr style={{ textAlign: 'right' }}>
+                <th style={{ ...th, textAlign: 'left', padding: '0 6px 10px' }}>Período</th>
+                <th style={{ ...th, padding: '0 6px 10px' }}>Novos seguidores</th>
+                <th style={{ ...th, padding: '0 6px 10px' }}>Qualif.</th>
+                <th style={{ ...th, padding: '0 6px 10px' }}>% Qualif.</th>
+                <th style={{ ...th, padding: '0 6px 10px' }}>% Estética</th>
+                <th style={{ ...th, padding: '0 6px 10px' }}>% Não qualif.</th>
+                <th style={{ ...th, padding: '0 6px 10px' }}>% Sem id.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sRows.map((r) => (
+                <tr key={r.key} style={{ textAlign: 'right', borderTop: '1px solid var(--border-soft)' }}>
+                  <td style={{ ...tdLabel, padding: '9px 6px 9px 4px', fontSize: 12.5 }}>
+                    <LabelCell r={r} onToggle={toggleSeg} />
+                  </td>
+                  <td data-keepcase="1" style={{ ...tdNum, padding: '9px 6px' }}>{r.tot}</td>
+                  <td data-keepcase="1" style={{ ...tdNum, padding: '9px 6px', fontWeight: 600, color: '#771520' }}>{r.qual}</td>
+                  <td data-keepcase="1" style={{ ...tdNum, padding: '9px 6px', fontWeight: 600, color: '#771520' }}>{r.pQ}</td>
+                  <td data-keepcase="1" style={{ ...tdNum, padding: '9px 6px', color: 'var(--text-muted)' }}>{r.pE}</td>
+                  <td data-keepcase="1" style={{ ...tdNum, padding: '9px 6px', color: 'var(--text-muted)' }}>{r.pNq}</td>
+                  <td data-keepcase="1" style={{ ...tdNum, padding: '9px 6px', color: 'var(--text-muted)' }}>{r.pS}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
+          * Novembro parcial (até 18/11). "Qualificada" = profissão do ICP identificada por @ + bio (não é o MQL do funil, que exige também
+          faturamento ≥ R$ 15 mil). "Estética" = do ramo, não qualificada específica. "Não qualif." = profissão fora do nicho. "Sem id." = sem
+          sinal de profissão.
         </div>
       </div>
     </div>

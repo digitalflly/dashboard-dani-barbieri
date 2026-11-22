@@ -42,14 +42,21 @@ export interface AudienceData {
 // ---------- fetch ao vivo ----------
 const num = (v: unknown): number => (v == null || v === '' ? 0 : +(v as number) || 0)
 const isDate = (s: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(s)
+const fd = (d: Date): string => ymd(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())))
 
-async function pull(fields: string, extra?: string): Promise<Record<string, unknown>[]> {
+// O endpoint REST (api_key) EXIGE date_from/date_to — sem eles retorna HTTP 400.
+// Para os snapshots lifetime (perfil/gênero-idade/cidade) usamos uma janela
+// recente; como podem repetir uma linha por dia, agregamos pegando o MAIOR valor.
+async function pull(fields: string, from: string, to: string): Promise<Record<string, unknown>[]> {
   const url =
     'https://connectors.windsor.ai/instagram?api_key=' +
     encodeURIComponent(WINDSOR_KEY) +
+    '&date_from=' +
+    from +
+    '&date_to=' +
+    to +
     '&fields=' +
     encodeURIComponent(fields) +
-    (extra || '') +
     '&_cb=' +
     Date.now()
   const r = await fetch(url, { cache: 'no-store' })
@@ -57,17 +64,37 @@ async function pull(fields: string, extra?: string): Promise<Record<string, unkn
   const j = await r.json()
   if (j && j.error) throw new Error(String(j.error).slice(0, 120))
   const arr: Record<string, unknown>[] = j && j.data ? j.data : Array.isArray(j) ? j : []
-  return arr.filter((x) => String(x.account_id ?? '') === IG_ACCOUNT_ID)
+  // filtro leniente por conta: mantém linhas sem account_id (algumas tabelas
+  // demográficas não trazem o campo por linha) e as que batem com a conta.
+  return arr.filter((x) => {
+    const a = String(x.account_id ?? '')
+    return a === '' || a === IG_ACCOUNT_ID
+  })
+}
+
+// agrega por rótulo pegando o MAIOR valor (snapshot lifetime pode repetir por dia).
+function dedupeMax(rows: Record<string, unknown>[], nameKey: string, sizeKey: string): AudGeo[] {
+  const by: Record<string, number> = {}
+  rows.forEach((r) => {
+    const name = String(r[nameKey] ?? '').trim()
+    if (!name) return
+    by[name] = Math.max(by[name] || 0, num(r[sizeKey]))
+  })
+  return Object.keys(by)
+    .map((name) => ({ name, size: by[name] }))
+    .sort((a, b) => b.size - a.size)
 }
 
 /** Lê a série diária + os snapshots de perfil/gênero-idade/cidade. Lança se faltar demografia. */
 export async function fetchAudience(): Promise<AudienceData> {
-  const today = ymd(new Date())
+  const now = new Date()
+  const today = fd(now)
+  const snapFrom = fd(new Date(now.getTime() - 10 * 86400000)) // janela recente p/ o snapshot lifetime
   const [daily, prof, ga, city] = await Promise.all([
-    pull('account_id,date,reach,total_interactions,accounts_engaged,follower_count', '&date_from=2026-08-01&date_to=' + today),
-    pull('account_id,followers_count,follows_count,media_count'),
-    pull('account_id,audience_gender_age_name,audience_gender_age_size'),
-    pull('account_id,city,audience_city_size'),
+    pull('account_id,date,reach,total_interactions,accounts_engaged,follower_count', '2026-08-01', today),
+    pull('account_id,followers_count', snapFrom, today),
+    pull('account_id,audience_gender_age_name,audience_gender_age_size', snapFrom, today),
+    pull('account_id,city,audience_city_size', snapFrom, today),
   ])
 
   const dailyRows: AudDaily[] = daily
@@ -81,13 +108,10 @@ export async function fetchAudience(): Promise<AudienceData> {
     .filter((d) => isDate(d.date))
     .sort((a, b) => (a.date < b.date ? -1 : 1))
 
-  const followers = num((prof[0] || {}).followers_count)
-  const gaRows: AudGeo[] = ga
-    .map((r) => ({ name: String(r.audience_gender_age_name ?? '').trim(), size: num(r.audience_gender_age_size) }))
-    .filter((g) => g.name)
-  const cityRows: AudGeo[] = city
-    .map((r) => ({ name: String(r.city ?? '').trim(), size: num(r.audience_city_size) }))
-    .filter((c) => c.name)
+  // followers: maior followers_count da janela (cresce, então o máximo ≈ o mais recente)
+  const followers = prof.reduce((a, r) => Math.max(a, num(r.followers_count)), 0)
+  const gaRows = dedupeMax(ga, 'audience_gender_age_name', 'audience_gender_age_size')
+  const cityRows = dedupeMax(city, 'city', 'audience_city_size')
 
   if (!gaRows.length) throw new Error('Sem dados de demografia para @' + HANDLE + '.')
 
