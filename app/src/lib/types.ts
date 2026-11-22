@@ -123,6 +123,8 @@ export interface AdRow {
   lpViews: number
   leads: number
   spend: number
+  // seguidores ganhos a partir do anúncio (instagram_profile_follow do Windsor)
+  follows: number
   // Golden Ticket (e-commerce) — só no snapshot estático
   checkout?: number
   purchases?: number
@@ -158,6 +160,7 @@ export interface AdDailyRow {
   purchases: number
   revenue: number
   spend: number
+  follows: number
 }
 // turbinamento — agregado por campanha (funil Seguidores)
 export interface TurbinaRow {

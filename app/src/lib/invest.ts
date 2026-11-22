@@ -62,6 +62,7 @@ export interface InvestAdRow {
   checkout: string
   custoLead: string
   leads: string
+  seg: string
 }
 export interface InvestAdsetRow {
   idx: number
@@ -416,6 +417,7 @@ export function investFunnel(
       checkout: fmtNum(a.checkout || 0),
       custoLead: money2((() => { const res = usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads; return res ? a.spend / res : 0 })()),
       leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
+      seg: fmtNum(a.follows || 0),
     }))
   } else {
     const adNames = [
@@ -452,6 +454,7 @@ export function investFunnel(
         checkout: fmtNum(0),
         custoLead: money2((isSeg ? clk : leads) ? investido * w[i] / (isSeg ? clk : leads) : 0),
         leads: fmtNum(isSeg ? clk : leads),
+        seg: fmtNum(Math.round(impr * 0.03)),
       }
     })
   }

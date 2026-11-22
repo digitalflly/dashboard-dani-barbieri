@@ -25,7 +25,7 @@ export async function fetchAds(): Promise<AdsResult> {
   const to = new Date()
   const from = new Date(Date.UTC(2025, 4, 1)) // 2025-05-01 — cobre todo o histórico das contas
   const fields =
-    'account_id,date,campaign,adset_name,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend'
+    'account_id,date,campaign,adset_name,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend,instagram_profile_follow'
   // o conector às vezes devolve resposta parcial (capada) sem a conta da Dani —
   // tenta até 6x com cache-buster até a conta aparecer
   let base: Record<string, unknown>[] = []
@@ -71,6 +71,7 @@ export async function fetchAds(): Promise<AdsResult> {
     purchases: num(x.actions_purchase),
     revenue: num(x.action_values_purchase),
     spend: num(x.spend),
+    follows: num(x.instagram_profile_follow),
   }))
   let mn: string | null = null
   let mx: string | null = null
@@ -98,7 +99,7 @@ export function adsAgg(
   rows.forEach((x) => {
     const a =
       byAd[x.ad] ||
-      (byAd[x.ad] = { name: x.ad, thumb: '', permalink: '', impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, leads: 0, checkout: 0, purchases: 0, revenue: 0, spend: 0 })
+      (byAd[x.ad] = { name: x.ad, thumb: '', permalink: '', impressions: 0, reach: 0, linkClicks: 0, lpViews: 0, leads: 0, checkout: 0, purchases: 0, revenue: 0, spend: 0, follows: 0 })
     a.impressions += x.impressions
     a.reach += x.reach
     a.linkClicks += x.linkClicks
@@ -108,6 +109,7 @@ export function adsAgg(
     a.purchases = (a.purchases || 0) + x.purchases
     a.revenue = (a.revenue || 0) + x.revenue
     a.spend += x.spend
+    a.follows += x.follows
     if (!a.thumb && x.thumb) a.thumb = x.thumb
     // link do anúncio: permalink do IG, senão a biblioteca de anúncios do Facebook
     if (!a.permalink) a.permalink = x.permalink || (x.adId ? 'https://www.facebook.com/ads/library/?id=' + x.adId : '')
