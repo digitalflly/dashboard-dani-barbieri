@@ -8,7 +8,7 @@
 // A análise de qualificação (@/bio) é curada e vive em audienceQual.
 // ============================================================
 
-import { WINDSOR_KEY, IG_ACCOUNT_ID, HANDLE, ACCENT } from './constants'
+import { WINDSOR_KEY, HANDLE, ACCENT } from './constants'
 import { ymd } from './dates'
 import { fmtNum } from './format'
 import type { Model } from './types'
@@ -44,9 +44,12 @@ const num = (v: unknown): number => (v == null || v === '' ? 0 : +(v as number) 
 const isDate = (s: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(s)
 const fd = (d: Date): string => ymd(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())))
 
-// O endpoint REST (api_key) EXIGE date_from/date_to — sem eles retorna HTTP 400.
-// Para os snapshots lifetime (perfil/gênero-idade/cidade) usamos uma janela
-// recente; como podem repetir uma linha por dia, agregamos pegando o MAIOR valor.
+// O endpoint REST (api_key) EXIGE date_from/date_to. Além disso, cada campo vive
+// numa "tabela" do conector e tem regras próprias — ex.: `follower_count` só
+// aceita os últimos 30 dias (fora disso → HTTP 400). Por isso separamos as
+// consultas por tabela/limite e filtramos por `username` (mesmo padrão da aba
+// Conta, que funciona), deixando as tabelas lifetime (demografia) tolerantes a
+// falha para não derrubar a página inteira.
 async function pull(fields: string, from: string, to: string): Promise<Record<string, unknown>[]> {
   const url =
     'https://connectors.windsor.ai/instagram?api_key=' +
@@ -63,14 +66,11 @@ async function pull(fields: string, from: string, to: string): Promise<Record<st
   if (!r.ok) throw new Error('Instagram HTTP ' + r.status)
   const j = await r.json()
   if (j && j.error) throw new Error(String(j.error).slice(0, 120))
-  const arr: Record<string, unknown>[] = j && j.data ? j.data : Array.isArray(j) ? j : []
-  // filtro leniente por conta: mantém linhas sem account_id (algumas tabelas
-  // demográficas não trazem o campo por linha) e as que batem com a conta.
-  return arr.filter((x) => {
-    const a = String(x.account_id ?? '')
-    return a === '' || a === IG_ACCOUNT_ID
-  })
+  return j && j.data ? j.data : Array.isArray(j) ? j : []
 }
+
+const isMine = (r: Record<string, unknown>): boolean => String(r.username ?? '').toLowerCase() === HANDLE.toLowerCase()
+const safe = (p: Promise<Record<string, unknown>[]>): Promise<Record<string, unknown>[]> => p.catch(() => [] as Record<string, unknown>[])
 
 // agrega por rótulo pegando o MAIOR valor (snapshot lifetime pode repetir por dia).
 function dedupeMax(rows: Record<string, unknown>[], nameKey: string, sizeKey: string): AudGeo[] {
@@ -85,35 +85,44 @@ function dedupeMax(rows: Record<string, unknown>[], nameKey: string, sizeKey: st
     .sort((a, b) => b.size - a.size)
 }
 
-/** Lê a série diária + os snapshots de perfil/gênero-idade/cidade. Lança se faltar demografia. */
+/** Lê a série diária + os snapshots de perfil/gênero-idade/cidade. */
 export async function fetchAudience(): Promise<AudienceData> {
   const now = new Date()
   const today = fd(now)
-  const snapFrom = fd(new Date(now.getTime() - 10 * 86400000)) // janela recente p/ o snapshot lifetime
-  const [daily, prof, ga, city] = await Promise.all([
-    pull('account_id,date,reach,total_interactions,accounts_engaged,follower_count', '2026-08-01', today),
-    pull('account_id,followers_count', snapFrom, today),
-    pull('account_id,audience_gender_age_name,audience_gender_age_size', snapFrom, today),
-    pull('account_id,city,audience_city_size', snapFrom, today),
+  const d30 = fd(new Date(now.getTime() - 29 * 86400000)) // limite do follower_count
+  const d7 = fd(new Date(now.getTime() - 7 * 86400000)) // janela recente p/ snapshots
+
+  const [dailyRaw, newfRaw, profRaw, gaRaw, cityRaw] = await Promise.all([
+    safe(pull('date,reach,total_interactions,accounts_engaged,username', '2026-08-01', today)),
+    safe(pull('date,follower_count,username', d30, today)),
+    safe(pull('followers_count,username', d7, today)),
+    safe(pull('audience_gender_age_name,audience_gender_age_size', d7, today)),
+    safe(pull('city,audience_city_size', d7, today)),
   ])
 
-  const dailyRows: AudDaily[] = daily
-    .map((r) => ({
-      date: String(r.date ?? '').slice(0, 10),
-      reach: num(r.reach),
-      inter: num(r.total_interactions),
-      engaged: num(r.accounts_engaged),
-      newf: num(r.follower_count),
-    }))
+  // novos seguidores por dia (follower_count, só últimos ~30 dias)
+  const newfBy: Record<string, number> = {}
+  newfRaw.filter(isMine).forEach((r) => {
+    const d = String(r.date ?? '').slice(0, 10)
+    if (isDate(d)) newfBy[d] = num(r.follower_count)
+  })
+
+  const dailyRows: AudDaily[] = dailyRaw
+    .filter(isMine)
+    .map((r) => {
+      const date = String(r.date ?? '').slice(0, 10)
+      return { date, reach: num(r.reach), inter: num(r.total_interactions), engaged: num(r.accounts_engaged), newf: newfBy[date] || 0 }
+    })
     .filter((d) => isDate(d.date))
     .sort((a, b) => (a.date < b.date ? -1 : 1))
 
   // followers: maior followers_count da janela (cresce, então o máximo ≈ o mais recente)
-  const followers = prof.reduce((a, r) => Math.max(a, num(r.followers_count)), 0)
-  const gaRows = dedupeMax(ga, 'audience_gender_age_name', 'audience_gender_age_size')
-  const cityRows = dedupeMax(city, 'city', 'audience_city_size')
+  const followers = profRaw.filter(isMine).reduce((a, r) => Math.max(a, num(r.followers_count)), 0)
+  // tabelas lifetime não trazem username por linha — mantém todas (a chave é da conta)
+  const gaRows = dedupeMax(gaRaw, 'audience_gender_age_name', 'audience_gender_age_size')
+  const cityRows = dedupeMax(cityRaw, 'city', 'audience_city_size')
 
-  if (!gaRows.length) throw new Error('Sem dados de demografia para @' + HANDLE + '.')
+  if (!dailyRows.length && !followers && !gaRows.length) throw new Error('Sem dados ao vivo para @' + HANDLE + '.')
 
   return { daily: dailyRows, followers, ga: gaRows, city: cityRows, fetchedAt: today }
 }
@@ -242,15 +251,22 @@ export function audienceVM(_M: Model, S: DashState): AudienceVM {
   }))
 
   // ----- persona predominante -----
-  const gWin = [
-    ['Feminino', gmap.F],
-    ['Masculino', gmap.M],
-    ['Não informado', gmap.U],
-  ].sort((a, b) => (b[1] as number) - (a[1] as number))[0]
-  const aWin = AGES.map((a) => [a, amap[a] || 0] as [string, number]).sort((a, b) => b[1] - a[1])[0]
-  const sWin = states[0] || ['—', 0]
-  base.persona = { gender: String(gWin[0]), age: aWin[0] + ' anos', state: String(sWin[0]) }
-  base.demoNote = 'Foto atual de quem segue o perfil — ' + fmtNum(gaTot) + ' seguidores classificados por gênero e idade'
+  if (A.ga.length) {
+    const gWin = [
+      ['Feminino', gmap.F],
+      ['Masculino', gmap.M],
+      ['Não informado', gmap.U],
+    ].sort((a, b) => (b[1] as number) - (a[1] as number))[0]
+    const aWin = AGES.map((a) => [a, amap[a] || 0] as [string, number]).sort((a, b) => b[1] - a[1])[0]
+    const sWin = states[0] || ['—', 0]
+    base.persona = { gender: String(gWin[0]), age: aWin[0] + ' anos', state: String(sWin[0]) }
+    base.demoNote = 'Foto atual de quem segue o perfil — ' + fmtNum(gaTot) + ' seguidores classificados por gênero e idade'
+  } else {
+    // gênero/idade ao vivo indisponíveis (tabela lifetime) — mantém KPIs e geografia
+    base.age = []
+    base.persona = { gender: '—', age: '—', state: states[0] ? String(states[0][0]) : '—' }
+    base.demoNote = 'Demografia (gênero, idade) ao vivo indisponível no momento — toque em Atualizar.'
+  }
 
   return base
 }
