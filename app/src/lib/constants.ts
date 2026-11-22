@@ -147,6 +147,8 @@ export const COVER_BG = ['#771520', '#771520', '#771520', '#771520', '#771520', 
 // Windsor.ai — conexão ao vivo (chave do cliente; visível no fonte do arquivo)
 export const WINDSOR_KEY = 'cc5920b6dff9cc53e32402809e467b617f83'
 export const HANDLE = 'danibarbieribeauty'
+// id da conta Instagram (usado para filtrar as linhas demográficas do Windsor)
+export const IG_ACCOUNT_ID = '17841404490943926'
 export const BRAND_NAME = 'Danielle Barbieri'
 
 export const ACCENT = '#771520'

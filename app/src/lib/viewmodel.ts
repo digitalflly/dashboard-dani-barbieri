@@ -9,6 +9,7 @@ import { fmtNum, fmtPct, delta } from './format'
 import { windowOf, kpiWindowOf, agg, tlAt, dailyAt } from './model'
 import { lineCfg, type LineOpts } from './charts'
 import { learnings, type Learning, type ThemeRow } from './learnings'
+import { ORIGEM_FOLLOW } from './origemFollow'
 import { ACCENT, COVER_BG } from './constants'
 import type { Model, MonthDef, MediaPost, DailyRow } from './types'
 import type { ChartConfiguration } from 'chart.js'
@@ -60,7 +61,9 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
   const pageTitle =
     S.page === 'conta'
       ? 'Dados da Conta'
-      : S.page === 'conteudos'
+      : S.page === 'audiencia'
+        ? 'Dados da Audiência'
+        : S.page === 'conteudos'
         ? 'Dados dos Conteúdos'
         : S.page === 'insights'
           ? 'Insights dos Conteúdos'
@@ -75,9 +78,9 @@ export function headerVM(M: Model, S: DashState): HeaderVM {
     dormant: S.dormant && !S.mediaLoading,
     pageTitle,
     // filtros (mês + intervalo de datas) — conta / conteúdos / acompanhamento
-    showFilters: S.page !== 'candidaturas' && S.page !== 'resultados',
+    showFilters: S.page !== 'candidaturas' && S.page !== 'resultados' && S.page !== 'audiencia',
     // seletor de mês — também em Resultados Mensais
-    showMonth: S.page !== 'candidaturas',
+    showMonth: S.page !== 'candidaturas' && S.page !== 'audiencia',
     showFunnelFilters: S.page === 'candidaturas',
     refreshLabel: S.refreshing ? 'Atualizando…' : 'Atualizar',
     dayMin: M.minDate,
@@ -190,7 +193,7 @@ export function contaVM(M: Model, S: DashState): ContaVM {
     'chart-followers': lineCfg(
       flWin.map((t) => ddmm(t.date)),
       [{ label: 'seguidores', data: flWin.map((t) => t.value), color: accent, fill: true, fillColor: 'rgba(119,21,32,0.08)' }],
-      lo({ zero: false })
+      lo({ zero: false, originMap: ORIGEM_FOLLOW })
     ),
     'chart-metric2': lineCfg(
       dLabels,
