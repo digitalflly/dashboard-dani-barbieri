@@ -59,6 +59,7 @@ export interface DashState {
   resOpen: Record<string, boolean>
   ctExpanded: Record<string, boolean>
   aqExpanded: Record<string, boolean>
+  segExpanded: Record<string, boolean>
   // Acompanhamento — métricas dos gráficos + drill
   acompMetric: string
   aqMetric: string
@@ -125,6 +126,7 @@ export function useDashboard(): Dashboard {
     resOpen: {},
     ctExpanded: {},
     aqExpanded: {},
+    segExpanded: {},
     acompMetric: 'reelsReach',
     aqMetric: 'qual',
     aqSrc: 'all',

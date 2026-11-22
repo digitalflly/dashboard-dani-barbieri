@@ -14,6 +14,7 @@ import { windowOf } from './model'
 import { lineCfg } from './charts'
 import { monday, addDays, ddmm, lastDayOf } from './dates'
 import { ADS_CAMPAIGN_MATCH } from './constants'
+import { SEG_DAILY } from './segDaily'
 import type { Model, MediaPost } from './types'
 import type { DashState } from './useDashboard'
 
@@ -191,6 +192,77 @@ export function contentRows(M: Model, S: DashState): ContentRow[] {
     caret: level < 2 ? (exp[key] ? '−' : '+') : '',
   })
   const out: ContentRow[] = []
+  Object.keys(T).sort().reverse().forEach((ym) => {
+    const Mo = T[ym]
+    out.push(fmtRow(ym, 0, MN[+ym.slice(5, 7) - 1] + ' ' + ym.slice(0, 4), Mo.n))
+    if (exp[ym]) {
+      Object.keys(Mo.w).sort().reverse().forEach((wk) => {
+        const W = Mo.w[wk]
+        out.push(fmtRow(ym + '|' + wk, 1, weekLabel(ym, wk), W.n))
+        if (exp[ym + '|' + wk]) {
+          Object.keys(W.d).sort().reverse().forEach((day) => out.push(fmtRow(ym + '|' + wk + '|' + day, 2, ddmm(day), W.d[day])))
+        }
+      })
+    }
+  })
+  return out
+}
+
+// ----- Seguidores qualificados: árvore mês → semana → dia (classificação @ + bio) -----
+interface SNode {
+  Q: number
+  E: number
+  N: number
+  S: number
+}
+export interface SeguidorRow extends AcompRow {
+  tot: string
+  qual: string
+  pQ: string
+  pE: string
+  pNq: string
+  pS: string
+}
+export function seguidoresRows(S: DashState): SeguidorRow[] {
+  const mk = (): SNode => ({ Q: 0, E: 0, N: 0, S: 0 })
+  const T: Record<string, { n: SNode; w: Record<string, { n: SNode; d: Record<string, SNode> }> }> = {}
+  const touch = (ym: string, wk: string, day: string): SNode[] => {
+    const Mo = T[ym] || (T[ym] = { n: mk(), w: {} })
+    const W = Mo.w[wk] || (Mo.w[wk] = { n: mk(), d: {} })
+    const D = W.d[day] || (W.d[day] = mk())
+    return [Mo.n, W.n, D]
+  }
+  Object.keys(SEG_DAILY).forEach((day) => {
+    const ym = day.slice(0, 7)
+    const wk = monday(day)
+    const v = SEG_DAILY[day]
+    touch(ym, wk, day).forEach((n) => {
+      n.Q += v.Q
+      n.E += v.E
+      n.N += v.N
+      n.S += v.S
+    })
+  })
+  const exp = S.segExpanded || {}
+  const fmtRow = (key: string, level: number, label: string, n: SNode): SeguidorRow => {
+    const tot = n.Q + n.E + n.N + n.S
+    return {
+      key,
+      level,
+      label,
+      indent: level * 18,
+      tot: fmtNum(tot),
+      qual: fmtNum(n.Q),
+      pQ: fmtPct(tot ? (n.Q / tot) * 100 : null),
+      pE: fmtPct(tot ? (n.E / tot) * 100 : null),
+      pNq: fmtPct(tot ? (n.N / tot) * 100 : null),
+      pS: fmtPct(tot ? (n.S / tot) * 100 : null),
+      hasChildren: level < 2,
+      leaf: level >= 2,
+      caret: level < 2 ? (exp[key] ? '−' : '+') : '',
+    }
+  }
+  const out: SeguidorRow[] = []
   Object.keys(T).sort().reverse().forEach((ym) => {
     const Mo = T[ym]
     out.push(fmtRow(ym, 0, MN[+ym.slice(5, 7) - 1] + ' ' + ym.slice(0, 4), Mo.n))
