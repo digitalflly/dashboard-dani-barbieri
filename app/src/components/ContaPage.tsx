@@ -44,7 +44,7 @@ export default function ContaPage({ dash }: { dash: Dashboard }) {
               {k.label}
             </div>
             <div>
-              <div style={{ fontSize: 21, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{k.value}</div>
+              <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{k.value}</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4, minHeight: 16, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 11, fontWeight: 600, color: k.deltaColor }}>{k.deltaText}</span>
                 <span style={{ fontSize: 11, color: 'var(--ink-300)' }}>{k.sub}</span>

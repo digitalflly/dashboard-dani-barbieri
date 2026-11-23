@@ -70,7 +70,7 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
           >
             <div style={kpiLabel}>{k.label}</div>
             <div>
-              <div data-keepcase="1" style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{k.value}</div>
+              <div data-keepcase="1" style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{k.value}</div>
               <div data-keepcase="1" style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 4 }}>{k.sub}</div>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
           >
             <div style={kpiLabel}>{c.label}</div>
             <div>
-              <div data-keepcase="1" style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{c.value}</div>
+              <div data-keepcase="1" style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{c.value}</div>
               <div data-keepcase="1" style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 4 }}>{c.sub}</div>
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
             >
               <div style={kpiLabel}>{c.label}</div>
               <div>
-                <div data-keepcase="1" style={{ fontSize: 20, fontWeight: 600, color: c.hot ? '#b0202f' : 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{c.value}</div>
+                <div data-keepcase="1" style={{ fontSize: 26, fontWeight: 600, color: c.hot ? '#b0202f' : 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{c.value}</div>
                 <div data-keepcase="1" style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 4 }}>{c.sub}</div>
               </div>
             </div>
