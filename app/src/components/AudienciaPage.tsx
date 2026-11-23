@@ -190,7 +190,10 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
               <div style={kpiLabel}>{c.label}</div>
               <div>
                 <div data-keepcase="1" style={{ fontSize: 26, fontWeight: 600, color: c.hot ? '#b0202f' : 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>{c.value}</div>
-                <div data-keepcase="1" style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 4 }}>{c.sub}</div>
+                <div style={{ height: 6, background: 'var(--border-soft)', borderRadius: 3, overflow: 'hidden', marginTop: 8 }}>
+                  <div style={{ height: '100%', width: c.pct + '%', background: c.hot ? '#b0202f' : '#771520', borderRadius: 3 }}></div>
+                </div>
+                <div data-keepcase="1" style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 6 }}>{c.sub}</div>
               </div>
             </div>
           ))}
