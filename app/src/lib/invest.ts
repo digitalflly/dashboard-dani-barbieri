@@ -48,6 +48,9 @@ export interface InvestStage {
 export interface InvestStat {
   label: string
   value: string
+  // destaque do valor (usado no card "Meta veiculada" do funil de Aplicação Direta)
+  valueColor?: string
+  valueBig?: boolean
 }
 export interface InvestAdRow {
   idx: number
@@ -372,8 +375,27 @@ export function investFunnel(
     return { label: s.label, value: fmtNum(s.value), left, barStyle: { width: `${widths[i]}%`, background: '#771520' } }
   })
 
+  // acompanhamento de meta de gasto (teto mensal) — só no funil de Aplicação Direta.
+  // Meta = R$ 10 mil por mês em set/out/nov 2026; some os meses do período filtrado.
+  const META_MES = 10000
+  const META_MESES = ['2026-09', '2026-10', '2026-11']
+  let metaInfo: { pct: string; over: boolean } | undefined = undefined
+  if (key === 'aplicacao') {
+    const lo = from ? from.slice(0, 7) : '0000-00'
+    const hi = to ? to.slice(0, 7) : '9999-99'
+    const nMeses = META_MESES.filter((m) => m >= lo && m <= hi).length
+    const meta = nMeses * META_MES
+    if (meta > 0) {
+      const pct = (investido / meta) * 100
+      metaInfo = { pct: pct.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '%', over: pct > 100 }
+    }
+  }
+
   const investStats: InvestStat[] = [
     { label: hasReal || GT ? 'Investimento' : 'Investimento (estim.)', value: 'R$ ' + fmtNum(investido) },
+    ...(metaInfo
+      ? [{ label: 'Meta veiculada', value: metaInfo.pct, valueColor: metaInfo.over ? '#b0202f' : '#771520', valueBig: true } as InvestStat]
+      : []),
     { label: 'CPM', value: money2(cpm) },
     { label: 'Custo por clique', value: money2(cpc) },
     key === 'aplicacao'
