@@ -2,8 +2,6 @@ import { useState, type CSSProperties } from 'react'
 import type { Dashboard } from '../lib/useDashboard'
 import { audienceVM, type AudBar } from '../lib/audience'
 import { PREVIA_CARDS, PREVIA_BARS, QUAL_MONTHS, WOMAN_ICON } from '../lib/audienceQual'
-import { doughnutCfg } from '../lib/charts'
-import ChartCanvas from './ChartCanvas'
 
 const sectionTitle: CSSProperties = {
   fontFamily: 'var(--font-sans)',
@@ -56,7 +54,6 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
   }
 
   const month = QUAL_MONTHS.find((m) => m.key === mqlMonth) || QUAL_MONTHS[0]
-  const donutId = 'mql-donut-' + month.key
 
   return (
     <div>
@@ -199,16 +196,27 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
           ))}
         </div>
         <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-          <div className="b-card" style={{ padding: '20px 22px', display: 'flex', alignItems: 'stretch', gap: 20, height: '100%', minHeight: 190 }}>
-            <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-              <div style={eyebrow}>Quebra por profissão qualificada (@ + bio)</div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                <div id={donutId + '-lg'} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}></div>
-              </div>
-            </div>
-            <div style={{ flex: '0 0 190px', maxWidth: 190, position: 'relative', minHeight: 150 }}>
-              <ChartCanvas id={donutId} config={doughnutCfg(month.donut)} />
-            </div>
+          <div className="b-card" style={{ padding: '20px 22px', height: '100%' }}>
+            <div style={{ ...eyebrow, marginBottom: 16 }}>Quebra por profissão qualificada (@ + bio)</div>
+            {(() => {
+              const rows = month.donut.slice().sort((a, b) => b.count - a.count)
+              const total = rows.reduce((a, d) => a + d.count, 0) || 1
+              const max = Math.max(1, ...rows.map((d) => d.count))
+              return rows.map((d, i) => (
+                <div key={i} style={{ marginBottom: i === rows.length - 1 ? 0 : 11 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 12.5, marginBottom: 5 }}>
+                    <span data-keepcase="1" style={{ color: 'var(--text-strong)' }}>{d.label}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      <b data-keepcase="1" style={{ color: 'var(--text-strong)' }}>{d.count.toLocaleString('pt-BR')}</b> ·{' '}
+                      {((d.count / total) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%
+                    </span>
+                  </div>
+                  <div style={barTrack}>
+                    <div style={{ height: '100%', width: ((d.count / max) * 100).toFixed(1) + '%', background: '#771520', borderRadius: 4 }}></div>
+                  </div>
+                </div>
+              ))
+            })()}
           </div>
         </div>
       </div>
