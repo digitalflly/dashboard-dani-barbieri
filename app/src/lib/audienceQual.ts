@@ -23,6 +23,7 @@ export interface QualCard {
   label: string
   value: string
   sub: string
+  pct: number // % do mês (para a barra abaixo do número)
   hot?: boolean
 }
 export interface QualMonth {
@@ -55,10 +56,10 @@ export const QUAL_MONTHS: QualMonth[] = [
     label: 'Outubro',
     title: 'Outubro/2026 · 980 perfis',
     cards: [
-      { label: 'Identificadas como qualificadas (@ + bio)', value: '387 · 39,5%', sub: 'o @ ou a bio indica a profissão' },
-      { label: 'Estética / beauty genérico', value: '309 · 31,5%', sub: 'nicho, mas não é profissão qualificada' },
-      { label: 'Não qualificada', value: '33 · 3,4%', sub: 'tem profissão, fora do nicho' },
-      { label: 'Sem identificação', value: '251 · 25,6%', sub: 'nem @ nem bio indicam profissão' },
+      { label: 'Identificadas como qualificadas (@ + bio)', value: '387 · 39,5%', sub: 'o @ ou a bio indica a profissão', pct: 39.5 },
+      { label: 'Estética / beauty genérico', value: '309 · 31,5%', sub: 'nicho, mas não é profissão qualificada', pct: 31.5 },
+      { label: 'Não qualificada', value: '33 · 3,4%', sub: 'tem profissão, fora do nicho', pct: 3.4 },
+      { label: 'Sem identificação', value: '251 · 25,6%', sub: 'nem @ nem bio indicam profissão', pct: 25.6 },
     ],
     donut: [
       { label: 'Micropigmentação / Designer de sobrancelhas', count: 247 },
@@ -74,10 +75,10 @@ export const QUAL_MONTHS: QualMonth[] = [
     label: 'Novembro',
     title: 'Novembro/2026 · 727 perfis',
     cards: [
-      { label: 'Identificadas como qualificadas (@ + bio)', value: '254 · 34,9%', sub: 'o @ ou a bio indica a profissão', hot: true },
-      { label: 'Estética / beauty genérico', value: '160 · 22,0%', sub: 'nicho, mas não é profissão qualificada' },
-      { label: 'Não qualificada', value: '24 · 3,3%', sub: 'tem profissão, fora do nicho' },
-      { label: 'Sem identificação', value: '289 · 39,8%', sub: 'nem @ nem bio indicam profissão', hot: true },
+      { label: 'Identificadas como qualificadas (@ + bio)', value: '254 · 34,9%', sub: 'o @ ou a bio indica a profissão', pct: 34.9, hot: true },
+      { label: 'Estética / beauty genérico', value: '160 · 22,0%', sub: 'nicho, mas não é profissão qualificada', pct: 22.0 },
+      { label: 'Não qualificada', value: '24 · 3,3%', sub: 'tem profissão, fora do nicho', pct: 3.3 },
+      { label: 'Sem identificação', value: '289 · 39,8%', sub: 'nem @ nem bio indicam profissão', pct: 39.8, hot: true },
     ],
     donut: [
       { label: 'Micropigmentação / Designer de sobrancelhas', count: 146 },
