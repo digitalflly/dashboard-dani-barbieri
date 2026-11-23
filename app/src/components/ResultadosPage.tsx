@@ -57,7 +57,7 @@ export default function ResultadosPage({ dash }: { dash: Dashboard }) {
               <div key={i} className="b-card" style={{ padding: '13px 15px', minHeight: 82, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '3px solid #771520' }}>
                 <div style={{ fontSize: 9.5, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1.3 }}>{st.label}</div>
                 <div>
-                  <div data-keepcase="1" style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-strong)', letterSpacing: '-0.02em' }}>{st.value}</div>
+                  <div data-keepcase="1" style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-strong)', letterSpacing: '-0.02em' }}>{st.value}</div>
                   {st.detail && <div data-keepcase="1" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{st.detail}</div>}
                 </div>
               </div>

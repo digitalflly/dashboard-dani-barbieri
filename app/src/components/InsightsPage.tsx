@@ -40,7 +40,7 @@ export default function InsightsPage({ dash }: { dash: Dashboard }) {
           {v.averages.map((a, i) => (
             <div key={i} style={{ borderLeft: `2px solid ${accent}`, paddingLeft: 12 }}>
               <div style={{ fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{a.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-strong)', marginTop: 3, letterSpacing: '-0.02em' }}>{a.value}</div>
+              <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-strong)', marginTop: 3, letterSpacing: '-0.02em' }}>{a.value}</div>
             </div>
           ))}
         </div>
