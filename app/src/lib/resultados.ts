@@ -100,7 +100,8 @@ export function resultadosVM(S: DashState): ResultadosVM {
   Object.keys(PROD).forEach((k) => ymSet.add(k))
   Object.keys(TF).forEach((k) => ymSet.add(k))
   Object.keys(DET).forEach((k) => ymSet.add(k))
-  let yms = [...ymSet].filter((y) => y >= '2026-01').sort()
+  // lista de meses do mais recente para o mais antigo (começando pelo mês atual)
+  let yms = [...ymSet].filter((y) => y >= '2026-01').sort().reverse()
   if (S.month && S.month !== 'all') yms = yms.filter((y) => y === S.month)
 
   const resMonths: ResMonth[] = yms
