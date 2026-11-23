@@ -180,7 +180,7 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
 
       <div data-keepcase="1" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-strong)', letterSpacing: '-0.01em', margin: '2px 0 14px' }}>{month.title}</div>
       <div style={{ display: 'flex', gap: 14, alignItems: 'stretch', flexWrap: 'wrap', marginBottom: 14 }}>
-        <div style={{ flex: '1 1 300px', minWidth: 0, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, alignContent: 'start' }}>
+        <div style={{ flex: '1 1 300px', minWidth: 0, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, alignContent: 'stretch' }}>
           {month.cards.map((c, i) => (
             <div
               key={i}
