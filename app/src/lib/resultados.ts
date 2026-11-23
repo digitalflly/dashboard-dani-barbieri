@@ -7,7 +7,7 @@
 
 import type { ChartConfiguration } from 'chart.js'
 import { fmtNum, fmtPct } from './format'
-import { ADS_CAMPAIGN_MATCH } from './constants'
+import { ADS_CAMPAIGN_MATCH, metaGastoMes } from './constants'
 import { RESULTADOS_VENDAS } from './resultadosVendasData'
 import { RESULTADOS_PRODUTO } from './resultadosProdutoData'
 import { RESULTADOS_TRAFEGO } from './resultadosTrafegoData'
@@ -127,14 +127,15 @@ export function resultadosVM(S: DashState): ResultadosVM {
           }
         })
       })
-      // meta de gasto veiculado: teto de R$ 10 mil por mês
-      const metaPct = (invest / 10000) * 100
+      // meta de gasto veiculado: teto mensal (varia por mês)
+      const metaMes = metaGastoMes(ym)
+      const metaPct = metaMes ? (invest / metaMes) * 100 : 0
       const kpis: ResKpi[] = [
         { label: 'Investido em tráfego', value: money(invest), detail: '' },
         {
           label: 'Meta veiculada',
           value: metaPct.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '%',
-          detail: 'teto R$ 10.000',
+          detail: 'teto ' + money(metaMes),
           valueColor: metaPct > 100 ? '#b0202f' : '#771520',
         },
         { label: 'Vendas Golden', value: fmtNum(gVend), detail: gFat > 0 ? money(gFat) : '' },
