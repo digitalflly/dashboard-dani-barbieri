@@ -31,6 +31,11 @@ import type { ResVendaMes } from './resultadosVendasData'
 
 export type PageKey = 'conta' | 'audiencia' | 'conteudos' | 'insights' | 'candidaturas' | 'resultados' | 'plano'
 
+import { pageFromPath, pathFromPage, titleForPage } from './routing'
+
+// aba inicial a partir da URL (ex.: /conta, /funis); cai na padrão se não bater
+const initialPage = (): PageKey => pageFromPath(typeof location !== 'undefined' ? location.pathname : '/')
+
 export interface DashState {
   page: PageKey
   month: string
@@ -91,7 +96,7 @@ export interface Dashboard {
   state: DashState
   setState: (patch: Partial<DashState> | ((s: DashState) => Partial<DashState>)) => void
   onRefresh: () => void
-  setPage: (p: PageKey) => void
+  setPage: (p: PageKey, opts?: { push?: boolean }) => void
   setFunnel: (key: string) => void
 }
 
@@ -100,7 +105,7 @@ export function useDashboard(): Dashboard {
   const initialModel = model
 
   const [state, setStateRaw] = useState<DashState>(() => ({
-    page: 'conta',
+    page: initialPage(),
     month: 'all',
     week: 'all',
     dayFrom: '',
@@ -458,8 +463,13 @@ export function useDashboard(): Dashboard {
   )
 
   const setPage = useCallback(
-    (p: PageKey) => {
+    (p: PageKey, opts?: { push?: boolean }) => {
       setState({ page: p })
+      // reflete a aba na URL (exceto quando a mudança veio do próprio histórico)
+      if (opts?.push !== false && typeof history !== 'undefined') {
+        const path = pathFromPage(p)
+        if (location.pathname !== path) history.pushState({ page: p }, '', path)
+      }
       if (p === 'resultados') void loadVendasHBP()
       // ao entrar em Dados dos Funis, garante um funil visível selecionado (o primeiro)
       if (p === 'candidaturas') {
@@ -469,6 +479,27 @@ export function useDashboard(): Dashboard {
     },
     [setState, setFunnel, loadVendasHBP]
   )
+
+  // URL canônica no 1º load (ex.: "/" -> "/conta") e <title> da aba inicial
+  useEffect(() => {
+    const p = initialPage()
+    const canonical = pathFromPage(p)
+    if (typeof history !== 'undefined' && location.pathname !== canonical) {
+      history.replaceState({ page: p }, '', canonical)
+    }
+  }, [])
+
+  // botão voltar/avançar do navegador — sincroniza a aba sem empilhar histórico
+  useEffect(() => {
+    const onPop = (): void => setPage(pageFromPath(location.pathname), { push: false })
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [setPage])
+
+  // mantém o título da aba do navegador em sincronia com a página atual
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.title = titleForPage(state.page)
+  }, [state.page])
 
   return { model, state, setState, onRefresh, setPage, setFunnel }
 }
