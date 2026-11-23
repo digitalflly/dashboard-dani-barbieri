@@ -16,7 +16,7 @@ import { adsAgg, turbinaAgg, dailyAgg } from './facebook'
 import { lineCfg } from './charts'
 import { addDays, ddmm } from './dates'
 import { goldenAgg } from './golden'
-import { ADS_CAMPAIGN_MATCH, FUNNELS } from './constants'
+import { ADS_CAMPAIGN_MATCH, FUNNELS, metaGastoMes } from './constants'
 import { GOLDEN_TRAFEGO } from './goldenTrafegoData'
 import type { AdRow, AdDailyRow } from './types'
 
@@ -376,15 +376,13 @@ export function investFunnel(
   })
 
   // acompanhamento de meta de gasto (teto mensal) — só no funil de Aplicação Direta.
-  // Meta = R$ 10 mil por mês em set/out/nov 2026; some os meses do período filtrado.
-  const META_MES = 10000
+  // Soma o teto de cada mês ativo do funil (set/out/nov) dentro do período filtrado.
   const META_MESES = ['2026-09', '2026-10', '2026-11']
   let metaInfo: { pct: string; over: boolean } | undefined = undefined
   if (key === 'aplicacao') {
     const lo = from ? from.slice(0, 7) : '0000-00'
     const hi = to ? to.slice(0, 7) : '9999-99'
-    const nMeses = META_MESES.filter((m) => m >= lo && m <= hi).length
-    const meta = nMeses * META_MES
+    const meta = META_MESES.filter((m) => m >= lo && m <= hi).reduce((a, m) => a + metaGastoMes(m), 0)
     if (meta > 0) {
       const pct = (investido / meta) * 100
       metaInfo = { pct: pct.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '%', over: pct > 100 }

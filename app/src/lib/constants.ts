@@ -152,3 +152,22 @@ export const IG_ACCOUNT_ID = '17841404490943926'
 export const BRAND_NAME = 'Danielle Barbieri'
 
 export const ACCENT = '#771520'
+
+// Teto de gasto veiculado (meta) por mês. Meses não listados usam o default.
+export const META_GASTO_MES: Record<string, number> = {
+  '2026-01': 5000,
+  '2026-02': 5000,
+  '2026-03': 5000,
+  '2026-04': 5000,
+  '2026-05': 5000,
+  '2026-06': 12000,
+  '2026-07': 5000,
+  '2026-08': 12000,
+  '2026-09': 6000,
+  '2026-10': 10000,
+  '2026-11': 10000,
+}
+export const META_GASTO_DEFAULT = 10000
+export function metaGastoMes(ym: string): number {
+  return META_GASTO_MES[ym] ?? META_GASTO_DEFAULT
+}
