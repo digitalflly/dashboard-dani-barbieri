@@ -22,6 +22,7 @@ export interface ResKpi {
   label: string
   value: string
   detail: string
+  valueColor?: string
 }
 export interface ResCreative {
   n: string
@@ -126,8 +127,16 @@ export function resultadosVM(S: DashState): ResultadosVM {
           }
         })
       })
+      // meta de gasto veiculado: teto de R$ 10 mil por mês
+      const metaPct = (invest / 10000) * 100
       const kpis: ResKpi[] = [
         { label: 'Investido em tráfego', value: money(invest), detail: '' },
+        {
+          label: 'Meta veiculada',
+          value: metaPct.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '%',
+          detail: 'teto R$ 10.000',
+          valueColor: metaPct > 100 ? '#b0202f' : '#771520',
+        },
         { label: 'Vendas Golden', value: fmtNum(gVend), detail: gFat > 0 ? money(gFat) : '' },
         { label: 'Leads gerados', value: fmtNum(leads), detail: '' },
         { label: 'Vendas HBP', value: fmtNum(sv.vendas), detail: '' },
