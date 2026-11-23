@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react'
 import type { Dashboard } from '../lib/useDashboard'
 import { audienceVM, type AudBar } from '../lib/audience'
 import { PREVIA_CARDS, PREVIA_BARS, QUAL_MONTHS, WOMAN_ICON } from '../lib/audienceQual'
+import { ANALISES } from '../lib/analises'
 
 const sectionTitle: CSSProperties = {
   fontFamily: 'var(--font-sans)',
@@ -41,6 +42,7 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
   const { model: M, state: S } = dash
   const v = audienceVM(M, S)
   const [mqlMonth, setMqlMonth] = useState<'out' | 'nov'>('out')
+  const [openAn, setOpenAn] = useState<Record<string, boolean>>({})
 
   if (!v.ready) {
     const text = v.error
@@ -222,6 +224,90 @@ export default function AudienciaPage({ dash }: { dash: Dashboard }) {
             })()}
           </div>
         </div>
+      </div>
+
+      {/* ---------- Detalhamento de análises ---------- */}
+      <div style={{ margin: '34px 0 14px' }}>
+        <div style={sectionTitle}>Detalhamento de análises</div>
+        <div data-keepcase="1" style={subNote}>
+          Análises aprofundadas da audiência e do funil. Clique em “+ detalhes” para ler o resumo ou “baixar PDF” para o relatório completo.
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+        {ANALISES.map((an) => {
+          const open = !!openAn[an.id]
+          return (
+            <div key={an.id} className="b-card" style={{ padding: '16px 18px', borderTop: '3px solid #771520' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+                  <div data-keepcase="1" style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-strong)', letterSpacing: '-0.01em' }}>{an.titulo}</div>
+                  <div data-keepcase="1" style={{ fontSize: 12.5, color: '#771520', fontWeight: 600, marginTop: 3 }}>{an.subtitulo}</div>
+                  <div data-keepcase="1" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{an.meta}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flex: 'none' }}>
+                  <button
+                    onClick={() => setOpenAn((s) => ({ ...s, [an.id]: !s[an.id] }))}
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: '8px 16px',
+                      borderRadius: 6,
+                      border: open ? '1px solid #771520' : '1px solid var(--border-strong)',
+                      background: open ? '#771520' : 'transparent',
+                      color: open ? 'var(--cream)' : 'var(--text-muted)',
+                    }}
+                  >
+                    {open ? '− fechar' : '+ detalhes'}
+                  </button>
+                  <a
+                    href={an.pdf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                      padding: '8px 16px',
+                      borderRadius: 6,
+                      border: '1px solid #771520',
+                      background: 'transparent',
+                      color: '#771520',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    baixar PDF
+                  </a>
+                </div>
+              </div>
+
+              {open && (
+                <div style={{ marginTop: 16, borderTop: '1px solid var(--border-soft)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {an.resumo.map((sec, i) => (
+                    <div key={i}>
+                      <div data-keepcase="1" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-strong)', letterSpacing: '-0.01em', marginBottom: 4 }}>{sec.h}</div>
+                      {sec.p && (
+                        <div data-keepcase="1" style={{ fontSize: 12.5, color: 'var(--ink-300)', lineHeight: 1.6 }}>{sec.p}</div>
+                      )}
+                      {sec.itens && (
+                        <ul style={{ margin: '4px 0 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                          {sec.itens.map((it, j) => (
+                            <li key={j} data-keepcase="1" style={{ fontSize: 12.5, color: 'var(--ink-300)', lineHeight: 1.55 }}>{it}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
