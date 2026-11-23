@@ -137,7 +137,7 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                     style={{ padding: '14px 16px', minHeight: 96, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '3px solid #771520' }}
                   >
                     <div style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1.3 }}>{k.label}</div>
-                    <div data-keepcase="1" style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+                    <div data-keepcase="1" style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-strong)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
                       {k.value}
                     </div>
                   </div>
@@ -192,7 +192,7 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                 {v.neaKpis.map((k, i) => (
                   <div key={i} className="b-card" style={{ padding: '14px 16px', minHeight: 88, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '3px solid #771520' }}>
                     <div style={{ fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1.3 }}>{k.label}</div>
-                    <div data-keepcase="1" style={{ fontSize: 19, fontWeight: 600, color: 'var(--text-strong)', letterSpacing: '-0.02em' }}>{k.value}</div>
+                    <div data-keepcase="1" style={{ fontSize: 26, fontWeight: 600, color: 'var(--text-strong)', letterSpacing: '-0.02em' }}>{k.value}</div>
                   </div>
                 ))}
               </div>
@@ -244,7 +244,7 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                     <div style={{ fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1.3 }}>{st.label}</div>
                     <div
                       data-keepcase="1"
-                      style={{ fontSize: st.valueBig ? 26 : 19, fontWeight: st.valueBig ? 700 : 600, color: st.valueColor || 'var(--text-strong)', letterSpacing: '-0.02em', lineHeight: 1 }}
+                      style={{ fontSize: 26, fontWeight: st.valueBig ? 700 : 600, color: st.valueColor || 'var(--text-strong)', letterSpacing: '-0.02em', lineHeight: 1 }}
                     >
                       {st.value}
                     </div>
