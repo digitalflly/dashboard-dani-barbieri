@@ -127,16 +127,16 @@ export function resultadosVM(S: DashState): ResultadosVM {
           }
         })
       })
-      // meta de gasto veiculado: teto mensal (varia por mês)
+      // meta de gasto veiculado: teto mensal (varia por mês; alguns meses sem meta)
       const metaMes = metaGastoMes(ym)
       const metaPct = metaMes ? (invest / metaMes) * 100 : 0
       const kpis: ResKpi[] = [
         { label: 'Investido em tráfego', value: money(invest), detail: '' },
         {
           label: 'Meta veiculada',
-          value: metaPct.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '%',
-          detail: 'teto ' + money(metaMes),
-          valueColor: metaPct > 100 ? '#b0202f' : '#771520',
+          value: metaMes ? metaPct.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '%' : '—',
+          detail: metaMes ? 'teto ' + money(metaMes) : 'sem meta',
+          valueColor: metaMes ? (metaPct > 100 ? '#b0202f' : '#771520') : undefined,
         },
         { label: 'Vendas Golden', value: fmtNum(gVend), detail: gFat > 0 ? money(gFat) : '' },
         { label: 'Leads gerados', value: fmtNum(leads), detail: '' },

@@ -382,7 +382,7 @@ export function investFunnel(
   if (key === 'aplicacao') {
     const lo = from ? from.slice(0, 7) : '0000-00'
     const hi = to ? to.slice(0, 7) : '9999-99'
-    const meta = META_MESES.filter((m) => m >= lo && m <= hi).reduce((a, m) => a + metaGastoMes(m), 0)
+    const meta = META_MESES.filter((m) => m >= lo && m <= hi).reduce((a, m) => a + (metaGastoMes(m) || 0), 0)
     if (meta > 0) {
       const pct = (investido / meta) * 100
       metaInfo = { pct: pct.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '%', over: pct > 100 }
