@@ -12,7 +12,7 @@ import { AUDIENCE_DEMO } from './audienceDemo'
 import { fetchAds } from './facebook'
 import { fetchFunnel as fetchFunnelCsv, funnelSpec } from './sheets'
 import { persistCovers } from './cache'
-import { lastMonthRange } from './dates'
+import { currentMonthRange } from './dates'
 import { fetchAplicLeads, fetchIscaLeads } from './leads'
 import { fetchVendasHBP } from './hbp'
 import {
@@ -125,8 +125,9 @@ export function useDashboard(): Dashboard {
     funnelLoading: {},
     funnelError: {},
     candMonth: 'all',
-    candFrom: '',
-    candTo: '',
+    // funis abrem no mês atual (o padrão 'aplicacao' não é o Golden Ticket)
+    candFrom: currentMonthRange().from,
+    candTo: currentMonthRange().to,
     candStatusFilter: 'all',
     resOpen: {},
     ctExpanded: {},
@@ -161,8 +162,6 @@ export function useDashboard(): Dashboard {
   // refs for guard flags (avoid stale closures in async handlers)
   const refreshingRef = useRef(false)
   const adsLoadingRef = useRef(false)
-  const adsMinDRef = useRef<string | null>(null)
-  const adsMaxDRef = useRef<string | null>(null)
   const funnelLoadingRef = useRef<Record<string, boolean>>({})
   const funnelDataRef = useRef<Record<string, FunnelData>>({})
   const liveRef = useRef<LiveAccount | null>(null)
@@ -317,15 +316,13 @@ export function useDashboard(): Dashboard {
     setState({ adsLoading: true, adsError: '' })
     try {
       const { raw, minD, maxD } = await fetchAds()
-      adsMinDRef.current = minD
-      adsMaxDRef.current = maxD
       // se já estiver num funil só de anúncios e sem filtro, aplica o intervalo padrão
       setState((s) => {
         const patch: Partial<DashState> = { adsLoading: false, adsRaw: raw, adsMinD: minD, adsMaxD: maxD }
         const sp = funnelSpec(s.funnel)
-        // funis só de anúncios (exceto Golden / Isca / Low, que abrem no período todo) usam o último mês
-        if (sp?.adsOnly && !sp.golden && s.funnel !== 'isca' && s.funnel !== 'low' && !s.candFrom && !s.candTo && s.candMonth === 'all') {
-          const r = lastMonthRange(minD, maxD)
+        // funis só de anúncios (exceto o Golden Ticket, snapshot congelado) abrem no mês atual
+        if (sp?.adsOnly && !sp.golden && !s.candFrom && !s.candTo && s.candMonth === 'all') {
+          const r = currentMonthRange()
           patch.candFrom = r.from
           patch.candTo = r.to
         }
@@ -357,9 +354,9 @@ export function useDashboard(): Dashboard {
             funnelLoading: { ...s.funnelLoading, [key]: false },
             funnelData: { ...s.funnelData, [key]: data },
           }
-          // intervalo padrão na 1ª carga, se o usuário ainda não filtrou
+          // intervalo padrão na 1ª carga (mês atual), se o usuário ainda não filtrou
           if (s.funnel === key && !s.candFrom && !s.candTo && s.candMonth === 'all') {
-            const r = lastMonthRange(data.minD, data.maxD)
+            const r = currentMonthRange()
             patch.candFrom = r.from
             patch.candTo = r.to
           }
@@ -441,23 +438,13 @@ export function useDashboard(): Dashboard {
       const spec = funnelSpec(key)
       if (key === 'aplicacao') void loadAplicLeads()
       if (key === 'isca') void loadIscaLeads()
-      // Golden / Isca / Low abrem no período todo (sem intervalo padrão)
-      if (spec && (spec.golden || key === 'isca' || key === 'low')) {
-        setState({ candFrom: '', candTo: '', candMonth: 'all' })
-        return
-      }
-      // demais funis só de anúncios — último mês com dados
-      if (spec?.adsOnly) {
-        const r = lastMonthRange(adsMinDRef.current, adsMaxDRef.current)
-        setState({ candFrom: r.from, candTo: r.to })
-        return
-      }
-      const d = funnelDataRef.current[key]
-      if (!d && !funnelLoadingRef.current[key]) void fetchFunnel(key)
-      else if (d) {
-        const r = lastMonthRange(d.minD, d.maxD)
-        setState({ candFrom: r.from, candTo: r.to })
-      }
+      // Golden Ticket é um snapshot congelado (vai até ago/2026): abre no período todo
+      if (spec?.golden) return
+      // todos os outros funis abrem no mês atual (dia 1 até hoje)
+      const r = currentMonthRange()
+      setState({ candFrom: r.from, candTo: r.to })
+      // funis de planilha: busca os dados na 1ª vez
+      if (!spec?.adsOnly && !funnelDataRef.current[key] && !funnelLoadingRef.current[key]) void fetchFunnel(key)
     },
     [setState, fetchFunnel, loadAplicLeads, loadIscaLeads]
   )
