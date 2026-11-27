@@ -7,7 +7,7 @@
 // ============================================================
 
 import { ymd } from './dates'
-import { WINDSOR_KEY, ADS_ACCOUNT_ID } from './constants'
+import { WINDSOR_KEY, ADS_ACCOUNT_ID, ADS_CAMPAIGN_MATCH, SEG_TRAFFIC_RE, SEG_TRAFFIC_OBJECTIVES } from './constants'
 import type { AdRow, AdsetRow, AdDailyRow, TurbinaRow } from './types'
 
 const num = (v: unknown): number => (v == null || v === '' ? 0 : +(v as number) || 0)
@@ -25,7 +25,7 @@ export async function fetchAds(): Promise<AdsResult> {
   const to = new Date()
   const from = new Date(Date.UTC(2025, 4, 1)) // 2025-05-01 — cobre todo o histórico das contas
   const fields =
-    'account_id,date,campaign,adset_name,adset_id,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend,instagram_profile_follow'
+    'account_id,date,campaign,campaign_objective,adset_name,adset_id,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend,instagram_profile_follow'
   // o conector às vezes devolve resposta parcial (capada) sem a conta da Dani —
   // tenta até 6x com cache-buster até a conta aparecer
   let base: Record<string, unknown>[] = []
@@ -57,6 +57,7 @@ export async function fetchAds(): Promise<AdsResult> {
   const raw: AdDailyRow[] = base.map((x) => ({
     date: String(x.date || '').slice(0, 10),
     campaign: (x.campaign as string) || '',
+    objective: String(x.campaign_objective || ''),
     ad: (x.ad_name as string) || '(sem nome)',
     adset: (x.adset_name as string) || '(sem conjunto)',
     thumb: (x.thumbnail_url as string) || '',
@@ -86,6 +87,15 @@ export async function fetchAds(): Promise<AdsResult> {
 }
 
 // agrega anúncios/conjuntos por campanha (regex) e intervalo de datas
+// campanha de tráfego com objetivo de visita ao perfil (entra no funil Seguidores)
+export function isSegTraffic(x: { campaign: string; objective?: string }): boolean {
+  return SEG_TRAFFIC_RE.test(x.campaign) && SEG_TRAFFIC_OBJECTIVES.indexOf(String(x.objective || '').toUpperCase()) >= 0
+}
+// regra de campanha de um funil; o funil Seguidores soma as campanhas de tráfego
+function campMatch(re: RegExp, x: AdDailyRow): boolean {
+  return re.test(x.campaign) || (re === ADS_CAMPAIGN_MATCH.seguidores && isSegTraffic(x))
+}
+
 export function adsAgg(
   raw: AdDailyRow[] | null,
   camRe: RegExp,
@@ -93,7 +103,7 @@ export function adsAgg(
   to: string
 ): { ads: AdRow[]; adsets: AdsetRow[] } {
   const rows = (raw || []).filter(
-    (x) => camRe.test(x.campaign) && (!from || x.date >= from) && (!to || x.date <= to)
+    (x) => campMatch(camRe, x) && (!from || x.date >= from) && (!to || x.date <= to)
   )
   const byAd: Record<string, AdRow> = {}
   const byAdset: Record<string, AdsetRow> = {}
@@ -147,7 +157,7 @@ export interface DayAgg {
 }
 export function dailyAgg(raw: AdDailyRow[] | null, camRe: RegExp, from: string, to: string): DayAgg[] {
   const rows = (raw || []).filter(
-    (x) => camRe.test(x.campaign) && (!from || x.date >= from) && (!to || x.date <= to)
+    (x) => campMatch(camRe, x) && (!from || x.date >= from) && (!to || x.date <= to)
   )
   const byDay: Record<string, DayAgg> = {}
   rows.forEach((x) => {
