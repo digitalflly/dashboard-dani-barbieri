@@ -18,6 +18,10 @@ export interface AplicLeadRow {
   fonte?: string // 'respondi' (form externo) | undefined (Meta)
   ts?: string // data e hora da resposta (Respondi: 'YYYY-MM-DD HH:MM:SS')
   utm?: string // 'utm_source|utm_medium' em minúsculas (só Respondi; '|' = sem UTM)
+  // anúncio de origem — Meta: ad_id/ad_name/adset_id; Respondi: utm_content (nome) e utm_term (conjunto)
+  adId?: string
+  adName?: string
+  adsetId?: string
 }
 
 interface RawLead {
@@ -30,6 +34,9 @@ interface RawLead {
   fonte?: string
   pk?: string
   utm?: string
+  adId?: string
+  adName?: string
+  adsetId?: string
 }
 
 const SHEET = '10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc'
@@ -71,6 +78,9 @@ async function loadTab(gid: string): Promise<RawLead[]> {
   let cProf = -1
   let cMail = -1
   let cTel = -1
+  let cAdId = -1
+  let cAdName = -1
+  let cAdset = -1
   if (hasHeader) {
     ci = h0.findIndex((h) => /created.?time/.test(h))
     if (ci < 0) ci = 1
@@ -79,6 +89,9 @@ async function loadTab(gid: string): Promise<RawLead[]> {
     cProf = h0.findIndex((h) => /profiss/.test(h))
     cMail = h0.findIndex((h) => /e-?mail/.test(h))
     cTel = h0.findIndex((h) => /phone|telefone|whats|celular/.test(h))
+    cAdId = h0.findIndex((h) => /^ad_id$/.test(h))
+    cAdName = h0.findIndex((h) => /^ad_name$/.test(h))
+    cAdset = h0.findIndex((h) => /^adset_id$/.test(h))
     body = rows.slice(1)
   } else {
     ci = 1
@@ -101,7 +114,17 @@ async function loadTab(gid: string): Promise<RawLead[]> {
     const profMed = (cProf >= 0 && MED.test(prof)) || (cArea >= 0 && MED.test(area))
     const mail = cMail >= 0 ? rw[cMail] : rw.find((c) => /@/.test(String(c || ''))) || ''
     const tel = cTel >= 0 ? rw[cTel] : rw.find((c) => /^\+?\d[\d\s()-]{9,}$/.test(String(c || '').trim())) || ''
-    out.push({ id: String(rw[idc >= 0 ? idc : 0] || ''), ts: v, date, faixa: findFaixa(rw), perfilOk: profMed || !areaOutro, pk: personKey(mail, tel) })
+    out.push({
+      id: String(rw[idc >= 0 ? idc : 0] || ''),
+      ts: v,
+      date,
+      faixa: findFaixa(rw),
+      perfilOk: profMed || !areaOutro,
+      pk: personKey(mail, tel),
+      adId: cAdId >= 0 ? String(rw[cAdId] || '').trim() : '',
+      adName: cAdName >= 0 ? String(rw[cAdName] || '').trim() : '',
+      adsetId: cAdset >= 0 ? String(rw[cAdset] || '').trim() : '',
+    })
   })
   return out
 }
@@ -179,6 +202,8 @@ async function loadRespondi(): Promise<RawLead[]> {
   const cS = h.findIndex((x) => /^status$/.test(x))
   const cUs = h.findIndex((x) => /^utm_source$/.test(x))
   const cUm = h.findIndex((x) => /^utm_medium$/.test(x))
+  const cUc = h.findIndex((x) => /^utm_content$/.test(x))
+  const cUt = h.findIndex((x) => /^utm_term$/.test(x))
   const out: RawLead[] = []
   rows.slice(1).forEach((rw) => {
     const d = String(rw[cD] || '').match(/(\d{4})-(\d{2})-(\d{2})/)
@@ -198,6 +223,8 @@ async function loadRespondi(): Promise<RawLead[]> {
       faixa: respondiFaixa(rw[cF]),
       perfilOk,
       fonte: 'respondi',
+      adName: cUc >= 0 ? String(rw[cUc] || '').trim() : '',
+      adsetId: cUt >= 0 ? String(rw[cUt] || '').trim() : '',
       utm: (String(cUs >= 0 ? rw[cUs] || '' : '').trim() + '|' + String(cUm >= 0 ? rw[cUm] || '' : '').trim()).toLowerCase(),
       pk: personKey(cM >= 0 ? rw[cM] : '', cT >= 0 ? rw[cT] : ''),
     })
@@ -244,7 +271,7 @@ export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; r
   })
   const by: Record<string, number> = {}
   rowsF.forEach((r) => { by[r.date] = (by[r.date] || 0) + 1 })
-  return { by, rows: rowsF.map((r) => ({ date: r.date, faixa: r.faixa, perfilOk: r.perfilOk, status: r.status, fonte: r.fonte, ts: r.ts, utm: r.utm })) }
+  return { by, rows: rowsF.map((r) => ({ date: r.date, faixa: r.faixa, perfilOk: r.perfilOk, status: r.status, fonte: r.fonte, ts: r.ts, utm: r.utm, adId: r.adId, adName: r.adName, adsetId: r.adsetId })) }
 }
 
 // planilha de leads (aba 1) do funil Isca — volume por dia

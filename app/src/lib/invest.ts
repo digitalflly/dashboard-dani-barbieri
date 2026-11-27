@@ -17,6 +17,7 @@ import { lineCfg } from './charts'
 import { addDays, ddmm } from './dates'
 import { goldenAgg } from './golden'
 import { ADS_CAMPAIGN_MATCH, FUNNELS, metaGastoMes } from './constants'
+import { buildAdResolver, isMqlLead } from './adAttrib'
 import { GOLDEN_TRAFEGO } from './goldenTrafegoData'
 import type { AdRow, AdDailyRow } from './types'
 
@@ -30,7 +31,7 @@ export interface AdsState {
   gtLinks?: Record<string, Record<string, string>>
   // leads nativos por dia (planilha) — funis Aplicação Direta / Isca
   aplicLeadsBy?: Record<string, number>
-  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string; fonte?: string }[]
+  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string; fonte?: string; adId?: string; adName?: string; adsetId?: string }[]
   iscaLeadsBy?: Record<string, number>
 }
 
@@ -66,6 +67,9 @@ export interface InvestAdRow {
   custoLead: string
   leads: string
   seg: string
+  // % MQL dos leads da planilha atribuídos ao anúncio (só Aplicação Direta)
+  mql: string
+  mqlTip: string
 }
 export interface InvestAdsetRow {
   idx: number
@@ -125,6 +129,8 @@ export interface InvestVM {
   adsCostLabel: string
   adsResultLabel: string
   adsetResultLabel: string
+  showMql: boolean
+  mqlNote: string // cobertura da atribuição (leads da planilha ligados a um anúncio)
 }
 
 export const EMPTY_INVEST: InvestVM = {
@@ -154,6 +160,8 @@ export const EMPTY_INVEST: InvestVM = {
   adsCostLabel: 'Custo/lead',
   adsResultLabel: 'Leads do gerenciador',
   adsetResultLabel: 'Leads',
+  showMql: false,
+  mqlNote: '',
 }
 
 const money2 = (v: number): string =>
@@ -414,9 +422,38 @@ export function investFunnel(
     investStats.push({ label: 'Custo / lead planilha', value: money2(planLeads ? investido / planLeads : 0) })
   }
 
+  // % MQL por anúncio (Aplicação Direta): leads das planilhas (Meta + Respondi) atribuídos a cada anúncio
+  const showMql = key === 'aplicacao' && hasReal && !!st.aplicLeadsRows
+  const mqlBy: Record<string, { n: number; q: number }> = {}
+  let mqlNote = ''
+  if (showMql) {
+    const camRe = ADS_CAMPAIGN_MATCH[key] || /^\b$/
+    const resolve = buildAdResolver((st.adsRaw || []).filter((x) => camRe.test(x.campaign)))
+    let tot = 0
+    let hit = 0
+    ;(st.aplicLeadsRows || [])
+      .filter((r) => (!from || r.date >= from) && (!to || r.date <= to))
+      .forEach((r) => {
+        tot++
+        const nm = resolve(r)
+        if (!nm) return
+        hit++
+        const o = mqlBy[nm] || (mqlBy[nm] = { n: 0, q: 0 })
+        o.n++
+        if (isMqlLead(r)) o.q++
+      })
+    mqlNote = tot ? `${fmtNum(hit)} de ${fmtNum(tot)} leads da planilha ligados a um anúncio` : ''
+  }
+  const mqlCell = (name: string): { mql: string; mqlTip: string } => {
+    const o = mqlBy[name]
+    if (!showMql || !o || !o.n) return { mql: '—', mqlTip: '' }
+    return { mql: fmtPct((o.q / o.n) * 100), mqlTip: `${fmtNum(o.q)} MQL de ${fmtNum(o.n)} ${o.n === 1 ? 'lead' : 'leads'} da planilha` }
+  }
+
   let investAds: InvestAdRow[]
   if (hasReal) {
     investAds = ads.slice(0, 12).map((a, i) => ({
+      ...mqlCell(a.name),
       idx: i,
       name: a.name,
       thumbStyle: {
@@ -475,6 +512,8 @@ export function investFunnel(
         custoLead: money2((isSeg ? clk : leads) ? investido * w[i] / (isSeg ? clk : leads) : 0),
         leads: fmtNum(isSeg ? clk : leads),
         seg: fmtNum(Math.round(impr * 0.03)),
+        mql: '—',
+        mqlTip: '',
       }
     })
   }
@@ -655,5 +694,7 @@ export function investFunnel(
     adsCostLabel: usePurchase ? 'Custo/compra' : isSeg ? 'Custo/visita' : 'Custo/lead',
     adsResultLabel: usePurchase ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads do gerenciador',
     adsetResultLabel: usePurchase ? 'Compras' : isSeg ? 'Visitas ao perfil' : 'Leads',
+    showMql,
+    mqlNote,
   }
 }

@@ -25,7 +25,7 @@ export async function fetchAds(): Promise<AdsResult> {
   const to = new Date()
   const from = new Date(Date.UTC(2025, 4, 1)) // 2025-05-01 — cobre todo o histórico das contas
   const fields =
-    'account_id,date,campaign,adset_name,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend,instagram_profile_follow'
+    'account_id,date,campaign,adset_name,adset_id,ad_name,ad_id,thumbnail_url,instagram_permalink_url,impressions,reach,inline_link_clicks,actions_landing_page_view,actions_lead,actions_initiate_checkout,actions_purchase,action_values_purchase,spend,instagram_profile_follow'
   // o conector às vezes devolve resposta parcial (capada) sem a conta da Dani —
   // tenta até 6x com cache-buster até a conta aparecer
   let base: Record<string, unknown>[] = []
@@ -62,6 +62,7 @@ export async function fetchAds(): Promise<AdsResult> {
     thumb: (x.thumbnail_url as string) || '',
     permalink: (x.instagram_permalink_url as string) || '',
     adId: String(x.ad_id || ''),
+    adsetId: String(x.adset_id || ''),
     impressions: num(x.impressions),
     reach: num(x.reach),
     linkClicks: num(x.inline_link_clicks),
