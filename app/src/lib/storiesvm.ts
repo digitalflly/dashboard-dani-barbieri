@@ -41,10 +41,10 @@ export interface StoriesCompareRow {
   ret: string
   gap: string
   reach: string
-  clk: string
-  ctr: string
+  int: string // interesses: cliques no link (com link) ou respostas (sem link)
+  intKind: string
+  intRate: string
   apps: string
-  conversas: string | null
   agendamentos: string | null
   agendTip: string
 }
@@ -90,6 +90,9 @@ interface SeqCalc {
   viewsT: number
   respT: number
   visT: number
+  // interesses: cliques no link quando há figurinha de link; respostas quando não há
+  intN: number
+  intKind: string
 }
 
 function calcSeq(seq: StorySeq, S: DashState): SeqCalc {
@@ -113,16 +116,19 @@ function calcSeq(seq: StorySeq, S: DashState): SeqCalc {
       return fromStories && r.ts >= from && r.ts < end
     }).length
   }
+  const respT = st.reduce((a, x) => a + x.resp, 0)
   return {
     seq,
     hasLink,
+    intN: hasLink ? anchor.clk : respT,
+    intKind: hasLink ? (anchor.clk === 1 ? 'clique no link' : 'cliques no link') : respT === 1 ? 'resposta' : 'respostas',
     anchor,
     first,
     ret: first.views ? (anchor.views / first.views) * 100 : 0,
     gapMin,
     apps,
     viewsT: st.reduce((a, x) => a + x.views, 0),
-    respT: st.reduce((a, x) => a + x.resp, 0),
+    respT,
     visT: st.reduce((a, x) => a + x.vis, 0),
   }
 }
@@ -151,7 +157,7 @@ export function storiesVM(S: DashState): StoriesVM {
     return { empty: true, kpis: [], seqBtns: [], selEyebrow: '', stages: [], storiesNote: '', storyRows: [], compare: [], retCfg: null }
   }
 
-  const res = (id: string): StoryResult => STORY_RESULTS[id] || { conversas: null, agendamentos: null }
+  const res = (id: string): StoryResult => STORY_RESULTS[id] || { agendamentos: null }
   const nAg = (r: StoryResult): number | null => (r.agendamentos == null ? null : r.agendamentos.length)
   const sumRes = (get: (r: StoryResult) => number | null): number | null => {
     const vals = calcs.map((c) => get(res(c.seq.id))).filter((v): v is number => v != null)
@@ -166,21 +172,18 @@ export function storiesVM(S: DashState): StoriesVM {
 
   // ---- KPIs (sempre numa linha) ----
   const multi = calcs.filter((c) => c.seq.stories.length > 1)
-  const withLink = calcs.filter((c) => c.hasLink)
-  const clkT = withLink.reduce((a, c) => a + c.anchor.clk, 0)
-  const reachLinkT = withLink.reduce((a, c) => a + c.anchor.reach, 0)
+  const intT = calcs.reduce((a, c) => a + c.intN, 0)
+  const intReachT = calcs.reduce((a, c) => a + c.anchor.reach, 0)
   const appsKnown = calcs.every((c) => c.apps != null)
   const appsT = calcs.reduce((a, c) => a + (c.apps || 0), 0)
-  const convT = sumRes((r) => r.conversas)
   const agT = sumRes(nAg)
   const kpis: StoriesKpi[] = [
     { label: 'Sequências', value: String(calcs.length), sub: calcs.length > 1 ? `de ${dm(calcs[0].seq.id)} a ${dm(calcs[calcs.length - 1].seq.id)}` : dm(calcs[0].seq.id) },
     { label: 'Stories', value: fmtNum(calcs.reduce((a, c) => a + c.seq.stories.length, 0)), sub: 'nas sequências' },
     { label: 'Visualizações', value: fmtNum(calcs.reduce((a, c) => a + c.viewsT, 0)), sub: 'soma dos stories' },
     { label: 'Retenção média', value: multi.length ? pct(multi.reduce((a, c) => a + c.ret, 0) / multi.length) : '—', sub: 'do 1º ao último story' },
-    { label: 'Cliques no link', value: fmtNum(clkT), sub: reachLinkT ? pct((clkT / reachLinkT) * 100) + ' do alcance' : 'sem link no período' },
+    { label: 'Interesses', value: fmtNum(intT), sub: intReachT ? pct((intT / intReachT) * 100) + ' do alcance' : '' },
     { label: 'Aplicações', value: appsKnown ? fmtNum(appsT) : '…', sub: `respondi · até ${APP_WINDOW_H}h` },
-    { label: 'Conversas', value: convT == null ? '—' : fmtNum(convT), sub: '', pending: convT == null },
     { label: 'Agendamentos', value: agT == null ? '—' : fmtNum(agT), sub: agT ? 'passe o mouse para ver' : '', pending: agT == null, tip: agTipAll || undefined },
   ]
 
@@ -189,10 +192,9 @@ export function storiesVM(S: DashState): StoriesVM {
   const seqBtns = calcs.map((c) => ({ id: c.seq.id, label: `${dm(c.seq.id)} · ${c.seq.name}`, active: c === sel }))
   const r = res(sel.seq.id)
   const appsStr = sel.apps == null ? '…' : fmtNum(sel.apps)
-  const W = [82, 76, 70, 63, 56, 50, 45]
+  const W = [82, 75, 68, 61, 54, 47]
   const tail: Omit<StoriesStage, 'width'>[] = [
     { label: 'Aplicações', value: appsStr, left: 'respondi sem utm' },
-    { label: 'Conversas', value: r.conversas == null ? '—' : fmtNum(r.conversas), left: '', pending: r.conversas == null },
     {
       label: 'Agendamentos',
       value: r.agendamentos == null ? '—' : fmtNum(r.agendamentos.length),
@@ -206,12 +208,12 @@ export function storiesVM(S: DashState): StoriesVM {
         { label: 'Views do 1º story', value: fmtNum(sel.first.views), left: '' },
         { label: 'Chegaram no link', value: fmtNum(sel.anchor.views), left: pct(sel.ret) + ' retenção' },
         { label: 'Alcance do link', value: fmtNum(sel.anchor.reach), left: '' },
-        { label: 'Cliques no link', value: fmtNum(sel.anchor.clk), left: sel.anchor.reach ? pct((sel.anchor.clk / sel.anchor.reach) * 100) + ' do alcance' : '' },
+        { label: 'Interesses', value: fmtNum(sel.intN), left: sel.intKind + (sel.anchor.reach ? ' · ' + pct((sel.intN / sel.anchor.reach) * 100) + ' do alcance' : '') },
       ]
     : [
         { label: 'Visualizações', value: fmtNum(sel.viewsT), left: sel.seq.stories.length === 1 ? 'story único' : '' },
         { label: 'Alcance', value: fmtNum(sel.anchor.reach), left: '' },
-        { label: 'Respostas', value: fmtNum(sel.respT), left: sel.anchor.reach ? pct((sel.respT / sel.anchor.reach) * 100) + ' do alcance' : '' },
+        { label: 'Interesses', value: fmtNum(sel.intN), left: sel.intKind + (sel.anchor.reach ? ' · ' + pct((sel.intN / sel.anchor.reach) * 100) + ' do alcance' : '') },
         { label: 'Visitas ao perfil', value: fmtNum(sel.visT), left: sel.anchor.reach ? pct((sel.visT / sel.anchor.reach) * 100) + ' do alcance' : '' },
       ]
   const stages: StoriesStage[] = [...head, ...tail].map((s, i) => ({ ...s, width: W[i] }))
@@ -256,10 +258,10 @@ export function storiesVM(S: DashState): StoriesVM {
         ret: n > 1 ? pct(c.ret) : '—',
         gap: n === 1 ? 'story único' : c.gapMin != null && c.gapMin > 2 ? c.gapMin + ' min depois' : 'junto',
         reach: fmtNum(c.anchor.reach),
-        clk: c.hasLink ? fmtNum(c.anchor.clk) : 'sem link',
-        ctr: c.hasLink && c.anchor.reach ? pct((c.anchor.clk / c.anchor.reach) * 100) : '—',
+        int: fmtNum(c.intN),
+        intKind: c.intKind.replace(' no link', ''),
+        intRate: c.anchor.reach ? pct((c.intN / c.anchor.reach) * 100) : '—',
         apps: c.apps == null ? '…' : fmtNum(c.apps),
-        conversas: rr.conversas == null ? null : fmtNum(rr.conversas),
         agendamentos: rr.agendamentos == null ? null : fmtNum(rr.agendamentos.length),
         agendTip: (rr.agendamentos || []).join('\n'),
       }

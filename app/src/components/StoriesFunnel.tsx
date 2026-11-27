@@ -160,7 +160,7 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
             <thead>
               <tr>
                 <th style={th({ textAlign: 'left', padding: '0 10px 10px 4px' })}>Dia</th>
-                {['Hora', 'Stories', 'Views 1º story', 'Views no link', 'Retenção', 'Intervalo até o link', 'Alcance do link', 'Cliques', 'Clique / alcance', 'Aplicações', 'Conversas'].map((h) => (
+                {['Hora', 'Stories', 'Views 1º story', 'Views no link', 'Retenção', 'Intervalo até o link', 'Alcance do link', 'Interesses', 'Interesse / alcance', 'Aplicações'].map((h) => (
                   <th key={h} style={th()}>{h}</th>
                 ))}
                 <th style={th({ padding: '0 4px 10px 10px' })}>Agendamentos</th>
@@ -180,10 +180,12 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
                   <td data-keepcase="1" style={td}>{r.ret}</td>
                   <td style={td}>{r.gap}</td>
                   <td data-keepcase="1" style={td}>{r.reach}</td>
-                  <td data-keepcase="1" style={tdHl}>{r.clk}</td>
-                  <td data-keepcase="1" style={td}>{r.ctr}</td>
+                  <td data-keepcase="1" style={tdHl}>
+                    {r.int}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> {r.intKind}</span>
+                  </td>
+                  <td data-keepcase="1" style={td}>{r.intRate}</td>
                   <td data-keepcase="1" style={tdHl}>{r.apps}</td>
-                  <td data-keepcase="1" style={td}>{r.conversas ?? <Pending />}</td>
                   <td data-keepcase="1" style={{ ...td, padding: '10px 4px 10px 10px' }}>
                     {r.agendamentos == null ? (
                       <Pending />
