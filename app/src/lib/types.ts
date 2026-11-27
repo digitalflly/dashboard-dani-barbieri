@@ -207,6 +207,8 @@ export interface FunnelSpec {
   purchaseFunnel?: boolean
   // oculto na lista de abas de funis (ex.: nea2, dobrado dentro do Golden)
   hidden?: boolean
+  // funil Stories — sequências de stories (export manual, sem anúncios)
+  stories?: boolean
 }
 export interface FunnelData {
   rows: string[][]

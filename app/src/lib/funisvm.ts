@@ -8,10 +8,11 @@ import { fmtNum, fmtPct } from './format'
 import { funnelSpec, parseRowDate } from './sheets'
 import { buildFunnel } from './funnel'
 import { lineCfg, barCfg, doughnutCfg } from './charts'
-import { investFunnel, type InvestVM, type AdsState } from './invest'
+import { investFunnel, EMPTY_INVEST, type InvestVM, type AdsState } from './invest'
+import { storiesMonths, storiesRange } from './storiesvm'
 import { adsAgg, dailyAgg } from './facebook'
 import { FUNNELS, ADS_CAMPAIGN_MATCH } from './constants'
-import { MONTH_NAMES, lastDayOf, addDays } from './dates'
+import { MONTH_NAMES, lastDayOf, addDays, currentMonthRange } from './dates'
 import { GOLDEN_TRAFEGO } from './goldenTrafegoData'
 import { GOLDEN_VENDAS } from './goldenVendasData'
 import type { ChartConfiguration } from 'chart.js'
@@ -299,6 +300,37 @@ export function funisVM(S: DashState): FunisVM {
     active: f.key === key,
     inactive: f.key !== key,
   }))
+
+  // ---- funil Stories — página própria (StoriesFunnel); aqui só os filtros do cabeçalho ----
+  if (spec.stories) {
+    const rg = storiesRange()
+    const today = currentMonthRange().to
+    return {
+      funnelTabs,
+      candFilters: {
+        month: S.candMonth,
+        from: S.candFrom,
+        to: S.candTo,
+        monthOptions: [{ value: 'all', label: 'Todos os meses' }, ...storiesMonths()],
+        min: rg.min,
+        max: rg.max > today ? rg.max : today,
+        hasFilter: S.candMonth !== 'all' || !!S.candFrom || !!S.candTo,
+      },
+      candStatusBtns: [],
+      candReady: false,
+      candLoadingView: false,
+      candStatusLabel: '',
+      candKpis: [],
+      candCharts: [],
+      cfgs: {},
+      invest: EMPTY_INVEST,
+      leadsView: false,
+      showStatusBtns: false,
+      statusGroupLabel: '',
+      statusMode: 'status',
+      ...NO_NEA,
+    }
+  }
 
   const adsState: AdsState = {
     adsRaw: S.adsRaw,

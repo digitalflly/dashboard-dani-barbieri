@@ -83,12 +83,14 @@ export interface DashState {
   postMetrics: boolean
   // leads nativos por dia (planilhas) — funis Aplicação Direta / Isca
   aplicLeadsBy?: Record<string, number>
-  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string; fonte?: string }[]
+  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string; fonte?: string; ts?: string; utm?: string }[]
   iscaLeadsBy?: Record<string, number>
   // Audiência — demografia + split seguidor/não-seguidor (ao vivo, Windsor)
   audData: AudienceData | null
   audLoading: boolean
   audError: string
+  // Funil Stories — sequência selecionada (id 'YYYY-MM-DD'; null = a mais recente do período)
+  storySeq: string | null
 }
 
 export interface Dashboard {
@@ -150,6 +152,7 @@ export function useDashboard(): Dashboard {
     audData: null,
     audLoading: false,
     audError: '',
+    storySeq: null,
   }))
 
   const setState = useCallback(

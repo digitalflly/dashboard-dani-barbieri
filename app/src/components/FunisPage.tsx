@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { Dashboard } from '../lib/useDashboard'
 import type { FunisVM } from '../lib/funisvm'
 import ChartCanvas from './ChartCanvas'
+import StoriesFunnel from './StoriesFunnel'
 
 const eyebrow: CSSProperties = {
   fontSize: 11,
@@ -520,6 +521,8 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
           )}
         </div>
       )}
+
+      {dash.state.funnel === 'stories' && <StoriesFunnel dash={dash} />}
 
       {v.candLoadingView && (
         <div className="b-card b-card--bare" style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>

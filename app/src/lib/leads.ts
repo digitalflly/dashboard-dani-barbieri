@@ -16,6 +16,8 @@ export interface AplicLeadRow {
   perfilOk: boolean
   status?: string // 'ag' (laranja) | 'fe' (verde) | undefined
   fonte?: string // 'respondi' (form externo) | undefined (Meta)
+  ts?: string // data e hora da resposta (Respondi: 'YYYY-MM-DD HH:MM:SS')
+  utm?: string // 'utm_source|utm_medium' em minúsculas (só Respondi; '|' = sem UTM)
 }
 
 interface RawLead {
@@ -27,6 +29,7 @@ interface RawLead {
   status?: string
   fonte?: string
   pk?: string
+  utm?: string
 }
 
 const SHEET = '10x1BkVrMMnhKODfU0J8_J2JB2sYLlsMbQNNXWTGDMuc'
@@ -174,6 +177,8 @@ async function loadRespondi(): Promise<RawLead[]> {
   const cA = h.findIndex((x) => /rea de atua/.test(x))
   const cP = h.findIndex((x) => /profiss/.test(x))
   const cS = h.findIndex((x) => /^status$/.test(x))
+  const cUs = h.findIndex((x) => /^utm_source$/.test(x))
+  const cUm = h.findIndex((x) => /^utm_medium$/.test(x))
   const out: RawLead[] = []
   rows.slice(1).forEach((rw) => {
     const d = String(rw[cD] || '').match(/(\d{4})-(\d{2})-(\d{2})/)
@@ -193,6 +198,7 @@ async function loadRespondi(): Promise<RawLead[]> {
       faixa: respondiFaixa(rw[cF]),
       perfilOk,
       fonte: 'respondi',
+      utm: (String(cUs >= 0 ? rw[cUs] || '' : '').trim() + '|' + String(cUm >= 0 ? rw[cUm] || '' : '').trim()).toLowerCase(),
       pk: personKey(cM >= 0 ? rw[cM] : '', cT >= 0 ? rw[cT] : ''),
     })
   })
@@ -238,7 +244,7 @@ export async function fetchAplicLeads(): Promise<{ by: Record<string, number>; r
   })
   const by: Record<string, number> = {}
   rowsF.forEach((r) => { by[r.date] = (by[r.date] || 0) + 1 })
-  return { by, rows: rowsF.map((r) => ({ date: r.date, faixa: r.faixa, perfilOk: r.perfilOk, status: r.status, fonte: r.fonte })) }
+  return { by, rows: rowsF.map((r) => ({ date: r.date, faixa: r.faixa, perfilOk: r.perfilOk, status: r.status, fonte: r.fonte, ts: r.ts, utm: r.utm })) }
 }
 
 // planilha de leads (aba 1) do funil Isca — volume por dia

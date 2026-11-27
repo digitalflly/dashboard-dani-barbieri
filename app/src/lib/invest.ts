@@ -127,7 +127,7 @@ export interface InvestVM {
   adsetResultLabel: string
 }
 
-const EMPTY_INVEST: InvestVM = {
+export const EMPTY_INVEST: InvestVM = {
   investShow: false,
   isSeg: false,
   isGolden: false,
