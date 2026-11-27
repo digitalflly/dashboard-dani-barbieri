@@ -151,6 +151,7 @@ export interface AdDailyRow {
   thumb: string
   permalink: string
   adId: string
+  adsetId: string
   impressions: number
   reach: number
   linkClicks: number

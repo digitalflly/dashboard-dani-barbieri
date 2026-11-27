@@ -83,7 +83,7 @@ export interface DashState {
   postMetrics: boolean
   // leads nativos por dia (planilhas) — funis Aplicação Direta / Isca
   aplicLeadsBy?: Record<string, number>
-  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string; fonte?: string; ts?: string; utm?: string }[]
+  aplicLeadsRows?: { date: string; faixa: string; perfilOk?: boolean; status?: string; fonte?: string; ts?: string; utm?: string; adId?: string; adName?: string; adsetId?: string }[]
   iscaLeadsBy?: Record<string, number>
   // Audiência — demografia + split seguidor/não-seguidor (ao vivo, Windsor)
   audData: AudienceData | null
