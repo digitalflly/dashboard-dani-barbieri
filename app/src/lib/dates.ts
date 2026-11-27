@@ -80,6 +80,14 @@ export function lastMonthRange(minD: string | null, maxD: string | null): { from
   return { from, to }
 }
 
+// mês atual do calendário (horário local): dia 1 até hoje — período padrão dos funis
+export function currentMonthRange(): { from: string; to: string } {
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  const d = new Date()
+  const ym = d.getFullYear() + '-' + pad(d.getMonth() + 1)
+  return { from: ym + '-01', to: ym + '-' + pad(d.getDate()) }
+}
+
 // últimos 30 dias — limitado ao período disponível
 export function last30Range(minD: string | null, maxD: string | null): { from: string; to: string } {
   const pad = (n: number): string => String(n).padStart(2, '0')
