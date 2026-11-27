@@ -7,7 +7,7 @@
 import type { ChartConfiguration } from 'chart.js'
 import { fmtNum } from './format'
 import { MONTH_NAMES } from './dates'
-import { STORY_SEQS, STORY_RESULTS, type StorySeq, type StoryItem } from './storiesData'
+import { STORY_SEQS, STORY_RESULTS, type StorySeq, type StoryItem, type StoryResult } from './storiesData'
 import type { DashState } from './useDashboard'
 import type { MonthDef } from './types'
 
@@ -20,6 +20,7 @@ export interface StoriesKpi {
   value: string
   sub: string
   pending?: boolean
+  tip?: string // texto do tooltip (ex.: nomes de quem agendou)
 }
 export interface StoriesStage {
   label: string
@@ -27,6 +28,7 @@ export interface StoriesStage {
   left: string
   width: number
   pending?: boolean
+  tip?: string
 }
 export interface StoriesCompareRow {
   id: string
@@ -44,6 +46,7 @@ export interface StoriesCompareRow {
   apps: string
   conversas: string | null
   agendamentos: string | null
+  agendTip: string
 }
 export interface StoriesStoryRow {
   pos: string
@@ -148,11 +151,18 @@ export function storiesVM(S: DashState): StoriesVM {
     return { empty: true, kpis: [], seqBtns: [], selEyebrow: '', stages: [], storiesNote: '', storyRows: [], compare: [], retCfg: null }
   }
 
-  const res = (id: string) => STORY_RESULTS[id] || { conversas: null, agendamentos: null }
-  const sumRes = (k: 'conversas' | 'agendamentos'): number | null => {
-    const vals = calcs.map((c) => res(c.seq.id)[k]).filter((v): v is number => v != null)
+  const res = (id: string): StoryResult => STORY_RESULTS[id] || { conversas: null, agendamentos: null }
+  const nAg = (r: StoryResult): number | null => (r.agendamentos == null ? null : r.agendamentos.length)
+  const sumRes = (get: (r: StoryResult) => number | null): number | null => {
+    const vals = calcs.map((c) => get(res(c.seq.id))).filter((v): v is number => v != null)
     return vals.length ? vals.reduce((a, v) => a + v, 0) : null
   }
+  // nomes de quem agendou, por sequência (mais recente primeiro) — tooltip do KPI
+  const agTipAll = calcs
+    .slice()
+    .reverse()
+    .flatMap((c) => (res(c.seq.id).agendamentos || []).map((nm) => `${dm(c.seq.id)} · ${nm}`))
+    .join('\n')
 
   // ---- KPIs (sempre numa linha) ----
   const multi = calcs.filter((c) => c.seq.stories.length > 1)
@@ -161,8 +171,8 @@ export function storiesVM(S: DashState): StoriesVM {
   const reachLinkT = withLink.reduce((a, c) => a + c.anchor.reach, 0)
   const appsKnown = calcs.every((c) => c.apps != null)
   const appsT = calcs.reduce((a, c) => a + (c.apps || 0), 0)
-  const convT = sumRes('conversas')
-  const agT = sumRes('agendamentos')
+  const convT = sumRes((r) => r.conversas)
+  const agT = sumRes(nAg)
   const kpis: StoriesKpi[] = [
     { label: 'Sequências', value: String(calcs.length), sub: calcs.length > 1 ? `de ${dm(calcs[0].seq.id)} a ${dm(calcs[calcs.length - 1].seq.id)}` : dm(calcs[0].seq.id) },
     { label: 'Stories', value: fmtNum(calcs.reduce((a, c) => a + c.seq.stories.length, 0)), sub: 'nas sequências' },
@@ -171,7 +181,7 @@ export function storiesVM(S: DashState): StoriesVM {
     { label: 'Cliques no link', value: fmtNum(clkT), sub: reachLinkT ? pct((clkT / reachLinkT) * 100) + ' do alcance' : 'sem link no período' },
     { label: 'Aplicações', value: appsKnown ? fmtNum(appsT) : '…', sub: `respondi · até ${APP_WINDOW_H}h` },
     { label: 'Conversas', value: convT == null ? '—' : fmtNum(convT), sub: '', pending: convT == null },
-    { label: 'Agendamentos', value: agT == null ? '—' : fmtNum(agT), sub: '', pending: agT == null },
+    { label: 'Agendamentos', value: agT == null ? '—' : fmtNum(agT), sub: agT ? 'passe o mouse para ver' : '', pending: agT == null, tip: agTipAll || undefined },
   ]
 
   // ---- sequência selecionada (padrão: a mais recente do período) ----
@@ -183,7 +193,13 @@ export function storiesVM(S: DashState): StoriesVM {
   const tail: Omit<StoriesStage, 'width'>[] = [
     { label: 'Aplicações', value: appsStr, left: 'respondi sem utm' },
     { label: 'Conversas', value: r.conversas == null ? '—' : fmtNum(r.conversas), left: '', pending: r.conversas == null },
-    { label: 'Agendamentos', value: r.agendamentos == null ? '—' : fmtNum(r.agendamentos), left: '', pending: r.agendamentos == null },
+    {
+      label: 'Agendamentos',
+      value: r.agendamentos == null ? '—' : fmtNum(r.agendamentos.length),
+      left: r.agendamentos && r.agendamentos.length ? 'passe o mouse para ver' : '',
+      pending: r.agendamentos == null,
+      tip: r.agendamentos && r.agendamentos.length ? r.agendamentos.join('\n') : undefined,
+    },
   ]
   const head: Omit<StoriesStage, 'width'>[] = sel.hasLink
     ? [
@@ -244,7 +260,8 @@ export function storiesVM(S: DashState): StoriesVM {
         ctr: c.hasLink && c.anchor.reach ? pct((c.anchor.clk / c.anchor.reach) * 100) : '—',
         apps: c.apps == null ? '…' : fmtNum(c.apps),
         conversas: rr.conversas == null ? null : fmtNum(rr.conversas),
-        agendamentos: rr.agendamentos == null ? null : fmtNum(rr.agendamentos),
+        agendamentos: rr.agendamentos == null ? null : fmtNum(rr.agendamentos.length),
+        agendTip: (rr.agendamentos || []).join('\n'),
       }
     })
 

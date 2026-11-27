@@ -56,7 +56,8 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
         {v.kpis.map((k, i) => (
           <div
             key={i}
-            className="b-card"
+            className={k.tip ? 'b-card tt tt--pre' : 'b-card'}
+            data-tip={k.tip}
             style={{ padding: '14px 14px', minHeight: 96, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderTop: '3px solid #771520' }}
           >
             <div style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1.3 }}>{k.label}</div>
@@ -108,6 +109,8 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
             {v.stages.map((s, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div
+                  className={s.tip ? 'tt tt--pre' : undefined}
+                  data-tip={s.tip}
                   style={{
                     width: s.width + '%',
                     background: s.pending ? '#BCA489' : '#771520',
@@ -181,7 +184,17 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
                   <td data-keepcase="1" style={td}>{r.ctr}</td>
                   <td data-keepcase="1" style={tdHl}>{r.apps}</td>
                   <td data-keepcase="1" style={td}>{r.conversas ?? <Pending />}</td>
-                  <td data-keepcase="1" style={{ ...td, padding: '10px 4px 10px 10px' }}>{r.agendamentos ?? <Pending />}</td>
+                  <td data-keepcase="1" style={{ ...td, padding: '10px 4px 10px 10px' }}>
+                    {r.agendamentos == null ? (
+                      <Pending />
+                    ) : r.agendTip ? (
+                      <span className="tt tt--pre tt--side" data-tip={r.agendTip} style={{ fontWeight: 600, color: '#771520', borderBottom: '1px dotted #771520' }}>
+                        {r.agendamentos}
+                      </span>
+                    ) : (
+                      r.agendamentos
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

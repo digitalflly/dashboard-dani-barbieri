@@ -29,5 +29,14 @@ export const STORY_SEQS: StorySeq[] = [
   {"id": "2026-11-25", "name": "Black Friday", "stories": [{"iso": "2026-11-25 11:17", "dur": 0, "views": 837, "reach": 706, "resp": 0, "vis": 2, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038244053228482364"}, {"iso": "2026-11-25 11:17", "dur": 0, "views": 768, "reach": 671, "resp": 1, "vis": 0, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038244152054689639"}, {"iso": "2026-11-25 11:18", "dur": 20, "views": 707, "reach": 653, "resp": 0, "vis": 1, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038244697985499845"}, {"iso": "2026-11-25 11:19", "dur": 0, "views": 676, "reach": 619, "resp": 0, "vis": 0, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038245396680878343"}, {"iso": "2026-11-25 11:20", "dur": 0, "views": 656, "reach": 593, "resp": 0, "vis": 0, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038245771072800091"}, {"iso": "2026-11-25 11:21", "dur": 0, "views": 652, "reach": 577, "resp": 1, "vis": 0, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038246034659785272"}, {"iso": "2026-11-25 11:21", "dur": 0, "views": 624, "reach": 557, "resp": 0, "vis": 0, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038246140045714949"}, {"iso": "2026-11-25 11:22", "dur": 20, "views": 597, "reach": 537, "resp": 0, "vis": 1, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038246717408665869"}, {"iso": "2026-11-25 11:22", "dur": 0, "views": 578, "reach": 530, "resp": 0, "vis": 0, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038246855526878167"}, {"iso": "2026-11-25 11:22", "dur": 0, "views": 554, "reach": 517, "resp": 0, "vis": 1, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038246896228458050"}, {"iso": "2026-11-25 11:22", "dur": 0, "views": 552, "reach": 515, "resp": 0, "vis": 0, "clk": 0, "shr": 0, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038246938180046556"}, {"iso": "2026-11-25 11:23", "dur": 20, "views": 568, "reach": 511, "resp": 0, "vis": 8, "clk": 4, "shr": 1, "link": "https://www.instagram.com/stories/danibarbieribeauty/4038247428863154490"}]},
 ]
 
-// resultados comerciais informados manualmente, por sequência (null = a preencher)
-export const STORY_RESULTS: Record<string, { conversas: number | null; agendamentos: number | null }> = {}
+// resultados comerciais informados manualmente, por sequência (id 'YYYY-MM-DD').
+// null = a preencher. agendamentos = nomes de quem agendou (a contagem é o tamanho
+// da lista; os nomes aparecem no tooltip do indicador).
+export interface StoryResult {
+  conversas: number | null
+  agendamentos: string[] | null
+}
+export const STORY_RESULTS: Record<string, StoryResult> = {
+  '2026-11-17': { conversas: null, agendamentos: ['Gabriela'] },
+  '2026-11-25': { conversas: null, agendamentos: ['Giovanna'] },
+}
