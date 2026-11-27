@@ -44,10 +44,14 @@ export function installTableSort(): () => void {
     rows.sort((a, b) => {
       const av = parseVal(a.children[idx] || a.lastElementChild)
       const bv = parseVal(b.children[idx] || b.lastElementChild)
+      // células vazias ("—", "-" ou em branco) ficam sempre no fim, nos dois sentidos
+      const ae = av.s === ''
+      const be = bv.s === ''
+      if (ae || be) return ae && be ? 0 : ae ? 1 : -1
       let cmp: number
       if (!isNaN(av.n) && !isNaN(bv.n)) cmp = av.n - bv.n
       else if (isNaN(av.n) && isNaN(bv.n)) cmp = av.s.localeCompare(bv.s, 'pt')
-      else cmp = isNaN(av.n) ? 1 : -1 // vazios sempre no fim
+      else cmp = isNaN(av.n) ? 1 : -1 // texto não numérico depois dos números
       return cmp * dir
     })
     rows.forEach((r) => tbody.appendChild(r))
