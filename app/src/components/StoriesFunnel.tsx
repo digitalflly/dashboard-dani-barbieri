@@ -91,13 +91,12 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
       <div style={{ borderTop: '1px solid var(--border-soft)', margin: '26px 0 16px', paddingTop: 24 }}>
         <div style={sectionTitle}>Sequências de stories</div>
       </div>
-      {/* "ver tudo" ignora o dia selecionado e compara todas as sequências do período */}
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+        {/* "ver tudo" ignora o dia selecionado e compara todas as sequências do período */}
         <button onClick={() => setState({ storyAll: !S.storyAll })} style={pillBtn(v.allMode)}>
           Ver tudo
         </button>
-      </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        <span style={{ width: 1, alignSelf: 'stretch', background: 'var(--border-soft)', margin: '0 4px' }}></span>
         {v.seqBtns.map((b) => (
           <button key={b.id} onClick={() => setState({ storySeq: b.id, storyAll: false })} style={pillBtn(b.active)}>
             {b.label}
