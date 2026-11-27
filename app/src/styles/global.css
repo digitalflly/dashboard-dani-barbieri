@@ -39,6 +39,12 @@ a.b-card--link:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba
   z-index: 20;
   pointer-events: none;
 }
+/* tooltip com várias linhas (ex.: nomes de quem agendou no Funil Stories) */
+.tt--pre { cursor: help; }
+.tt--pre:hover::after { white-space: pre-line; width: max-content; max-width: 240px; text-align: left; }
+/* abre ao lado, à esquerda e na mesma altura (célula de tabela com rolagem, que cortaria o tooltip acima) */
+.tt--side:hover::after { left: auto; right: calc(100% + 10px); bottom: auto; top: 50%; transform: translateY(-50%); }
+
 ::-webkit-scrollbar-thumb {
   background: var(--accent);
   border-radius: 999px;
