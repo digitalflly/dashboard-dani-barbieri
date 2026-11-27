@@ -8,6 +8,7 @@
 import type { ChartConfiguration } from 'chart.js'
 import { fmtNum, fmtPct } from './format'
 import { ADS_CAMPAIGN_MATCH, metaGastoMes } from './constants'
+import { isSegTraffic } from './facebook'
 import { RESULTADOS_VENDAS } from './resultadosVendasData'
 import { RESULTADOS_PRODUTO } from './resultadosProdutoData'
 import { RESULTADOS_TRAFEGO } from './resultadosTrafegoData'
@@ -84,11 +85,12 @@ export function resultadosVM(S: DashState): ResultadosVM {
   const BOOST = ADS_CAMPAIGN_MATCH.turbinamento
   const curYm = new Date().toISOString().slice(0, 7)
 
-  const TYPES: { key: string; label: string; re: RegExp; hbp?: string }[] = [
+  const TYPES: { key: string; label: string; re: RegExp; hbp?: string; extra?: (x: AdDailyRow) => boolean }[] = [
     { key: 'aplicacao', label: 'Aplicação Direta', re: ADS_CAMPAIGN_MATCH.aplicacao, hbp: 'aplicação direta' },
     { key: 'isca', label: 'Isca', re: ADS_CAMPAIGN_MATCH.isca },
     { key: 'low', label: 'Low Ticket', re: ADS_CAMPAIGN_MATCH.low },
-    { key: 'seguidores', label: 'Seguidores', re: /seguidores/i },
+    // + campanhas de tráfego com objetivo de visita ao perfil (mesma regra do funil Seguidores)
+    { key: 'seguidores', label: 'Seguidores', re: /seguidores/i, extra: isSegTraffic },
     { key: 'premium', label: 'Sessão Premium', re: ADS_CAMPAIGN_MATCH.premium, hbp: 'sessão premium' },
     { key: 'diagnostico', label: 'Diagnóstico', re: ADS_CAMPAIGN_MATCH.diagnostico, hbp: 'diagnóstico' },
     { key: 'golden', label: 'Golden Ticket', re: /(\bamb\b|\bnea\b|\bieb\b|nea\s*2\.?0)/i, hbp: 'golden ticket' },
@@ -164,7 +166,7 @@ export function resultadosVM(S: DashState): ResultadosVM {
         })
       } else {
         TYPES.forEach((t) => {
-          const rws = monthRows.filter((x) => t.re.test(x.campaign) && !BOOST.test(x.campaign))
+          const rws = monthRows.filter((x) => (t.re.test(x.campaign) || (t.extra ? t.extra(x) : false)) && !BOOST.test(x.campaign))
           const sp = rws.reduce((a, x) => a + (x.spend || 0), 0)
           if (sp <= 0) return
           const res = rws.reduce((a, x) => a + (x.leads || 0) + (x.purchases || 0), 0)

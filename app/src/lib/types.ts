@@ -146,6 +146,7 @@ export interface AdsetRow {
 export interface AdDailyRow {
   date: string
   campaign: string
+  objective: string // campaign_objective (ex.: OUTCOME_TRAFFIC)
   ad: string
   adset: string
   thumb: string
