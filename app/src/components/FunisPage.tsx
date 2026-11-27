@@ -44,24 +44,20 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
   const { setState, setFunnel } = dash
   const v = funis
   const inv = v.invest
-  const isSeg = inv.isSeg
 
-  // posicionamento da grade de investimento (funil Seguidores reorganiza as células)
-  const investGrid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, ...(isSeg ? { alignItems: 'stretch' } : {}) }
-  const funnelCell: CSSProperties = { gridColumn: 1, gridRow: isSeg ? '1 / span 2' : 1, minWidth: 0, display: 'flex' }
+  // grade de investimento: conversão + conjuntos em cima, anúncios na largura toda embaixo
+  // (o funil Seguidores tinha layout próprio por causa do card Turbinamento, que saiu)
+  const investGrid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }
+  const funnelCell: CSSProperties = { gridColumn: 1, gridRow: 1, minWidth: 0, display: 'flex' }
   const adsetCell: CSSProperties = { gridColumn: 2, gridRow: 1, minWidth: 0, display: 'flex' }
-  const adsCell: CSSProperties = isSeg
-    ? { gridColumn: 2, gridRow: 2, minWidth: 0, display: 'flex' }
-    : { gridColumn: '1 / -1', gridRow: 2, minWidth: 0, display: 'flex' }
+  const adsCell: CSSProperties = { gridColumn: '1 / -1', gridRow: 2, minWidth: 0, display: 'flex' }
   const investHeader: CSSProperties = inv.noPlan
     ? { margin: '18px 0 18px', display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }
     : { borderTop: '1px solid var(--border-soft)', margin: '26px 0 18px', paddingTop: 24, display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }
-  const adsetWrap: CSSProperties = isSeg
-    ? { overflow: 'auto', margin: '0 -4px', height: 430 }
-    : { overflow: 'auto', margin: '0 -4px', flex: '1 1 0', minHeight: 0 }
-  const adsWrap: CSSProperties = isSeg ? { overflow: 'auto', margin: '0 -4px', maxHeight: 625 } : { overflowX: 'auto', margin: '0 -4px' }
-  const adsTable: CSSProperties = isSeg ? { borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' } : { borderCollapse: 'collapse', width: '100%', minWidth: 660 }
-  const adsNameCol: CSSProperties = { ...thPlain, textAlign: 'left', padding: '0 12px 10px 4px', ...(isSeg ? { width: '38%' } : {}) }
+  const adsetWrap: CSSProperties = { overflow: 'auto', margin: '0 -4px', flex: '1 1 0', minHeight: 0 }
+  const adsWrap: CSSProperties = { overflowX: 'auto', margin: '0 -4px' }
+  const adsTable: CSSProperties = { borderCollapse: 'collapse', width: '100%', minWidth: 660 }
+  const adsNameCol: CSSProperties = { ...thPlain, textAlign: 'left', padding: '0 12px 10px 4px' }
 
   return (
     <div>
