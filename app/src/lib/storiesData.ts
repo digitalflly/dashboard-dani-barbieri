@@ -30,13 +30,12 @@ export const STORY_SEQS: StorySeq[] = [
 ]
 
 // resultados comerciais informados manualmente, por sequência (id 'YYYY-MM-DD').
-// null = a preencher. agendamentos = nomes de quem agendou (a contagem é o tamanho
-// da lista; os nomes aparecem no tooltip do indicador).
+// agendamentos = nomes de quem agendou (a contagem é o tamanho da lista; os nomes
+// aparecem no tooltip do indicador). null = a preencher.
 export interface StoryResult {
-  conversas: number | null
   agendamentos: string[] | null
 }
 export const STORY_RESULTS: Record<string, StoryResult> = {
-  '2026-11-17': { conversas: null, agendamentos: ['Gabriela'] },
-  '2026-11-25': { conversas: null, agendamentos: ['Giovanna'] },
+  '2026-11-17': { agendamentos: ['Gabriela'] },
+  '2026-11-25': { agendamentos: ['Giovanna'] },
 }
