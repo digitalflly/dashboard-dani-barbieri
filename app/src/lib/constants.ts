@@ -29,11 +29,12 @@ export const ADS_CAMPAIGN_MATCH: Record<string, RegExp> = {
   gieb: /(?=.*\bieb\b)(?=.*venda)/i,
 }
 
-// Funil Seguidores também inclui campanhas com "tráfego" no nome e objetivo de tráfego
-// (visita ao perfil). A API não distingue destino perfil × site dentro do objetivo de
-// tráfego, então o nome com "tráfego" é o que identifica essas campanhas.
+// Funil Seguidores também inclui campanhas com "tráfego" no nome, objetivo de tráfego e
+// destino "perfil do Instagram" (adset_destination_type = INSTAGRAM_PROFILE) — ou seja,
+// tráfego para visita ao perfil. Tráfego para site (outro destino) não entra.
 export const SEG_TRAFFIC_RE = /tr[aá]fego/i
 export const SEG_TRAFFIC_OBJECTIVES = ['OUTCOME_TRAFFIC', 'LINK_CLICKS']
+export const SEG_TRAFFIC_DESTINATION = 'INSTAGRAM_PROFILE'
 
 export const SHEET_ID = '1SEHe4kbnkOj_D5l4vCvnvEM2pPObgCrX25elBh_FH1o'
 
