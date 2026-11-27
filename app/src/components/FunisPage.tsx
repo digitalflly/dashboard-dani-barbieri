@@ -473,13 +473,7 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                             <th style={{ ...thPlain, padding: '0 12px 10px' }}>{inv.adsCostLabel}</th>
                             <th style={{ ...thPlain, padding: '0 12px 10px' }}>{inv.adsResultLabel}</th>
                             {inv.showMql && (
-                              <th
-                                className="tt"
-                                data-tip="% dos leads da planilha (Meta + Respondi) atribuídos ao anúncio que são MQL: faturamento a partir de R$ 15 mil e perfil dentro do ICP."
-                                style={{ ...thPlain, padding: '0 12px 10px', cursor: 'help' }}
-                              >
-                                % MQL
-                              </th>
+                              <th style={{ ...thPlain, padding: '0 12px 10px' }}>% MQL</th>
                             )}
                             <th style={{ ...thPlain, textAlign: 'right', padding: '0 4px 10px 12px' }}>Seguidores</th>
                           </tr>
@@ -519,15 +513,7 @@ export default function FunisPage({ dash, funis }: { dash: Dashboard; funis: Fun
                               <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.custoLead}</td>
                               <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13, fontWeight: 600, color: '#771520' }}>{a.leads}</td>
                               {inv.showMql && (
-                                <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>
-                                  {a.mqlTip ? (
-                                    <span className="tt tt--side" data-tip={a.mqlTip} style={{ borderBottom: '1px dotted var(--border-strong)', cursor: 'help' }}>
-                                      {a.mql}
-                                    </span>
-                                  ) : (
-                                    a.mql
-                                  )}
-                                </td>
+                                <td data-keepcase="1" style={{ ...tdNum, padding: '10px 12px', fontSize: 13 }}>{a.mql}</td>
                               )}
                               <td data-keepcase="1" style={{ ...tdNum, padding: '10px 4px 10px 12px', fontSize: 13, fontWeight: 600, color: '#771520' }}>{a.seg}</td>
                             </tr>
