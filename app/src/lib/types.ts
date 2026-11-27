@@ -125,6 +125,8 @@ export interface AdRow {
   spend: number
   // seguidores ganhos a partir do anúncio (instagram_profile_follow do Windsor)
   follows: number
+  // visitas ao perfil do Instagram a partir do anúncio (instagram_profile_visits)
+  profileVisits?: number
   // Golden Ticket (e-commerce) — só no snapshot estático
   checkout?: number
   purchases?: number
@@ -141,6 +143,7 @@ export interface AdsetRow {
   checkout?: number
   purchases?: number
   revenue?: number
+  profileVisits?: number
 }
 // linha diária bruta do conector do Facebook (agregada no cliente por intervalo)
 export interface AdDailyRow {
@@ -164,6 +167,7 @@ export interface AdDailyRow {
   revenue: number
   spend: number
   follows: number
+  profileVisits: number
 }
 // turbinamento — agregado por campanha (funil Seguidores)
 export interface TurbinaRow {

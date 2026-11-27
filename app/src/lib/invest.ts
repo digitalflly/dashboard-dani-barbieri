@@ -12,7 +12,7 @@
 import type { CSSProperties } from 'react'
 import type { ChartConfiguration } from 'chart.js'
 import { fmtNum, fmtPct } from './format'
-import { adsAgg, turbinaAgg, dailyAgg } from './facebook'
+import { adsAgg, dailyAgg } from './facebook'
 import { lineCfg } from './charts'
 import { addDays, ddmm } from './dates'
 import { goldenAgg } from './golden'
@@ -196,34 +196,11 @@ export function investFunnel(
   const noPlan = isSeg || isGolden || isNea2 || key === 'aplicacao' || key === 'isca' || key === 'low'
   const IMLABEL: Record<string, string> = { ieb: 'IEB', amb: 'AMB', nea: 'NEA' }
 
-  // Turbinamento (só no funil Seguidores) — substitui o card "Dados de conversão"
-  let convShow = true
-  let turbinaShow = false
-  let turbina: TurbinaItem[] = []
-  let turbinaSummary: TurbinaSummary[] = []
-  if (isSeg) {
-    convShow = false
-    turbinaShow = true
-    const tb = turbinaAgg(st.adsRaw, ADS_CAMPAIGN_MATCH.turbinamento, from, to)
-    const tspend = tb.reduce((a, x) => a + (x.spend || 0), 0)
-    const tvis = tb.reduce((a, x) => a + (x.linkClicks || 0), 0)
-    turbinaSummary = [
-      { label: 'Publicações', value: fmtNum(tb.length) },
-      { label: 'Investimento', value: 'R$ ' + fmtNum(tspend) },
-      { label: 'Visitas ao perfil', value: fmtNum(tvis) },
-    ]
-    turbina = tb.map((x, i) => ({
-      idx: i,
-      name:
-        String(x.name || '')
-          .replace(/^Post do Instagram:\s*/i, '')
-          .replace(/^Publica[çc][ãa]o do Instagram:\s*/i, '')
-          .slice(0, 70) || '(sem título)',
-      visitas: fmtNum(x.linkClicks),
-      spend: 'R$ ' + fmtNum(x.spend),
-      permalink: x.permalink || '',
-    }))
-  }
+  // card "Dados de conversão" em todos os funis (o Seguidores deixou de usar o Turbinamento)
+  const convShow = true
+  const turbinaShow = false
+  const turbina: TurbinaItem[] = []
+  const turbinaSummary: TurbinaSummary[] = []
 
   const T = Math.max(total, 1)
   // Golden: por imersão usa as campanhas de venda (gamb/gnea/gieb) ou NEA 2.0; senão o snapshot goldenAgg
@@ -281,6 +258,8 @@ export function investFunnel(
   let alcance: number, impressoes: number, cliques: number, lpViews: number, leadsGer: number, investido: number
   let checkout = 0
   let compras = 0
+  let visitas = 0 // visitas ao perfil (funil Seguidores)
+  let seguidores = 0
   // Golden: tráfego CONGELADO por produto (snapshot), não depende de busca ao vivo
   const GT = isGolden ? GOLDEN_TRAFEGO[imersaoKey] : null
   if (GT) {
@@ -302,6 +281,8 @@ export function investFunnel(
     investido = sum('spend')
     checkout = sum('checkout')
     compras = sum('purchases')
+    visitas = sum('profileVisits')
+    seguidores = sum('follows')
   } else {
     // fallback estimado enquanto carrega / se não houver anúncios
     leadsGer = Math.round(T / 0.85)
@@ -322,7 +303,16 @@ export function investFunnel(
 
   type Stage = { label: string; value: number; conv: number | null; cost: string | null; freq: number | null }
   let raw: Stage[]
-  if (usePurchase) {
+  if (isSeg) {
+    // funil Seguidores: alcance → impressões → cliques → visitas ao perfil → seguidores
+    raw = [
+      { label: 'Alcance', value: alcance, conv: null, cost: null, freq: null },
+      { label: 'Impressões', value: impressoes, conv: div(impressoes, alcance), freq: div(impressoes, alcance), cost: null },
+      { label: 'Cliques no link', value: cliques, conv: div(cliques, impressoes), cost: money2(cpc), freq: null },
+      { label: 'Visitas ao perfil', value: visitas, conv: div(visitas, cliques), cost: money2(visitas ? investido / visitas : 0), freq: null },
+      { label: 'Seguidores', value: seguidores, conv: div(seguidores, visitas), cost: money2(seguidores ? investido / seguidores : 0), freq: null },
+    ]
+  } else if (usePurchase) {
     raw = [
       { label: 'Alcance', value: alcance, conv: null, cost: null, freq: null },
       { label: 'Impressões', value: impressoes, conv: div(impressoes, alcance), freq: div(impressoes, alcance), cost: null },
@@ -471,8 +461,8 @@ export function investFunnel(
       lpv: fmtNum(a.lpViews),
       cr: fmtPct(a.linkClicks ? (a.lpViews / a.linkClicks) * 100 : 0),
       checkout: fmtNum(a.checkout || 0),
-      custoLead: money2((() => { const res = usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads; return res ? a.spend / res : 0 })()),
-      leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
+      custoLead: money2((() => { const res = usePurchase ? a.purchases || 0 : isSeg ? a.profileVisits || 0 : a.leads; return res ? a.spend / res : 0 })()),
+      leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.profileVisits || 0 : a.leads),
       seg: fmtNum(a.follows || 0),
     }))
   } else {
@@ -535,7 +525,7 @@ export function investFunnel(
       clk: fmtNum(a.linkClicks),
       lpv: fmtNum(a.lpViews),
       cr: fmtPct(a.linkClicks ? (a.lpViews / a.linkClicks) * 100 : 0),
-      leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.linkClicks : a.leads),
+      leads: fmtNum(usePurchase ? a.purchases || 0 : isSeg ? a.profileVisits || 0 : a.leads),
     }))
   } else {
     const setNames = [
