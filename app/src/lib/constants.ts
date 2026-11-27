@@ -12,7 +12,9 @@ import type { FunnelSpec } from './types'
 export const ADS_ACCOUNT_ID = '450830237045296'
 
 export const ADS_CAMPAIGN_MATCH: Record<string, RegExp> = {
-  aplicacao: /aplica[çc][aã]o/i,
+  // inclui a campanha "[Leads] [Qualificados] 10/26", que também é do funil de aplicação
+  // (os leads dela caem na mesma planilha de aplicação)
+  aplicacao: /aplica[çc][aã]o|\[qualificados\]/i,
   isca: /isca/i,
   low: /low/i,
   premium: /sess[aã]o\s*premium/i,
