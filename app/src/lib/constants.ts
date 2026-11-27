@@ -83,6 +83,18 @@ export const FUNNELS: FunnelSpec[] = [
     statusMap: {},
     charts: [],
   },
+  // funil Stories — sequências de stories (export manual da Meta + resultados informados)
+  {
+    key: 'stories',
+    name: 'Funil Stories',
+    adsOnly: true,
+    stories: true,
+    gid: '',
+    dateCol: 0,
+    statusCol: 0,
+    statusMap: {},
+    charts: [],
+  },
   // funil Golden Ticket — snapshot estático por imersão (IEB/AMB/NEA)
   {
     key: 'golden',
