@@ -69,7 +69,6 @@ export interface InvestAdRow {
   seg: string
   // % MQL dos leads da planilha atribuídos ao anúncio (só Aplicação Direta)
   mql: string
-  mqlTip: string
 }
 export interface InvestAdsetRow {
   idx: number
@@ -444,10 +443,10 @@ export function investFunnel(
       })
     mqlNote = tot ? `${fmtNum(hit)} de ${fmtNum(tot)} leads da planilha ligados a um anúncio` : ''
   }
-  const mqlCell = (name: string): { mql: string; mqlTip: string } => {
+  const mqlCell = (name: string): { mql: string } => {
     const o = mqlBy[name]
-    if (!showMql || !o || !o.n) return { mql: '—', mqlTip: '' }
-    return { mql: fmtPct((o.q / o.n) * 100), mqlTip: `${fmtNum(o.q)} MQL de ${fmtNum(o.n)} ${o.n === 1 ? 'lead' : 'leads'} da planilha` }
+    if (!showMql || !o || !o.n) return { mql: '—' }
+    return { mql: fmtPct((o.q / o.n) * 100) }
   }
 
   let investAds: InvestAdRow[]
@@ -513,7 +512,6 @@ export function investFunnel(
         leads: fmtNum(isSeg ? clk : leads),
         seg: fmtNum(Math.round(impr * 0.03)),
         mql: '—',
-        mqlTip: '',
       }
     })
   }
