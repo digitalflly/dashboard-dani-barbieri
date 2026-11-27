@@ -147,6 +147,7 @@ export interface AdDailyRow {
   date: string
   campaign: string
   objective: string // campaign_objective (ex.: OUTCOME_TRAFFIC)
+  destination: string // adset_destination_type (ex.: INSTAGRAM_PROFILE)
   ad: string
   adset: string
   thumb: string
