@@ -91,6 +91,8 @@ export interface DashState {
   audError: string
   // Funil Stories — sequência selecionada (id 'YYYY-MM-DD'; null = a mais recente do período)
   storySeq: string | null
+  // Funil Stories — "ver tudo": ignora a sequência selecionada e compara todas
+  storyAll: boolean
 }
 
 export interface Dashboard {
@@ -153,6 +155,7 @@ export function useDashboard(): Dashboard {
     audLoading: false,
     audError: '',
     storySeq: null,
+    storyAll: false,
   }))
 
   const setState = useCallback(

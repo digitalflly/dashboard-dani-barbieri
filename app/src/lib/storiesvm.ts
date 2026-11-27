@@ -65,13 +65,16 @@ export interface StoriesStoryRow {
 export interface StoriesVM {
   empty: boolean
   kpis: StoriesKpi[]
+  allMode: boolean // "ver tudo": ignora o dia selecionado e mostra todas as sequências
   seqBtns: { id: string; label: string; active: boolean }[]
   selEyebrow: string
   stages: StoriesStage[]
+  storiesTitle: string
   storiesNote: string
   storyRows: StoriesStoryRow[]
   compare: StoriesCompareRow[]
   retCfg: ChartConfiguration | null
+  retNote: string // mensagem quando não há curva (ex.: story único)
 }
 
 const dm = (id: string): string => id.slice(8, 10) + '/' + id.slice(5, 7)
@@ -154,7 +157,7 @@ export function storiesVM(S: DashState): StoriesVM {
     .sort((a, b) => a.id.localeCompare(b.id))
   const calcs = list.map((s) => calcSeq(s, S))
   if (!calcs.length) {
-    return { empty: true, kpis: [], seqBtns: [], selEyebrow: '', stages: [], storiesNote: '', storyRows: [], compare: [], retCfg: null }
+    return { empty: true, kpis: [], allMode: false, seqBtns: [], selEyebrow: '', stages: [], storiesTitle: '', storiesNote: '', storyRows: [], compare: [], retCfg: null, retNote: '' }
   }
 
   const res = (id: string): StoryResult => STORY_RESULTS[id] || { agendamentos: null }
@@ -187,58 +190,85 @@ export function storiesVM(S: DashState): StoriesVM {
     { label: 'Agendamentos', value: agT == null ? '—' : fmtNum(agT), sub: agT ? 'passe o mouse para ver' : '', pending: agT == null, tip: agTipAll || undefined },
   ]
 
-  // ---- sequência selecionada (padrão: a mais recente do período) ----
+  // ---- sequência selecionada (padrão: a mais recente do período) ou "ver tudo" ----
+  const allMode = !!S.storyAll
   const sel = calcs.find((c) => c.seq.id === S.storySeq) || calcs[calcs.length - 1]
-  const seqBtns = calcs.map((c) => ({ id: c.seq.id, label: `${dm(c.seq.id)} · ${c.seq.name}`, active: c === sel }))
-  const r = res(sel.seq.id)
-  const appsStr = sel.apps == null ? '…' : fmtNum(sel.apps)
+  const seqBtns = calcs.map((c) => ({ id: c.seq.id, label: `${dm(c.seq.id)} · ${c.seq.name}`, active: !allMode && c === sel }))
   const W = [82, 75, 68, 61, 54, 47]
-  const tail: Omit<StoriesStage, 'width'>[] = [
-    { label: 'Aplicações', value: appsStr, left: 'respondi sem utm' },
-    {
-      label: 'Agendamentos',
-      value: r.agendamentos == null ? '—' : fmtNum(r.agendamentos.length),
-      left: r.agendamentos && r.agendamentos.length ? 'passe o mouse para ver' : '',
-      pending: r.agendamentos == null,
-      tip: r.agendamentos && r.agendamentos.length ? r.agendamentos.join('\n') : undefined,
-    },
-  ]
-  const head: Omit<StoriesStage, 'width'>[] = sel.hasLink
-    ? [
-        { label: 'Views do 1º story', value: fmtNum(sel.first.views), left: '' },
-        { label: 'Chegaram no link', value: fmtNum(sel.anchor.views), left: pct(sel.ret) + ' retenção' },
-        { label: 'Alcance do link', value: fmtNum(sel.anchor.reach), left: '' },
-        { label: 'Interesses', value: fmtNum(sel.intN), left: sel.intKind + (sel.anchor.reach ? ' · ' + pct((sel.intN / sel.anchor.reach) * 100) + ' do alcance' : '') },
-      ]
-    : [
-        { label: 'Visualizações', value: fmtNum(sel.viewsT), left: sel.seq.stories.length === 1 ? 'story único' : '' },
-        { label: 'Alcance', value: fmtNum(sel.anchor.reach), left: '' },
-        { label: 'Interesses', value: fmtNum(sel.intN), left: sel.intKind + (sel.anchor.reach ? ' · ' + pct((sel.intN / sel.anchor.reach) * 100) + ' do alcance' : '') },
-        { label: 'Visitas ao perfil', value: fmtNum(sel.visT), left: sel.anchor.reach ? pct((sel.visT / sel.anchor.reach) * 100) + ' do alcance' : '' },
-      ]
-  const stages: StoriesStage[] = [...head, ...tail].map((s, i) => ({ ...s, width: W[i] }))
+  const intLeft = (n: number, reach: number, kind: string): string => kind + (reach ? ' · ' + pct((n / reach) * 100) + ' do alcance' : '')
 
+  let stagesRaw: Omit<StoriesStage, 'width'>[]
+  let selEyebrow: string
+  if (allMode) {
+    // soma de todas as sequências do período
+    const firstT = calcs.reduce((a, c) => a + c.first.views, 0)
+    const lastT = calcs.reduce((a, c) => a + c.anchor.views, 0)
+    stagesRaw = [
+      { label: 'Views do 1º story', value: fmtNum(firstT), left: `${calcs.length} sequências` },
+      { label: 'Views no story final', value: fmtNum(lastT), left: firstT ? pct((lastT / firstT) * 100) + ' retenção' : '' },
+      { label: 'Alcance', value: fmtNum(intReachT), left: '' },
+      { label: 'Interesses', value: fmtNum(intT), left: intLeft(intT, intReachT, 'cliques + respostas') },
+      { label: 'Aplicações', value: appsKnown ? fmtNum(appsT) : '…', left: 'respondi sem utm' },
+      { label: 'Agendamentos', value: agT == null ? '—' : fmtNum(agT), left: agT ? 'passe o mouse para ver' : '', pending: agT == null, tip: agTipAll || undefined },
+    ]
+    selEyebrow = `Todas as sequências · ${calcs.length > 1 ? `de ${dm(calcs[0].seq.id)} a ${dm(calcs[calcs.length - 1].seq.id)}` : dm(calcs[0].seq.id)}`
+  } else {
+    const r = res(sel.seq.id)
+    const tail: Omit<StoriesStage, 'width'>[] = [
+      { label: 'Aplicações', value: sel.apps == null ? '…' : fmtNum(sel.apps), left: 'respondi sem utm' },
+      {
+        label: 'Agendamentos',
+        value: r.agendamentos == null ? '—' : fmtNum(r.agendamentos.length),
+        left: r.agendamentos && r.agendamentos.length ? 'passe o mouse para ver' : '',
+        pending: r.agendamentos == null,
+        tip: r.agendamentos && r.agendamentos.length ? r.agendamentos.join('\n') : undefined,
+      },
+    ]
+    const head: Omit<StoriesStage, 'width'>[] = sel.hasLink
+      ? [
+          { label: 'Views do 1º story', value: fmtNum(sel.first.views), left: '' },
+          { label: 'Chegaram no link', value: fmtNum(sel.anchor.views), left: pct(sel.ret) + ' retenção' },
+          { label: 'Alcance do link', value: fmtNum(sel.anchor.reach), left: '' },
+          { label: 'Interesses', value: fmtNum(sel.intN), left: intLeft(sel.intN, sel.anchor.reach, sel.intKind) },
+        ]
+      : [
+          { label: 'Visualizações', value: fmtNum(sel.viewsT), left: sel.seq.stories.length === 1 ? 'story único' : '' },
+          { label: 'Alcance', value: fmtNum(sel.anchor.reach), left: '' },
+          { label: 'Interesses', value: fmtNum(sel.intN), left: intLeft(sel.intN, sel.anchor.reach, sel.intKind) },
+          { label: 'Visitas ao perfil', value: fmtNum(sel.visT), left: sel.anchor.reach ? pct((sel.visT / sel.anchor.reach) * 100) + ' do alcance' : '' },
+        ]
+    stagesRaw = [...head, ...tail]
+    selEyebrow = `${sel.seq.name} · ${dm(sel.seq.id)} às ${hm(sel.first.iso)}`
+  }
+  const stages: StoriesStage[] = stagesRaw.map((st, i) => ({ ...st, width: W[i] }))
+
+  // ---- stories: da sequência selecionada, ou de todas (mais recente primeiro) ----
+  const rowsOf = (c: SeqCalc): StoriesStoryRow[] =>
+    c.seq.stories.map((x, i) => {
+      const isLink = c.hasLink && x === c.anchor
+      return {
+        pos: String(i + 1) + (isLink ? ' · link' : ''),
+        isLink,
+        pub: dm(x.iso) + ' ' + hm(x.iso),
+        tipo: x.dur ? 'vídeo ' + x.dur + 's' : 'foto',
+        views: fmtNum(x.views),
+        ret: c.first.views ? pct((x.views / c.first.views) * 100) : '—',
+        reach: fmtNum(x.reach),
+        resp: fmtNum(x.resp),
+        vis: fmtNum(x.vis),
+        clk: x.clk ? fmtNum(x.clk) : '—',
+        shr: fmtNum(x.shr),
+        link: x.link,
+      }
+    })
   const nSel = sel.seq.stories.length
-  const storiesNote = sel.hasLink
-    ? `${dm(sel.seq.id)} · ${nSel} stories · story ${sel.seq.stories.indexOf(sel.anchor) + 1} é o do link`
-    : `${dm(sel.seq.id)} · ${nSel === 1 ? 'story único' : nSel + ' stories'} · sem figurinha de link`
-  const storyRows: StoriesStoryRow[] = sel.seq.stories.map((x, i) => {
-    const isLink = sel.hasLink && x === sel.anchor
-    return {
-      pos: String(i + 1) + (isLink ? ' · link' : ''),
-      isLink,
-      pub: dm(x.iso) + ' ' + hm(x.iso),
-      tipo: x.dur ? 'vídeo ' + x.dur + 's' : 'foto',
-      views: fmtNum(x.views),
-      ret: sel.first.views ? pct((x.views / sel.first.views) * 100) : '—',
-      reach: fmtNum(x.reach),
-      resp: fmtNum(x.resp),
-      vis: fmtNum(x.vis),
-      clk: x.clk ? fmtNum(x.clk) : '—',
-      shr: fmtNum(x.shr),
-      link: x.link,
-    }
-  })
+  const storiesTitle = allMode ? 'Stories das sequências' : 'Stories da sequência'
+  const storiesNote = allMode
+    ? `${calcs.length} sequências · ${calcs.reduce((a, c) => a + c.seq.stories.length, 0)} stories · mais recentes primeiro`
+    : sel.hasLink
+      ? `${dm(sel.seq.id)} · ${nSel} stories · story ${sel.seq.stories.indexOf(sel.anchor) + 1} é o do link`
+      : `${dm(sel.seq.id)} · ${nSel === 1 ? 'story único' : nSel + ' stories'} · sem figurinha de link`
+  const storyRows: StoriesStoryRow[] = allMode ? calcs.slice().reverse().flatMap(rowsOf) : rowsOf(sel)
 
   // ---- comparativo (mais recente primeiro) ----
   const compare: StoriesCompareRow[] = calcs
@@ -267,19 +297,28 @@ export function storiesVM(S: DashState): StoriesVM {
       }
     })
 
-  // ---- retenção: views de cada story ÷ views do 1º (só sequências com mais de 1 story) ----
+  // ---- retenção: views de cada story ÷ views do 1º ----
+  // segue o dia selecionado; no "ver tudo" mostra todas as sequências com mais de 1 story.
+  // Cada sequência mantém a mesma cor nos dois modos (a mais recente é vinho).
+  const colorOf = (c: SeqCalc): string => SEQ_COLORS[(multi.length - 1 - multi.indexOf(c)) % SEQ_COLORS.length]
+  const shown = (allMode ? multi : multi.filter((c) => c === sel)).slice().reverse()
   let retCfg: ChartConfiguration | null = null
-  if (multi.length) {
-    const maxLen = Math.max(...multi.map((c) => c.seq.stories.length))
-    const ordered = multi.slice().reverse() // mais recente primeiro (cor vinho)
+  const retNote = shown.length
+    ? ''
+    : allMode
+      ? 'Sem sequência com mais de um story no período.'
+      : `${dm(sel.seq.id)} · ${sel.seq.name} é um story único, então não há curva de retenção. Use "ver tudo" para comparar as sequências.`
+  if (shown.length) {
+    const maxLen = Math.max(...shown.map((c) => c.seq.stories.length))
+    const ordered = shown
     retCfg = {
       type: 'line',
       data: {
         labels: Array.from({ length: maxLen }, (_, i) => String(i + 1)),
-        datasets: ordered.map((c, k) => {
+        datasets: ordered.map((c) => {
           const curve = c.seq.stories.map((x) => Math.round((x.views / c.first.views) * 1000) / 10)
           const li = c.hasLink ? c.seq.stories.indexOf(c.anchor) : -1
-          const col = SEQ_COLORS[k % SEQ_COLORS.length]
+          const col = colorOf(c)
           return {
             label: `${dm(c.seq.id)} · ${c.seq.stories.length} stories`,
             data: curve,
@@ -319,12 +358,15 @@ export function storiesVM(S: DashState): StoriesVM {
   return {
     empty: false,
     kpis,
+    allMode,
     seqBtns,
-    selEyebrow: `${sel.seq.name} · ${dm(sel.seq.id)} às ${hm(sel.first.iso)}`,
+    selEyebrow,
     stages,
+    storiesTitle,
     storiesNote,
     storyRows,
     compare,
     retCfg,
+    retNote,
   }
 }
