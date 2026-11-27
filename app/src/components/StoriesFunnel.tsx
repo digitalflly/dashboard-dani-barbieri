@@ -25,6 +25,20 @@ const td: CSSProperties = { textAlign: 'right', padding: '10px', fontSize: 12.5,
 const tdFirst: CSSProperties = { ...td, textAlign: 'left', padding: '10px 10px 10px 4px', fontSize: 12, fontWeight: 500 }
 const tdHl: CSSProperties = { ...td, fontWeight: 600, color: '#771520' }
 
+// botão de filtro (mesmo visual dos seletores de funil e de mês)
+const pillBtn = (active: boolean): CSSProperties => ({
+  fontFamily: 'var(--font-sans)',
+  fontSize: 12.5,
+  fontWeight: active ? 600 : 500,
+  cursor: 'pointer',
+  padding: '8px 16px',
+  borderRadius: 6,
+  border: `1px solid ${active ? '#771520' : 'var(--border-strong)'}`,
+  background: active ? '#771520' : 'transparent',
+  color: active ? 'var(--cream)' : 'var(--text-muted)',
+  transition: 'var(--transition-base)',
+})
+
 function Pending() {
   return (
     <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', padding: '2px 8px', borderRadius: 999, background: '#F4E4C9', color: 'var(--gold-deep)' }}>
@@ -77,24 +91,15 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
       <div style={{ borderTop: '1px solid var(--border-soft)', margin: '26px 0 16px', paddingTop: 24 }}>
         <div style={sectionTitle}>Sequências de stories</div>
       </div>
+      {/* "ver tudo" ignora o dia selecionado e compara todas as sequências do período */}
+      <div style={{ marginBottom: 8 }}>
+        <button onClick={() => setState({ storyAll: !S.storyAll })} style={pillBtn(v.allMode)}>
+          Ver tudo
+        </button>
+      </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
         {v.seqBtns.map((b) => (
-          <button
-            key={b.id}
-            onClick={() => setState({ storySeq: b.id })}
-            style={{
-              fontFamily: 'var(--font-sans)',
-              fontSize: 12.5,
-              fontWeight: b.active ? 600 : 500,
-              cursor: 'pointer',
-              padding: '8px 16px',
-              borderRadius: 6,
-              border: `1px solid ${b.active ? '#771520' : 'var(--border-strong)'}`,
-              background: b.active ? '#771520' : 'transparent',
-              color: b.active ? 'var(--cream)' : 'var(--text-muted)',
-              transition: 'var(--transition-base)',
-            }}
-          >
+          <button key={b.id} onClick={() => setState({ storySeq: b.id, storyAll: false })} style={pillBtn(b.active)}>
             {b.label}
           </button>
         ))}
@@ -141,13 +146,16 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
         {/* retenção */}
         <div className="b-card" style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column' }}>
           <div style={eyebrow}>Views de cada story ÷ views do 1º</div>
-          <div style={{ ...cardTitle, marginBottom: 12 }}>Retenção da sequência</div>
+          <div style={{ ...cardTitle, marginBottom: v.allMode ? 4 : 12 }}>{v.allMode ? 'Retenção das sequências' : 'Retenção da sequência'}</div>
+          {v.allMode && v.retCfg && (
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>clique numa sequência da legenda para esconder ou mostrar e comparar</div>
+          )}
           {v.retCfg ? (
             <div style={{ flex: 1, minHeight: 240, position: 'relative' }}>
               <ChartCanvas id="stories-ret" config={v.retCfg} />
             </div>
           ) : (
-            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Sem sequência com mais de um story no período.</div>
+            <div data-keepcase="1" style={{ fontSize: 12.5, color: 'var(--text-muted)', lineHeight: 1.55 }}>{v.retNote}</div>
           )}
         </div>
       </div>
@@ -207,7 +215,7 @@ export default function StoriesFunnel({ dash }: { dash: Dashboard }) {
       {/* stories da sequência selecionada */}
       <div className="b-card" style={{ padding: '22px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div style={cardTitle}>Stories da sequência</div>
+          <div style={cardTitle}>{v.storiesTitle}</div>
           <span data-keepcase="1" style={{ fontSize: 11, color: 'var(--text-muted)' }}>{v.storiesNote}</span>
         </div>
         <div style={{ overflowX: 'auto', margin: '0 -4px' }}>
